@@ -177,11 +177,18 @@ const Hero = () => {
 
   return (
     <section className="container mx-auto px-4 min-h-screen flex flex-col items-center justify-center">
-      <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-12 bg-gradient-to-r from-pink-500 to-violet-500 text-transparent bg-clip-text">
-        Find Your Perfect Makeup Dupe
-      </h1>
+      <div className="mb-8">
+        <img 
+          src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
+          alt="Dupe Academy Logo" 
+          className="h-24 md:h-32 mb-6"
+        />
+        <p className="text-xl md:text-2xl text-gray-600 italic">
+          Where luxury meets affordability
+        </p>
+      </div>
       
-      <div className="relative w-full max-w-2xl">
+      <div className="relative w-full max-w-2xl mt-12">
         <Input
           type="text"
           placeholder="Search for your favorite makeup product..."
