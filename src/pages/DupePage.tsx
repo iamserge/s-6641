@@ -60,7 +60,9 @@ const DupePage = () => {
       try {
         const { data: product, error: productError } = await supabase
           .from('products')
-          .select('*, dupes:dupes(*), resources:resources(*)') as { data: Product | null; error: Error | null };
+          .select('*, dupes(*), resources(*)')
+          .eq('slug', slug)
+          .single();
 
         if (productError) throw productError;
         if (!product) throw new Error('Product not found');
@@ -74,7 +76,7 @@ const DupePage = () => {
             attributes: product.attributes,
             imageUrl: product.image_url
           },
-          dupes: product.dupes.map((dupe) => ({
+          dupes: product.dupes.map((dupe: any) => ({
             name: dupe.name,
             brand: dupe.brand,
             price: dupe.price,
@@ -89,7 +91,7 @@ const DupePage = () => {
             purchaseLink: dupe.purchase_link
           })),
           summary: product.summary,
-          resources: product.resources.map((resource) => ({
+          resources: product.resources.map((resource: any) => ({
             title: resource.title,
             url: resource.url,
             type: resource.type
