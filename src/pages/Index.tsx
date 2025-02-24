@@ -50,14 +50,22 @@ const RecentDupes = () => {
           name,
           brand,
           slug,
-          dupes(count),
-          resources(count)
+          dupes:dupes(count),
+          resources:resources(count)
         `)
         .order('created_at', { ascending: false })
         .limit(6);
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match our interface
+      const transformedData = (data || []).map(product => ({
+        ...product,
+        dupes: { count: product.dupes[0]?.count || 0 },
+        resources: { count: product.resources[0]?.count || 0 }
+      }));
+
+      return transformedData;
     }
   });
 
@@ -94,10 +102,10 @@ const RecentDupes = () => {
               <div className="flex justify-between items-center">
                 <div className="space-y-1">
                   <p className="text-sm text-gray-500">
-                    {product.dupes.count || 0} dupes found
+                    {product.dupes.count} dupes found
                   </p>
                   <p className="text-sm text-gray-500">
-                    {product.resources.count || 0} resources
+                    {product.resources.count} resources
                   </p>
                 </div>
                 <ArrowRight className="w-5 h-5 text-gray-400" />
