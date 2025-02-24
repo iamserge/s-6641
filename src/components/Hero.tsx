@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Mic, Camera, Loader2, Search } from "lucide-react";
+import { Mic, Camera, Loader2, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
 import { motion } from "framer-motion";
@@ -13,6 +13,46 @@ const Hero = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+
+    if (!searchText) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a search term or use image search",
+      });
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const { data, error } = await supabase.functions.invoke('search-dupes', {
+        body: { searchText },
+      });
+
+      if (error) throw error;
+
+      console.log('Search results:', data);
+      toast({
+        title: "Success!",
+        description: "Found similar products. Check the results below.",
+      });
+
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to search for products. Please try again.",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleVoiceSearch = async () => {
     try {
@@ -54,6 +94,8 @@ const Hero = () => {
                   title: "Voice processed!",
                   description: `Detected text: "${data.text}"`,
                 });
+                // Automatically trigger search after voice processing
+                await handleSearch();
                 resolve();
               } catch (error) {
                 console.error('Error processing voice in reader:', error);
@@ -121,7 +163,6 @@ const Hero = () => {
           const base64Image = reader.result as string;
           console.log('Sending image to analyze-image function...');
 
-          // Analyze image with OpenAI
           const { data: imageAnalysis, error: imageError } = await supabase.functions.invoke(
             'analyze-image',
             {
@@ -135,9 +176,12 @@ const Hero = () => {
           }
 
           console.log('Image analysis result:', imageAnalysis);
-
-          // Search for dupes with the analyzed image
-          await handleSearch(undefined, imageAnalysis);
+          
+          // Set the analyzed text as search text
+          setSearchText(imageAnalysis);
+          
+          // Automatically trigger search with the analyzed text
+          await handleSearch();
           
         } catch (error) {
           console.error('Error in reader.onload:', error);
@@ -165,46 +209,10 @@ const Hero = () => {
     }
   };
 
-  const handleSearch = async (e?: React.FormEvent, imageAnalysis?: any) => {
-    if (e) {
-      e.preventDefault();
-    }
-
-    if (!searchText && !imageAnalysis) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter a search term or use image search",
-      });
-      return;
-    }
-
-    try {
-      setIsProcessing(true);
-      const { data, error } = await supabase.functions.invoke('search-dupes', {
-        body: { 
-          searchText: searchText || null,
-          imageAnalysis
-        },
-      });
-
-      if (error) throw error;
-
-      console.log('Search results:', data);
-      toast({
-        title: "Success!",
-        description: "Found similar products. Check the results below.",
-      });
-
-    } catch (error) {
-      console.error('Search error:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to search for products. Please try again.",
-      });
-    } finally {
-      setIsProcessing(false);
+  const clearPreview = () => {
+    setPreviewImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -266,12 +274,19 @@ const Hero = () => {
       >
         <div className="relative">
           {previewImage && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 group">
               <img 
                 src={previewImage} 
                 alt="Preview" 
                 className="h-10 w-10 rounded-full object-cover border-2 border-pink-100"
               />
+              <button
+                type="button"
+                onClick={clearPreview}
+                className="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="w-3 h-3 text-gray-500" />
+              </button>
             </div>
           )}
           <Input
