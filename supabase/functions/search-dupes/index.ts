@@ -15,22 +15,19 @@ serve(async (req) => {
   }
 
   try {
-    const { searchText, imageAnalysis } = await req.json()
+    const { searchText } = await req.json()
     
-    // Use imageAnalysis result if available, otherwise use searchText
-    const productToSearch = imageAnalysis?.description || searchText
-
-    if (!productToSearch) {
+    if (!searchText) {
       throw new Error("No search query provided")
     }
 
-    console.log('Searching for dupes for:', productToSearch)
+    console.log('Searching for dupes for:', searchText)
 
-    const prompt = `I am building a makeup dupe-finding tool called Dupe.academy. For the product "${productToSearch}", please generate a detailed report that includes:
+    const prompt = `I am building a makeup dupe-finding tool called Dupe.academy. For the product "${searchText}", please generate a detailed report that includes:
 
 Recommended Dupes: A list of makeup dupes with product names, brands, and links to high-quality product images.
 Key Details: For each dupe, include information such as price, SPF (if applicable), key ingredients, and performance features.
-Comparison Table: A side-by-side comparison table that highlights similarities and differences between ${productToSearch} and each recommended dupe (e.g., texture, finish, formulation, price savings).
+Comparison Table: A side-by-side comparison table that highlights similarities and differences between ${searchText} and each recommended dupe (e.g., texture, finish, formulation, price savings).
 User Feedback: Include user reviews, ratings, or match scores that indicate how closely the dupe resembles the original.
 Skin Tone/Type Compatibility: Information on which skin tones or skin types each dupe is best suited for, along with any formulation differences.
 Supplementary Resources: Links or references to articles, tutorials, or expert reviews that offer additional insights on evaluating the dupes.
@@ -45,7 +42,7 @@ Please format the output as a clear, structured comparison table (or in JSON for
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-large-128k-online',
+        model: 'sonar-reasoning-pro',
         messages: [
           {
             role: 'system',
