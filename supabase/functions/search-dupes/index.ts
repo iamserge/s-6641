@@ -19,6 +19,11 @@ serve(async (req) => {
   }
 
   try {
+    // Check if PERPLEXITY_API_KEY is set
+    if (!PERPLEXITY_API_KEY) {
+      throw new Error('PERPLEXITY_API_KEY is not set')
+    }
+
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
     const { searchText } = await req.json()
     
@@ -71,7 +76,7 @@ Please format your response in JSON format for easy parsing and display. Each se
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'sonar-reasoning-pro',
+        model: 'sonar-medium-online',
         messages: [
           {
             role: 'system',
@@ -120,13 +125,18 @@ Please format your response in JSON format for easy parsing and display. Each se
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      console.error('Perplexity API error:', error)
-      throw new Error('Failed to get response from Perplexity')
+      const errorText = await response.text()
+      console.error('Perplexity API error response:', errorText)
+      throw new Error(`Perplexity API error: ${response.status} ${errorText}`)
     }
 
     const perplexityResponse = await response.json()
     console.log('Perplexity response:', perplexityResponse)
+
+    if (!perplexityResponse.choices?.[0]?.message?.content) {
+      console.error('Invalid response format from Perplexity:', perplexityResponse)
+      throw new Error('Invalid response format from Perplexity')
+    }
 
     // Parse the response
     let formattedResponse
@@ -135,6 +145,12 @@ Please format your response in JSON format for easy parsing and display. Each se
       formattedResponse = JSON.parse(content)
     } catch (e) {
       console.error('Could not parse response as JSON:', e)
+      throw new Error('Invalid response format from Perplexity')
+    }
+
+    // Validate response format
+    if (!formattedResponse.original || !formattedResponse.dupes || !formattedResponse.summary) {
+      console.error('Missing required fields in response:', formattedResponse)
       throw new Error('Invalid response format from Perplexity')
     }
 
