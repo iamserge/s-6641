@@ -199,21 +199,37 @@ const Hero = () => {
             delay: 0.2
           }}
         />
-        <motion.p 
-          className="text-2xl md:text-3xl text-gray-600 font-extralight"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-        >
-          Where luxury meets affordability
-        </motion.p>
+        <div className="text-2xl md:text-3xl text-gray-600 font-extralight flex justify-center gap-2 md:gap-3">
+          {["Smart", "Dupes,", "Stunning", "You"].map((word, index) => (
+            <motion.span
+              key={word}
+              initial={{ 
+                opacity: 0, 
+                scale: 1.1,
+                filter: "blur(5px)"
+              }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1,
+                filter: "blur(0px)"
+              }}
+              transition={{
+                duration: 0.5,
+                delay: 0.8 + (index * 0.15),
+                ease: [0.6, -0.05, 0.01, 0.99]
+              }}
+            >
+              {word}
+            </motion.span>
+          ))}
+        </div>
       </motion.div>
       
       <motion.div 
         className="relative w-full max-w-3xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.8 }}
+        transition={{ delay: 1.6, duration: 0.8 }}
       >
         <Input
           type="text"
