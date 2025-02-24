@@ -152,7 +152,7 @@ Please format your response in JSON format for easy parsing and display. Each se
             content: prompt
           }
         ],
-        max_tokens: 20000,
+        max_tokens: 123,
         temperature: 0.2,
         top_p: 0.9,
         search_domain_filter: null,
@@ -266,7 +266,6 @@ Return only the structured JSON with no explanation or markdown.`
             content: openaiPrompt
           }
         ],
-        temperature: 0.1,
         max_completion_tokens: 4000
       })
     })
