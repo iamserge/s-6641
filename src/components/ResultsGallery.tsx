@@ -39,7 +39,10 @@ interface DupeSearchResult {
   resources: Resource[];
 }
 
-// Example data structure
+interface ResultsGalleryProps {
+  data?: DupeSearchResult;
+}
+
 const mockResults: DupeSearchResult = {
   original: {
     name: "Shape Tape Concealer",
@@ -138,32 +141,31 @@ const mockResults: DupeSearchResult = {
   ]
 };
 
-const ResultsGallery = () => {
+const ResultsGallery = ({ data = mockResults }: ResultsGalleryProps) => {
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
-      {/* Original Product */}
       <Card className="bg-gradient-to-r from-pink-50 to-purple-50">
         <CardHeader className="space-y-4">
           <div className="flex items-start justify-between">
             <div>
-              <CardTitle className="text-2xl font-bold">{mockResults.original.name}</CardTitle>
-              <CardDescription className="text-lg">{mockResults.original.brand}</CardDescription>
+              <CardTitle className="text-2xl font-bold">{data.original.name}</CardTitle>
+              <CardDescription className="text-lg">{data.original.brand}</CardDescription>
             </div>
             <Badge variant="secondary" className="text-lg px-4 py-1">
-              ${mockResults.original.price}
+              ${data.original.price}
             </Badge>
           </div>
-          {mockResults.original.imageUrl && (
+          {data.original.imageUrl && (
             <img
-              src={mockResults.original.imageUrl}
-              alt={mockResults.original.name}
+              src={data.original.imageUrl}
+              alt={data.original.name}
               className="w-full max-w-md mx-auto rounded-lg shadow-lg"
             />
           )}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {mockResults.original.attributes.map((attribute, index) => (
+            {data.original.attributes.map((attribute, index) => (
               <Badge key={index} variant="outline" className="justify-center">
                 {attribute}
               </Badge>
@@ -172,16 +174,14 @@ const ResultsGallery = () => {
         </CardContent>
       </Card>
 
-      {/* Summary */}
       <Card className="bg-gradient-to-r from-blue-50 to-green-50">
         <CardContent className="py-6">
-          <p className="text-lg text-center font-medium text-gray-700">{mockResults.summary}</p>
+          <p className="text-lg text-center font-medium text-gray-700">{data.summary}</p>
         </CardContent>
       </Card>
 
-      {/* Dupes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockResults.dupes.map((dupe, index) => (
+        {data.dupes.map((dupe, index) => (
           <Card key={index} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -253,14 +253,13 @@ const ResultsGallery = () => {
         ))}
       </div>
 
-      {/* Resources */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Additional Resources</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockResults.resources.map((resource, index) => (
+            {data.resources.map((resource, index) => (
               <a
                 key={index}
                 href={resource.url}

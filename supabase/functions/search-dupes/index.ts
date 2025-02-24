@@ -1,5 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +9,8 @@ const corsHeaders = {
 }
 
 const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY')
+const supabaseUrl = Deno.env.get('SUPABASE_URL')
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -15,6 +19,7 @@ serve(async (req) => {
   }
 
   try {
+    const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
     const { searchText } = await req.json()
     
     if (!searchText) {
@@ -123,24 +128,92 @@ Please format your response in JSON format for easy parsing and display. Each se
     const perplexityResponse = await response.json()
     console.log('Perplexity response:', perplexityResponse)
 
-    // Parse and format the response
+    // Parse the response
     let formattedResponse
     try {
-      // Try to parse as JSON first
       const content = perplexityResponse.choices[0].message.content
       formattedResponse = JSON.parse(content)
     } catch (e) {
-      console.log('Could not parse response as JSON, using raw text')
-      formattedResponse = {
-        raw: perplexityResponse.choices[0].message.content,
-        error: 'Could not parse response as JSON'
-      }
+      console.error('Could not parse response as JSON:', e)
+      throw new Error('Invalid response format from Perplexity')
+    }
+
+    // Store in database
+    const { original, dupes, summary, resources } = formattedResponse
+
+    // Create slug from product name
+    const slug = slugify(original.name, { lower: true })
+
+    // Insert product
+    const { data: productData, error: productError } = await supabase
+      .from('products')
+      .insert({
+        name: original.name,
+        brand: original.brand,
+        price: original.price,
+        attributes: original.attributes,
+        image_url: original.imageUrl,
+        summary,
+        slug
+      })
+      .select()
+      .single()
+
+    if (productError) {
+      console.error('Error inserting product:', productError)
+      throw productError
+    }
+
+    // Insert dupes
+    const { error: dupesError } = await supabase
+      .from('dupes')
+      .insert(
+        dupes.map(dupe => ({
+          product_id: productData.id,
+          name: dupe.name,
+          brand: dupe.brand,
+          price: dupe.price,
+          savings_percentage: dupe.savingsPercentage,
+          key_ingredients: dupe.keyIngredients,
+          texture: dupe.texture,
+          finish: dupe.finish,
+          spf: dupe.spf,
+          skin_types: dupe.skinTypes,
+          match_score: dupe.matchScore,
+          notes: dupe.notes,
+          purchase_link: dupe.purchaseLink
+        }))
+      )
+
+    if (dupesError) {
+      console.error('Error inserting dupes:', dupesError)
+      throw dupesError
+    }
+
+    // Insert resources
+    const { error: resourcesError } = await supabase
+      .from('resources')
+      .insert(
+        resources.map(resource => ({
+          product_id: productData.id,
+          title: resource.title,
+          url: resource.url,
+          type: resource.type
+        }))
+      )
+
+    if (resourcesError) {
+      console.error('Error inserting resources:', resourcesError)
+      throw resourcesError
     }
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        data: formattedResponse
+        data: {
+          id: productData.id,
+          slug
+        }
       }),
       { 
         headers: { 

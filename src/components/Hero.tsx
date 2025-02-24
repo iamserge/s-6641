@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -6,6 +5,7 @@ import { Mic, Camera, Loader2, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
   const [searchText, setSearchText] = useState("");
@@ -13,6 +13,7 @@ const Hero = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) {
@@ -36,11 +37,11 @@ const Hero = () => {
 
       if (error) throw error;
 
-      console.log('Search results:', data);
-      toast({
-        title: "Success!",
-        description: "Found similar products. Check the results below.",
-      });
+      if (data?.success && data?.data?.slug) {
+        navigate(`/dupes/for/${data.data.slug}`);
+      } else {
+        throw new Error('No product data returned');
+      }
 
     } catch (error) {
       console.error('Search error:', error);
@@ -94,7 +95,6 @@ const Hero = () => {
                   title: "Voice processed!",
                   description: `Detected text: "${data.text}"`,
                 });
-                // Automatically trigger search after voice processing
                 await handleSearch();
                 resolve();
               } catch (error) {
@@ -152,7 +152,6 @@ const Hero = () => {
 
     try {
       setIsProcessing(true);
-      // Create preview URL for the image
       const previewUrl = URL.createObjectURL(file);
       setPreviewImage(previewUrl);
 
@@ -177,12 +176,9 @@ const Hero = () => {
 
           console.log('Image analysis result:', imageAnalysis);
           
-          // Set the analyzed text as search text
           setSearchText(imageAnalysis);
           
-          // Automatically trigger search with the analyzed text
           await handleSearch();
-          
         } catch (error) {
           console.error('Error in reader.onload:', error);
           throw error;
