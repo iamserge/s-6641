@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
@@ -158,8 +157,7 @@ Please format your response in JSON format for easy parsing and display. Each se
         top_k: 0,
         stream: false,
         presence_penalty: 0,
-        frequency_penalty: 1,
-        response_format: { type: "json_object" }
+        frequency_penalty: 1
       }),
     })
 
