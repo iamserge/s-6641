@@ -4,7 +4,12 @@ import Hero from "../components/Hero";
 import ResultsGallery from "../components/ResultsGallery";
 import Footer from "../components/Footer";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 const TrendingPill = ({ text }: { text: string }) => (
   <motion.div 
@@ -16,6 +21,78 @@ const TrendingPill = ({ text }: { text: string }) => (
     <span className="text-gray-700">{text}</span>
   </motion.div>
 );
+
+const RecentDupes = () => {
+  const navigate = useNavigate();
+  const { data: products, isLoading } = useQuery({
+    queryKey: ['recentDupes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          brand,
+          slug,
+          dupes(count),
+          resources(count)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {products?.map((product) => (
+        <motion.div
+          key={product.id}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate(`/dupes/for/${product.slug}`)}
+          >
+            <CardHeader>
+              <CardTitle className="text-xl font-bold">
+                {product.brand}
+              </CardTitle>
+              <p className="text-2xl font-light text-gray-600 mt-2">
+                {product.name}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500">
+                    {product.dupes?.count || 0} dupes found
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {product.resources?.count || 0} resources
+                  </p>
+                </div>
+                <ArrowRight className="w-5 h-5 text-gray-400" />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
 
 const Index = () => {
   const trendingProducts = [
@@ -64,6 +141,19 @@ const Index = () => {
           <div className="text-4xl font-semibold text-pink-500">98%</div>
           <div className="text-gray-600 mt-2">Match Accuracy</div>
         </motion.div>
+      </section>
+
+      {/* Recent Dupes Section */}
+      <section className="container mx-auto px-4 py-12">
+        <motion.h2 
+          className="text-3xl font-bold text-gray-800 mb-8 text-center"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          Recently Added Dupes
+        </motion.h2>
+        <RecentDupes />
       </section>
 
       {/* Trending Products Section */}
