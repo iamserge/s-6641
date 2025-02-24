@@ -1,112 +1,90 @@
 
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { Card } from "./ui/card";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { ImagePlus, Mic, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
-const SearchSection = () => {
-  const [searchMode, setSearchMode] = useState<"text" | "image" | "voice">("text");
-  const [searchText, setSearchText] = useState("");
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+export default function SearchSection() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setImageUrl(url);
-      setSearchMode("image");
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('https://cnoqknkqvygbrbzgnswn.supabase.co/functions/v1/search-dupes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ searchText: searchQuery }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to search for dupes');
+      }
+
+      // Redirect to the dupe details page
+      navigate(`/dupes/for/${data.data.slug}`);
+
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to search for dupes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSearch = () => {
-    // TODO: Implement search functionality
-    console.log("Searching with:", { searchMode, searchText, imageUrl });
-  };
-
   return (
-    <section className="container mx-auto px-4 py-12">
-      <Card className="p-6 max-w-2xl mx-auto">
-        <div className="space-y-4">
-          <div className="flex gap-2 justify-center mb-6">
-            <Button
-              variant={searchMode === "text" ? "default" : "outline"}
-              onClick={() => setSearchMode("text")}
-            >
-              <Search className="w-4 h-4 mr-2" />
-              Text Search
-            </Button>
-            <Button
-              variant={searchMode === "image" ? "default" : "outline"}
-              onClick={() => setSearchMode("image")}
-            >
-              <ImagePlus className="w-4 h-4 mr-2" />
-              Image Upload
-            </Button>
-            <Button
-              variant={searchMode === "voice" ? "default" : "outline"}
-              onClick={() => setSearchMode("voice")}
-            >
-              <Mic className="w-4 h-4 mr-2" />
-              Voice Search
-            </Button>
+    <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-purple-50 to-white">
+      <div className="container px-4 md:px-6">
+        <div className="flex flex-col items-center justify-center space-y-4 text-center">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500">
+              Find Your Perfect Dupe
+            </h1>
+            <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl">
+              Enter the name of your favorite high-end beauty product and we'll find affordable alternatives that work just as well.
+            </p>
           </div>
-
-          {searchMode === "text" && (
-            <Textarea
-              placeholder="Describe the makeup product you're looking for..."
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              className="min-h-[100px]"
-            />
-          )}
-
-          {searchMode === "image" && (
-            <div className="space-y-4">
+          <div className="w-full max-w-2xl mx-auto">
+            <form 
+              onSubmit={handleSearch}
+              className="flex flex-col sm:flex-row gap-2"
+            >
               <Input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                id="image-upload"
+                type="text"
+                placeholder="E.g., Charlotte Tilbury Hollywood Flawless Filter"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
               />
-              <label
-                htmlFor="image-upload"
-                className="block w-full h-40 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
-              >
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt="Uploaded product"
-                    className="max-h-full object-contain"
-                  />
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Searching...
+                  </>
                 ) : (
-                  <div className="text-center">
-                    <ImagePlus className="w-8 h-8 mx-auto mb-2" />
-                    <p>Click to upload product image</p>
-                  </div>
+                  "Find Dupes"
                 )}
-              </label>
-            </div>
-          )}
-
-          {searchMode === "voice" && (
-            <div className="text-center p-8">
-              <Button variant="outline" size="lg" className="rounded-full w-16 h-16">
-                <Mic className="w-6 h-6" />
               </Button>
-              <p className="mt-4">Click to start voice search</p>
-            </div>
-          )}
-
-          <Button onClick={handleSearch} className="w-full">
-            Find Dupes
-          </Button>
+            </form>
+          </div>
         </div>
-      </Card>
+      </div>
     </section>
   );
-};
-
-export default SearchSection;
+}
