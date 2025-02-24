@@ -1,18 +1,17 @@
+
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
-import Features from "../components/Features";
-import Stats from "../components/Stats";
-import FAQ from "../components/FAQ";
+import SearchSection from "../components/SearchSection";
+import ResultsGallery from "../components/ResultsGallery";
 import Footer from "../components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
       <Navbar />
       <Hero />
-      <Features />
-      <Stats />
-      <FAQ />
+      <SearchSection />
+      <ResultsGallery />
       <Footer />
     </div>
   );
