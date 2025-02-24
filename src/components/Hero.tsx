@@ -287,20 +287,6 @@ const Hero = () => {
         
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2 items-center">
           <Button
-            type="submit"
-            variant="ghost"
-            size="icon"
-            disabled={isProcessing}
-            className="h-12 w-12 hover:bg-pink-50 mr-2"
-          >
-            {isProcessing ? (
-              <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
-            ) : (
-              <Search className="w-6 h-6 text-pink-500" />
-            )}
-          </Button>
-          <div className="w-px h-8 bg-pink-100" />
-          <Button
             type="button"
             variant="ghost"
             size="icon"
@@ -319,6 +305,20 @@ const Hero = () => {
             className="h-12 w-12 hover:bg-pink-50"
           >
             <Camera className="w-6 h-6 text-pink-500" />
+          </Button>
+          <div className="w-px h-8 bg-pink-100" />
+          <Button
+            type="submit"
+            variant="ghost"
+            size="icon"
+            disabled={isProcessing}
+            className="h-12 w-12 hover:bg-pink-50 ml-2"
+          >
+            {isProcessing ? (
+              <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
+            ) : (
+              <Search className="w-6 h-6 text-pink-500" />
+            )}
           </Button>
         </div>
         <input
