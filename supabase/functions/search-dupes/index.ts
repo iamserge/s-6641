@@ -119,7 +119,7 @@ Please format your response in JSON format for easy parsing and display. Each se
             content: prompt
           }
         ],
-        max_tokens: 123,
+        max_tokens: 10000,
         temperature: 0.2,
         top_p: 0.9,
         search_domain_filter: null,
