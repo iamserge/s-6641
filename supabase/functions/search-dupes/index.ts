@@ -8,6 +8,7 @@ const corsHeaders = {
 }
 
 const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY')
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') // Added OpenAI API key
 const supabaseUrl = Deno.env.get('SUPABASE_URL')
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
@@ -18,9 +19,13 @@ serve(async (req) => {
   }
 
   try {
-    // Check if PERPLEXITY_API_KEY is set
+    // Check if API keys are set
     if (!PERPLEXITY_API_KEY) {
       throw new Error('PERPLEXITY_API_KEY is not set')
+    }
+    
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not set')
     }
 
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
@@ -175,22 +180,127 @@ Please format your response in JSON format for easy parsing and display. Each se
       throw new Error('Invalid response format from Perplexity')
     }
 
-    // Parse the response
+    // Get raw content from Perplexity
+    const perplexityContent = perplexityResponse.choices[0].message.content
+    
+    // Remove any markdown code blocks if present
+    const jsonContent = perplexityContent.replace(/```json\n?|\n?```/g, '').trim()
+    
+    // Parse the Perplexity response (this might fail if not proper JSON)
+    let parsedPerplexityData
+    try {
+      parsedPerplexityData = JSON.parse(jsonContent)
+    } catch (e) {
+      console.log('Perplexity response is not valid JSON, sending to OpenAI for repair...')
+      // If we can't parse it, we'll use OpenAI to fix it
+    }
+
+    // Process with OpenAI o3-mini to ensure structured output
+    console.log('Processing with OpenAI o3-mini...')
+    
+    const schemaDefinition = `{
+  "original": {
+    "name": string,
+    "brand": string,
+    "price": number,
+    "attributes": string[],
+    "imageUrl": string (optional)
+  },
+  "dupes": [{
+    "name": string,
+    "brand": string,
+    "price": number,
+    "savingsPercentage": number,
+    "keyIngredients": string[],
+    "texture": string,
+    "finish": string,
+    "spf": number (optional),
+    "skinTypes": string[],
+    "matchScore": number,
+    "notes": string,
+    "purchaseLink": string (optional)
+  }],
+  "summary": string,
+  "resources": [{
+    "title": string,
+    "url": string,
+    "type": "Video" | "YouTube" | "Instagram" | "TikTok" | "Article"
+  }]
+}`
+
+    const openaiPrompt = parsedPerplexityData 
+      ? `I have JSON data about makeup product dupes that might have some structural issues. Please validate and fix this JSON data to ensure it strictly follows the schema definition provided. Make sure all required fields are present and correctly formatted.
+
+Schema Definition:
+${schemaDefinition}
+
+Input JSON:
+${JSON.stringify(parsedPerplexityData)}
+
+Return only the fixed JSON with no explanation or markdown.`
+      : `I have text data about makeup product dupes that needs to be structured as valid JSON. The data is from Perplexity AI but may not be in proper JSON format. Please convert this data to valid JSON that strictly follows the schema definition provided.
+
+Schema Definition:
+${schemaDefinition}
+
+Input Text:
+${perplexityContent}
+
+Return only the structured JSON with no explanation or markdown.`
+
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'o3-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a JSON validation and repair service. You take potentially malformed JSON data and fix its structure according to a given schema, without changing the core content.'
+          },
+          {
+            role: 'user',
+            content: openaiPrompt
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 4000
+      })
+    })
+
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text()
+      console.error('OpenAI API error response:', errorText)
+      throw new Error(`OpenAI API error: ${openaiResponse.status} ${errorText}`)
+    }
+
+    const openaiResult = await openaiResponse.json()
+    console.log('OpenAI processed response received')
+
+    if (!openaiResult.choices?.[0]?.message?.content) {
+      console.error('Invalid response format from OpenAI:', openaiResult)
+      throw new Error('Invalid response format from OpenAI')
+    }
+
+    // Parse the final formatted result
     let formattedResponse
     try {
-      const content = perplexityResponse.choices[0].message.content
+      const content = openaiResult.choices[0].message.content
       // Remove any markdown code blocks if present
-      const jsonContent = content.replace(/```json\n?|\n?```/g, '').trim()
-      formattedResponse = JSON.parse(jsonContent)
+      const cleanedContent = content.replace(/```json\n?|\n?```/g, '').trim()
+      formattedResponse = JSON.parse(cleanedContent)
     } catch (e) {
-      console.error('Could not parse response as JSON:', e)
-      throw new Error('Invalid response format from Perplexity')
+      console.error('Could not parse OpenAI response as JSON:', e)
+      throw new Error('Invalid response format from OpenAI')
     }
 
     // Validate response format
     if (!formattedResponse.original || !formattedResponse.dupes || !formattedResponse.summary) {
-      console.error('Missing required fields in response:', formattedResponse)
-      throw new Error('Invalid response format from Perplexity')
+      console.error('Missing required fields in final response:', formattedResponse)
+      throw new Error('Invalid response format after OpenAI processing')
     }
 
     // Store in database
