@@ -112,14 +112,43 @@ Please format your response in JSON format for easy parsing and display. Each se
         messages: [
           {
             role: 'system',
-            content: `You are a makeup expert specializing in finding dupes for high-end products.`
+            content: `You are a makeup expert specializing in finding dupes for high-end products. Return ONLY a valid JSON object (no markdown, no thinking process, just the JSON) with this structure:
+{
+  "original": {
+    "name": string,
+    "brand": string,
+    "price": number,
+    "attributes": string[],
+    "imageUrl": string (optional)
+  },
+  "dupes": [{
+    "name": string,
+    "brand": string,
+    "price": number,
+    "savingsPercentage": number,
+    "keyIngredients": string[],
+    "texture": string,
+    "finish": string,
+    "spf": number (optional),
+    "skinTypes": string[],
+    "matchScore": number,
+    "notes": string,
+    "purchaseLink": string (optional)
+  }],
+  "summary": string,
+  "resources": [{
+    "title": string,
+    "url": string,
+    "type": "Video" | "YouTube" | "Instagram" | "TikTok" | "Article"
+  }]
+}`
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 10000,
+        max_tokens: 123,
         temperature: 0.2,
         top_p: 0.9,
         search_domain_filter: null,
@@ -130,7 +159,7 @@ Please format your response in JSON format for easy parsing and display. Each se
         stream: false,
         presence_penalty: 0,
         frequency_penalty: 1,
-        response_format: null
+        response_format: { type: "json_object" }
       }),
     })
 
@@ -152,7 +181,9 @@ Please format your response in JSON format for easy parsing and display. Each se
     let formattedResponse
     try {
       const content = perplexityResponse.choices[0].message.content
-      formattedResponse = JSON.parse(content)
+      // Remove any markdown code blocks if present
+      const jsonContent = content.replace(/```json\n?|\n?```/g, '').trim()
+      formattedResponse = JSON.parse(jsonContent)
     } catch (e) {
       console.error('Could not parse response as JSON:', e)
       throw new Error('Invalid response format from Perplexity')
