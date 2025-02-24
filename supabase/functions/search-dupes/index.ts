@@ -41,11 +41,14 @@ serve(async (req) => {
 
 Original Product Description:
 Provide the product name, brand, price, and key attributes (for example, 'SPF 40, rich, creamy texture, dewy finish, hydrating formula suitable for dry/combination skin').
-Include an image URL if available (optional).
+Include a high-quality image URL from the brand's official website or a major retailer (this is important).
+
 
 Dupe Recommendations:
 For each recommended dupe, include:
 Product Name & Brand: e.g., 'Revolution Miracle Cream' by 'Revolution Beauty'
+Image URL: A high-quality product image URL from the brand's website or a major retailer (this is important).
+
 Price: e.g., '$14'
 Savings Percentage: Calculate and include the percentage savings compared to the original product's price (e.g., '86% savings').
 Key Ingredients/Formulation Highlights: List the main ingredients or formulation benefits (e.g., 'Hyaluronic Acid, Peptides, Shea Butter').
@@ -54,7 +57,6 @@ SPF (if applicable): e.g., 'SPF 30 or 50'
 Skin Type Compatibility: Which skin type(s) it is best suited for.
 Match Score or Similarity Grade: A similarity indicator compared to the original product (e.g., '90% match' or 'Grade A').
 Additional Notes: Any extra observations (e.g., 'lower SPF but comparable hydration').
-Purchase Link: (Optional) A link where the product can be purchased.
 
 Comparison Summary:
 Provide a concise summary that compares the original product and its dupes, highlighting which dupe stands out based on performance, savings, and suitability.
