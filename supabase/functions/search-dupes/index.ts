@@ -65,7 +65,39 @@ Title/Description: Brief description of the resource.
 URL: The link to the resource.
 Type: Specify the type (e.g., 'Video', 'YouTube', 'Instagram', 'TikTok', 'Article').
 
-Please format your response in JSON format for easy parsing and display. Each section should be clearly structured with appropriate fields and nested objects.`
+Please format your response in JSON format for easy parsing and display. Each section should be clearly structured with appropriate fields and nested objects.
+
+
+ Always format your responses as JSON with this structure:
+{
+  "original": {
+    "name": string,
+    "brand": string,
+    "price": number,
+    "attributes": string[],
+    "imageUrl": string 
+  },
+  "dupes": [{
+    "name": string,
+    "brand": string,
+    "price": number,
+    "savingsPercentage": number,
+    "keyIngredients": string[],
+    "texture": string,
+    "finish": string,
+    "spf": number (optional),
+    "skinTypes": string[],
+    "matchScore": number,
+    "notes": string,
+    "imageUrl": string,
+  }],
+  "summary": string,
+  "resources": [{
+    "title": string,
+    "url": string,
+    "type": "Video" | "YouTube" | "Instagram" | "TikTok" | "Article"
+  }]
+}`
 
     console.log('Sending request to Perplexity...')
 
@@ -80,36 +112,7 @@ Please format your response in JSON format for easy parsing and display. Each se
         messages: [
           {
             role: 'system',
-            content: `You are a makeup expert specializing in finding dupes for high-end products. Always format your responses as JSON with this structure:
-{
-  "original": {
-    "name": string,
-    "brand": string,
-    "price": number,
-    "attributes": string[],
-    "imageUrl": string (optional)
-  },
-  "dupes": [{
-    "name": string,
-    "brand": string,
-    "price": number,
-    "savingsPercentage": number,
-    "keyIngredients": string[],
-    "texture": string,
-    "finish": string,
-    "spf": number (optional),
-    "skinTypes": string[],
-    "matchScore": number,
-    "notes": string,
-    "purchaseLink": string (optional)
-  }],
-  "summary": string,
-  "resources": [{
-    "title": string,
-    "url": string,
-    "type": "Video" | "YouTube" | "Instagram" | "TikTok" | "Article"
-  }]
-}`
+            content: `You are a makeup expert specializing in finding dupes for high-end products.`
           },
           {
             role: 'user',
