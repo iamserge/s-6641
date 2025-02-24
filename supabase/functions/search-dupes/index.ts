@@ -76,7 +76,7 @@ Please format your response in JSON format for easy parsing and display. Each se
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'sonar',
+        model: 'sonar-reasoning-pro',
         messages: [
           {
             role: 'system',
