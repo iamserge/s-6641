@@ -23,15 +23,39 @@ serve(async (req) => {
 
     console.log('Searching for dupes for:', searchText)
 
-    const prompt = `I am building a makeup dupe-finding tool called Dupe.academy. For the product "${searchText}", please generate a detailed report that includes:
+    const prompt = `I'm building a makeup dupe-finding tool for Dupe.academy. Please write a detailed analysis report for the product '${searchText}'. Your report should cover:
 
-Recommended Dupes: A list of makeup dupes with product names, brands, and links to high-quality product images.
-Key Details: For each dupe, include information such as price, SPF (if applicable), key ingredients, and performance features.
-Comparison Table: A side-by-side comparison table that highlights similarities and differences between ${searchText} and each recommended dupe (e.g., texture, finish, formulation, price savings).
-User Feedback: Include user reviews, ratings, or match scores that indicate how closely the dupe resembles the original.
-Skin Tone/Type Compatibility: Information on which skin tones or skin types each dupe is best suited for, along with any formulation differences.
-Supplementary Resources: Links or references to articles, tutorials, or expert reviews that offer additional insights on evaluating the dupes.
-Please format the output as a clear, structured comparison table (or in JSON format) followed by a concise summary of key findings and recommendations.`
+Original Product Description:
+Provide the product name, brand, price, and key attributes (for example, 'SPF 40, rich, creamy texture, dewy finish, hydrating formula suitable for dry/combination skin').
+Include an image URL if available (optional).
+
+Dupe Recommendations:
+For each recommended dupe, include:
+Product Name & Brand: e.g., 'Revolution Miracle Cream' by 'Revolution Beauty'
+Price: e.g., '$14'
+Savings Percentage: Calculate and include the percentage savings compared to the original product's price (e.g., '86% savings').
+Key Ingredients/Formulation Highlights: List the main ingredients or formulation benefits (e.g., 'Hyaluronic Acid, Peptides, Shea Butter').
+Texture and Finish: Describe the texture (e.g., 'thick and rich') and finish (e.g., 'semi-matte' or 'dewy').
+SPF (if applicable): e.g., 'SPF 30 or 50'
+Skin Type Compatibility: Which skin type(s) it is best suited for.
+Match Score or Similarity Grade: A similarity indicator compared to the original product (e.g., '90% match' or 'Grade A').
+Additional Notes: Any extra observations (e.g., 'lower SPF but comparable hydration').
+Purchase Link: (Optional) A link where the product can be purchased.
+
+Comparison Summary:
+Provide a concise summary that compares the original product and its dupes, highlighting which dupe stands out based on performance, savings, and suitability.
+
+Resource Library:
+Create a library of supplementary resources related to '${searchText}', including various content types such as:
+Videos (e.g., YouTube, TikTok)
+Instagram posts
+Articles and blog posts
+For each resource, include:
+Title/Description: Brief description of the resource.
+URL: The link to the resource.
+Type: Specify the type (e.g., 'Video', 'YouTube', 'Instagram', 'TikTok', 'Article').
+
+Please format your response in JSON format for easy parsing and display. Each section should be clearly structured with appropriate fields and nested objects.`
 
     console.log('Sending request to Perplexity...')
 
@@ -46,7 +70,36 @@ Please format the output as a clear, structured comparison table (or in JSON for
         messages: [
           {
             role: 'system',
-            content: 'You are a makeup expert specializing in finding dupes for high-end products. Format your responses in clear, structured JSON.'
+            content: `You are a makeup expert specializing in finding dupes for high-end products. Always format your responses as JSON with this structure:
+{
+  "original": {
+    "name": string,
+    "brand": string,
+    "price": number,
+    "attributes": string[],
+    "imageUrl": string (optional)
+  },
+  "dupes": [{
+    "name": string,
+    "brand": string,
+    "price": number,
+    "savingsPercentage": number,
+    "keyIngredients": string[],
+    "texture": string,
+    "finish": string,
+    "spf": number (optional),
+    "skinTypes": string[],
+    "matchScore": number,
+    "notes": string,
+    "purchaseLink": string (optional)
+  }],
+  "summary": string,
+  "resources": [{
+    "title": string,
+    "url": string,
+    "type": "Video" | "YouTube" | "Instagram" | "TikTok" | "Article"
+  }]
+}`
           },
           {
             role: 'user',
