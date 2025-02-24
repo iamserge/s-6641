@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Mic, Camera, Loader2 } from "lucide-react";
+import { Mic, Camera, Loader2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
 import { motion } from "framer-motion";
@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 const Hero = () => {
   const [searchText, setSearchText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -109,6 +110,10 @@ const Hero = () => {
 
     try {
       setIsProcessing(true);
+      // Create preview URL for the image
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewImage(previewUrl);
+
       const reader = new FileReader();
 
       reader.onload = async () => {
@@ -131,25 +136,9 @@ const Hero = () => {
 
           console.log('Image analysis result:', imageAnalysis);
 
-          // Find dupes using Perplexity
-          const { data: dupes, error: dupesError } = await supabase.functions.invoke(
-            'find-dupes',
-            {
-              body: { productInfo: imageAnalysis },
-            }
-          );
-
-          if (dupesError) {
-            console.error('Dupes search error:', dupesError);
-            throw dupesError;
-          }
-
-          console.log('Found dupes:', dupes);
+          // Search for dupes with the analyzed image
+          await handleSearch(undefined, imageAnalysis);
           
-          toast({
-            title: "Success!",
-            description: "Found similar products. Check the results below.",
-          });
         } catch (error) {
           console.error('Error in reader.onload:', error);
           throw error;
@@ -170,6 +159,49 @@ const Hero = () => {
         description: error instanceof Error 
           ? error.message 
           : "Could not process the image. Please try again.",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSearch = async (e?: React.FormEvent, imageAnalysis?: any) => {
+    if (e) {
+      e.preventDefault();
+    }
+
+    if (!searchText && !imageAnalysis) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a search term or use image search",
+      });
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const { data, error } = await supabase.functions.invoke('search-dupes', {
+        body: { 
+          searchText: searchText || null,
+          imageAnalysis
+        },
+      });
+
+      if (error) throw error;
+
+      console.log('Search results:', data);
+      toast({
+        title: "Success!",
+        description: "Found similar products. Check the results below.",
+      });
+
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to search for products. Please try again.",
       });
     } finally {
       setIsProcessing(false);
@@ -225,45 +257,68 @@ const Hero = () => {
         </div>
       </motion.div>
       
-      <motion.div 
+      <motion.form 
         className="relative w-full max-w-3xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.6, duration: 0.8 }}
+        onSubmit={handleSearch}
       >
-        <Input
-          type="text"
-          placeholder="Search for your favorite makeup product..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          className="w-full h-16 pl-8 pr-36 text-xl rounded-full border-2 border-pink-100 focus:border-pink-300 focus:ring-pink-200 font-light"
-        />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
+        <div className="relative">
+          {previewImage && (
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+              <img 
+                src={previewImage} 
+                alt="Preview" 
+                className="h-10 w-10 rounded-full object-cover border-2 border-pink-100"
+              />
+            </div>
+          )}
+          <Input
+            type="text"
+            placeholder="Search for your favorite makeup product..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className={`w-full h-16 pr-48 text-xl rounded-full border-2 border-pink-100 focus:border-pink-300 focus:ring-pink-200 font-light ${
+              previewImage ? 'pl-16' : 'pl-8'
+            }`}
+          />
+        </div>
+        
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2 items-center">
           <Button
+            type="submit"
+            variant="ghost"
+            size="icon"
+            disabled={isProcessing}
+            className="h-12 w-12 hover:bg-pink-50 mr-2"
+          >
+            {isProcessing ? (
+              <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
+            ) : (
+              <Search className="w-6 h-6 text-pink-500" />
+            )}
+          </Button>
+          <div className="w-px h-8 bg-pink-100" />
+          <Button
+            type="button"
             variant="ghost"
             size="icon"
             onClick={handleVoiceSearch}
             disabled={isProcessing}
             className="h-12 w-12 hover:bg-pink-50"
           >
-            {isProcessing ? (
-              <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
-            ) : (
-              <Mic className="w-6 h-6 text-pink-500" />
-            )}
+            <Mic className="w-6 h-6 text-pink-500" />
           </Button>
           <Button
+            type="button"
             variant="ghost"
             size="icon"
             onClick={handleCameraSearch}
             disabled={isProcessing}
             className="h-12 w-12 hover:bg-pink-50"
           >
-            {isProcessing ? (
-              <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
-            ) : (
-              <Camera className="w-6 h-6 text-pink-500" />
-            )}
+            <Camera className="w-6 h-6 text-pink-500" />
           </Button>
         </div>
         <input
@@ -274,7 +329,7 @@ const Hero = () => {
           onChange={handleImageUpload}
           className="hidden"
         />
-      </motion.div>
+      </motion.form>
     </section>
   );
 };
