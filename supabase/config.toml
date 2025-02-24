@@ -1,1 +1,11 @@
+
 project_id = "cnoqknkqvygbrbzgnswn"
+
+[functions.process-voice]
+verify_jwt = false
+
+[functions.analyze-image]
+verify_jwt = false
+
+[functions.find-dupes]
+verify_jwt = false

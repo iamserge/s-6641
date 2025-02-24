@@ -25,26 +25,50 @@ const Hero = () => {
         };
 
         mediaRecorder.onstop = async () => {
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          const reader = new FileReader();
+          try {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const reader = new FileReader();
 
-          reader.onload = async () => {
-            try {
-              const base64Audio = (reader.result as string).split(',')[1];
-              const { data, error } = await supabase.functions.invoke('process-voice', {
-                body: { audio: base64Audio },
-              });
+            reader.onload = async () => {
+              try {
+                const base64Audio = (reader.result as string).split(',')[1];
+                console.log('Sending audio to process-voice function...');
+                
+                const { data, error } = await supabase.functions.invoke('process-voice', {
+                  body: { audio: base64Audio },
+                });
 
-              if (error) throw error;
-              setSearchText(data.text);
-              resolve();
-            } catch (error) {
-              console.error('Error processing voice:', error);
+                if (error) {
+                  console.error('Supabase function error:', error);
+                  throw error;
+                }
+
+                if (!data || !data.text) {
+                  throw new Error('No text returned from voice processing');
+                }
+
+                setSearchText(data.text);
+                toast({
+                  title: "Voice processed!",
+                  description: `Detected text: "${data.text}"`,
+                });
+                resolve();
+              } catch (error) {
+                console.error('Error processing voice in reader:', error);
+                reject(error);
+              }
+            };
+
+            reader.onerror = (error) => {
+              console.error('FileReader error:', error);
               reject(error);
-            }
-          };
+            };
 
-          reader.readAsDataURL(audioBlob);
+            reader.readAsDataURL(audioBlob);
+          } catch (error) {
+            console.error('Error in mediaRecorder.onstop:', error);
+            reject(error);
+          }
         };
 
         mediaRecorder.start();
@@ -63,14 +87,16 @@ const Hero = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Could not access microphone. Please check permissions.",
+        description: error instanceof Error 
+          ? error.message 
+          : "Could not access microphone. Please check permissions.",
       });
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleCameraSearch = async () => {
+  const handleCameraSearch = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -85,35 +111,53 @@ const Hero = () => {
       const reader = new FileReader();
 
       reader.onload = async () => {
-        const base64Image = reader.result as string;
+        try {
+          const base64Image = reader.result as string;
+          console.log('Sending image to analyze-image function...');
 
-        // Analyze image with OpenAI
-        const { data: imageAnalysis, error: imageError } = await supabase.functions.invoke(
-          'analyze-image',
-          {
-            body: { image: base64Image },
+          // Analyze image with OpenAI
+          const { data: imageAnalysis, error: imageError } = await supabase.functions.invoke(
+            'analyze-image',
+            {
+              body: { image: base64Image },
+            }
+          );
+
+          if (imageError) {
+            console.error('Image analysis error:', imageError);
+            throw imageError;
           }
-        );
 
-        if (imageError) throw imageError;
+          console.log('Image analysis result:', imageAnalysis);
 
-        // Find dupes using Perplexity
-        const { data: dupes, error: dupesError } = await supabase.functions.invoke(
-          'find-dupes',
-          {
-            body: { productInfo: imageAnalysis },
+          // Find dupes using Perplexity
+          const { data: dupes, error: dupesError } = await supabase.functions.invoke(
+            'find-dupes',
+            {
+              body: { productInfo: imageAnalysis },
+            }
+          );
+
+          if (dupesError) {
+            console.error('Dupes search error:', dupesError);
+            throw dupesError;
           }
-        );
 
-        if (dupesError) throw dupesError;
+          console.log('Found dupes:', dupes);
+          
+          toast({
+            title: "Success!",
+            description: "Found similar products. Check the results below.",
+          });
+        } catch (error) {
+          console.error('Error in reader.onload:', error);
+          throw error;
+        }
+      };
 
-        // TODO: Update UI with dupes
-        console.log('Found dupes:', dupes);
-        
-        toast({
-          title: "Success!",
-          description: "Found similar products. Check the results below.",
-        });
+      reader.onerror = (error) => {
+        console.error('FileReader error:', error);
+        throw error;
       };
 
       reader.readAsDataURL(file);
@@ -122,7 +166,9 @@ const Hero = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Could not process the image. Please try again.",
+        description: error instanceof Error 
+          ? error.message 
+          : "Could not process the image. Please try again.",
       });
     } finally {
       setIsProcessing(false);
