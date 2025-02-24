@@ -6,6 +6,43 @@ import ResultsGallery from '@/components/ResultsGallery';
 import Navbar from '@/components/Navbar';
 import { Loader2 } from 'lucide-react';
 
+// Define the types for our data structure
+interface Dupe {
+  id: string;
+  name: string;
+  brand: string;
+  price: number;
+  savings_percentage: number;
+  key_ingredients: string[];
+  texture: string;
+  finish: string;
+  spf: number | null;
+  skin_types: string[];
+  match_score: number;
+  notes: string | null;
+  purchase_link: string | null;
+}
+
+interface Resource {
+  id: string;
+  title: string;
+  url: string;
+  type: 'Video' | 'YouTube' | 'Instagram' | 'TikTok' | 'Article';
+}
+
+interface Product {
+  id: string;
+  name: string;
+  brand: string;
+  price: number;
+  attributes: string[];
+  image_url: string | null;
+  summary: string;
+  slug: string;
+  dupes: Dupe[];
+  resources: Resource[];
+}
+
 const DupePage = () => {
   const { slug } = useParams();
   const [isLoading, setIsLoading] = useState(true);
@@ -14,19 +51,19 @@ const DupePage = () => {
 
   useEffect(() => {
     const fetchDupeData = async () => {
+      if (!slug) {
+        setError('No product slug provided');
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        // Fetch product data
         const { data: product, error: productError } = await supabase
           .from('products')
-          .select(`
-            *,
-            dupes:dupes(*),
-            resources:resources(*)
-          `)
-          .eq('slug', slug)
-          .single();
+          .select('*, dupes:dupes(*), resources:resources(*)') as { data: Product | null; error: Error | null };
 
         if (productError) throw productError;
+        if (!product) throw new Error('Product not found');
 
         // Transform data to match ResultsGallery format
         const transformedData = {
@@ -37,7 +74,7 @@ const DupePage = () => {
             attributes: product.attributes,
             imageUrl: product.image_url
           },
-          dupes: product.dupes.map((dupe: any) => ({
+          dupes: product.dupes.map((dupe) => ({
             name: dupe.name,
             brand: dupe.brand,
             price: dupe.price,
@@ -52,7 +89,7 @@ const DupePage = () => {
             purchaseLink: dupe.purchase_link
           })),
           summary: product.summary,
-          resources: product.resources.map((resource: any) => ({
+          resources: product.resources.map((resource) => ({
             title: resource.title,
             url: resource.url,
             type: resource.type

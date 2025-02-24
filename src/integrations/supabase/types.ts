@@ -9,7 +9,148 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      dupes: {
+        Row: {
+          brand: string
+          created_at: string
+          finish: string
+          id: string
+          key_ingredients: string[]
+          match_score: number
+          name: string
+          notes: string | null
+          price: number
+          product_id: string
+          purchase_link: string | null
+          savings_percentage: number
+          skin_types: string[]
+          spf: number | null
+          texture: string
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          created_at?: string
+          finish: string
+          id?: string
+          key_ingredients: string[]
+          match_score: number
+          name: string
+          notes?: string | null
+          price: number
+          product_id: string
+          purchase_link?: string | null
+          savings_percentage: number
+          skin_types: string[]
+          spf?: number | null
+          texture: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          created_at?: string
+          finish?: string
+          id?: string
+          key_ingredients?: string[]
+          match_score?: number
+          name?: string
+          notes?: string | null
+          price?: number
+          product_id?: string
+          purchase_link?: string | null
+          savings_percentage?: number
+          skin_types?: string[]
+          spf?: number | null
+          texture?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dupes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          attributes: string[]
+          brand: string
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          slug: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          attributes: string[]
+          brand: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+          slug: string
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          attributes?: string[]
+          brand?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          slug?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      resources: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          title?: string
+          type?: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +159,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      resource_type: "Video" | "YouTube" | "Instagram" | "TikTok" | "Article"
     }
     CompositeTypes: {
       [_ in never]: never
