@@ -21,6 +21,7 @@ interface Dupe {
   match_score: number;
   notes: string | null;
   purchase_link: string | null;
+  image_url: string | null;
 }
 
 interface Resource {
@@ -87,7 +88,8 @@ const DupePage = () => {
             skinTypes: dupe.skin_types,
             matchScore: dupe.match_score,
             notes: dupe.notes,
-            purchaseLink: dupe.purchase_link
+            purchaseLink: dupe.purchase_link,
+            imageUrl: dupe.image_url
           })),
           summary: product.summary,
           resources: product.resources.map((resource: any) => ({
@@ -211,6 +213,20 @@ const DupePage = () => {
                     </Badge>
                     <span className="text-xl font-bold text-[#0EA5E9]">${dupe.price}</span>
                   </div>
+                  {dupe.imageUrl && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="mb-4"
+                    >
+                      <img
+                        src={dupe.imageUrl}
+                        alt={dupe.name}
+                        className="w-full h-48 object-cover rounded-lg shadow-md"
+                      />
+                    </motion.div>
+                  )}
                   <CardTitle className="text-xl mb-1">{dupe.brand}</CardTitle>
                   <h3 className="text-lg text-gray-600">{dupe.name}</h3>
                   <Badge variant="outline" className="mt-2 bg-green-50 text-green-700 border-green-200">

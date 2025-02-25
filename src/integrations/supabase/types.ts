@@ -15,6 +15,7 @@ export type Database = {
           created_at: string
           finish: string
           id: string
+          image_url: string | null
           key_ingredients: string[]
           match_score: number
           name: string
@@ -33,6 +34,7 @@ export type Database = {
           created_at?: string
           finish: string
           id?: string
+          image_url?: string | null
           key_ingredients: string[]
           match_score: number
           name: string
@@ -51,6 +53,7 @@ export type Database = {
           created_at?: string
           finish?: string
           id?: string
+          image_url?: string | null
           key_ingredients?: string[]
           match_score?: number
           name?: string
