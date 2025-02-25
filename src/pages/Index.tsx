@@ -9,11 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import useEmblaCarousel from 'embla-carousel-react';
-import { useEffect, useCallback } from 'react';
 
 const TrendingPill = ({ product }: { product: { name: string; brand: string } }) => (
-  <div className="bg-[#F1F0FB] hover:bg-[#E5DEFF] px-6 py-3 rounded-full inline-flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm min-w-fit mx-2">
+  <div className="bg-[#F1F0FB] hover:bg-[#E5DEFF] px-6 py-3 rounded-full inline-flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm">
     <div className="flex flex-col items-start">
       <span className="text-gray-800 text-sm font-medium leading-snug">{product.name}</span>
       <span className="text-gray-500 text-[11px] leading-none mt-0.5">by {product.brand}</span>
@@ -97,41 +95,6 @@ const Index = () => {
     { name: "No. 3 Hair Perfector", brand: "Olaplex" },
   ];
 
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    loop: true,
-    dragFree: true,
-    containScroll: "trimSnaps",
-  });
-
-  const onMouseEnter = useCallback(() => {
-    if (emblaApi) {
-      clearInterval(autoplayInterval);
-    }
-  }, [emblaApi]);
-
-  const onMouseLeave = useCallback(() => {
-    if (emblaApi) {
-      startAutoplay();
-    }
-  }, [emblaApi]);
-
-  let autoplayInterval: NodeJS.Timeout;
-
-  const startAutoplay = () => {
-    autoplayInterval = setInterval(() => {
-      if (emblaApi) emblaApi.scrollNext();
-    }, 3000);
-  };
-
-  useEffect(() => {
-    if (emblaApi) {
-      startAutoplay();
-    }
-    return () => {
-      clearInterval(autoplayInterval);
-    };
-  }, [emblaApi]);
-
   const stats = [
     { label: "Products", value: "1,249+" },
     { label: "Brands", value: "350+" },
@@ -145,9 +108,8 @@ const Index = () => {
       <div className="relative">
         <Hero />
         
-        {/* Trending Section with Auto-sliding Pills */}
-        <div className="container mx-auto px-4 mt-20 relative z-10">
-          <div className="flex items-center gap-4 max-w-4xl mx-auto">
+        <div className="container mx-auto px-4 mt-12 relative z-10">
+          <div className="flex items-center gap-6 max-w-4xl mx-auto overflow-x-auto no-scrollbar">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -156,30 +118,22 @@ const Index = () => {
               <Flame className="w-6 h-6 text-orange-500" />
             </motion.div>
             
-            <div 
-              className="overflow-hidden flex-1" 
-              ref={emblaRef}
-              onMouseEnter={onMouseEnter}
-              onMouseLeave={onMouseLeave}
-            >
-              <div className="flex">
-                {[...trendingProducts, ...trendingProducts].map((product, index) => (
-                  <motion.div
-                    key={`${product.name}-${index}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <TrendingPill product={product} />
-                  </motion.div>
-                ))}
-              </div>
+            <div className="flex gap-4">
+              {trendingProducts.map((product, index) => (
+                <motion.div
+                  key={product.name}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <TrendingPill product={product} />
+                </motion.div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Section */}
       <section className="container mx-auto px-4 py-24 grid grid-cols-1 md:grid-cols-3 gap-8">
         {stats.map((stat) => (
           <motion.div
@@ -195,7 +149,6 @@ const Index = () => {
         ))}
       </section>
 
-      {/* Recent Dupes Section */}
       <section className="container mx-auto px-4 py-12">
         <RecentDupes />
       </section>
