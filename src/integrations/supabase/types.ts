@@ -9,6 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      brands: {
+        Row: {
+          created_at: string
+          cruelty_free: boolean | null
+          description: string
+          id: string
+          name: string
+          price_range: string
+          slug: string
+          updated_at: string
+          vegan: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          cruelty_free?: boolean | null
+          description: string
+          id?: string
+          name: string
+          price_range: string
+          slug: string
+          updated_at?: string
+          vegan?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          cruelty_free?: boolean | null
+          description?: string
+          id?: string
+          name?: string
+          price_range?: string
+          slug?: string
+          updated_at?: string
+          vegan?: boolean | null
+        }
+        Relationships: []
+      }
+      dupe_ingredients: {
+        Row: {
+          created_at: string
+          dupe_id: string
+          id: string
+          ingredient_id: string
+          is_key_ingredient: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dupe_id: string
+          id?: string
+          ingredient_id: string
+          is_key_ingredient?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dupe_id?: string
+          id?: string
+          ingredient_id?: string
+          is_key_ingredient?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dupe_ingredients_dupe_id_fkey"
+            columns: ["dupe_id"]
+            isOneToOne: false
+            referencedRelation: "dupes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dupe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dupes: {
         Row: {
           brand: string
@@ -16,7 +94,6 @@ export type Database = {
           finish: string
           id: string
           image_url: string | null
-          key_ingredients: string[]
           match_score: number
           name: string
           notes: string | null
@@ -35,7 +112,6 @@ export type Database = {
           finish: string
           id?: string
           image_url?: string | null
-          key_ingredients: string[]
           match_score: number
           name: string
           notes?: string | null
@@ -54,7 +130,6 @@ export type Database = {
           finish?: string
           id?: string
           image_url?: string | null
-          key_ingredients?: string[]
           match_score?: number
           name?: string
           notes?: string | null
@@ -70,6 +145,90 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "dupes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingredients: {
+        Row: {
+          benefits: string[]
+          comedogenic_rating: number | null
+          concerns: string[]
+          created_at: string
+          description: string
+          id: string
+          name: string
+          skin_types: string[]
+          slug: string
+          updated_at: string
+          vegan: boolean | null
+        }
+        Insert: {
+          benefits: string[]
+          comedogenic_rating?: number | null
+          concerns: string[]
+          created_at?: string
+          description: string
+          id?: string
+          name: string
+          skin_types: string[]
+          slug: string
+          updated_at?: string
+          vegan?: boolean | null
+        }
+        Update: {
+          benefits?: string[]
+          comedogenic_rating?: number | null
+          concerns?: string[]
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          skin_types?: string[]
+          slug?: string
+          updated_at?: string
+          vegan?: boolean | null
+        }
+        Relationships: []
+      }
+      product_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string
+          is_key_ingredient: boolean
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          is_key_ingredient?: boolean
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          is_key_ingredient?: boolean
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_ingredients_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -118,33 +277,53 @@ export type Database = {
       }
       resources: {
         Row: {
+          brand_id: string | null
           created_at: string
           id: string
-          product_id: string
+          ingredient_id: string | null
+          product_id: string | null
           title: string
           type: Database["public"]["Enums"]["resource_type"]
           updated_at: string
           url: string
         }
         Insert: {
+          brand_id?: string | null
           created_at?: string
           id?: string
-          product_id: string
+          ingredient_id?: string | null
+          product_id?: string | null
           title: string
           type: Database["public"]["Enums"]["resource_type"]
           updated_at?: string
           url: string
         }
         Update: {
+          brand_id?: string | null
           created_at?: string
           id?: string
-          product_id?: string
+          ingredient_id?: string | null
+          product_id?: string | null
           title?: string
           type?: Database["public"]["Enums"]["resource_type"]
           updated_at?: string
           url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "resources_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resources_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "resources_product_id_fkey"
             columns: ["product_id"]
