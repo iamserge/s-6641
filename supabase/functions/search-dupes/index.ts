@@ -1,3 +1,5 @@
+/// <reference lib="es2015" />
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
@@ -93,8 +95,19 @@ function logError(message: string, error?: unknown): void {
   console.error(`[${new Date().toISOString()}] ${message}`, error instanceof Error ? error.message : error);
 }
 
+// Helper function to safely stringify objects for logging
+function safeStringify(obj: any): string {
+  try {
+    return JSON.stringify(obj, null, 2);
+  } catch {
+    return '[Unable to stringify object]';
+  }
+}
+
 /** Fetches a product image using Google Custom Search API */
 async function fetchProductImage(productName: string, brand: string): Promise<string | null> {
+  // Log before making the API call
+  logInfo(`Fetching image for product: ${productName} by ${brand}`);
   const query = `${productName} ${brand} makeup site:revolutionbeauty.com OR site:maccosmetics.com OR site:sephora.com`;
   const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}&searchType=image&q=${encodeURIComponent(query)}`;
 
@@ -102,7 +115,10 @@ async function fetchProductImage(productName: string, brand: string): Promise<st
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Google API error: ${response.status}`);
     const data = await response.json();
-    return data.items?.[0]?.link || null;
+    const imageUrl = data.items?.[0]?.link || null;
+    // Log whether an image URL was found
+    logInfo(`Image URL found: ${imageUrl ? 'Yes' : 'No'}`);
+    return imageUrl;
   } catch (error) {
     logError(`Failed to fetch image for ${productName} by ${brand}:`, error);
     return null;
@@ -111,6 +127,8 @@ async function fetchProductImage(productName: string, brand: string): Promise<st
 
 /** Uploads an image to Supabase storage and returns the public URL */
 async function uploadImageToSupabase(imageUrl: string, fileName: string): Promise<string | undefined> {
+  // Log before uploading the image
+  logInfo(`Uploading image to Supabase: ${fileName}`);
   try {
     const response = await fetch(imageUrl);
     if (!response.ok) throw new Error(`Failed to download image: ${response.status}`);
@@ -127,15 +145,19 @@ async function uploadImageToSupabase(imageUrl: string, fileName: string): Promis
       .getPublicUrl(`${fileName}.jpg`);
 
     if (urlError) throw urlError;
-    return data.publicUrl; // string
+    // Log after successful upload
+    logInfo(`Image uploaded successfully: ${data.publicUrl}`);
+    return data.publicUrl;
   } catch (error) {
-    console.error(`Failed to upload image ${fileName}:`, error);
-    return undefined; // undefined on failure
+    logError(`Failed to upload image ${fileName}:`, error);
+    return undefined;
   }
 }
 
 /** Fetches dupe data from Perplexity API */
 async function getPerplexityResponse(searchText: string): Promise<DupeResponse> {
+  // Log before making the API call
+  logInfo(`Sending request to Perplexity API for: ${searchText}`);
   const prompt = `I'm building a makeup dupe-finding tool for Dupe.academy. Please write a detailed analysis report for the product '${searchText}'. Your report should cover:
 
   Original Product Description:
@@ -193,9 +215,14 @@ async function getPerplexityResponse(searchText: string): Promise<DupeResponse> 
   if (!response.ok) throw new Error(`Perplexity API error: ${await response.text()}`);
   const data = await response.json();
   const jsonContent = data.choices[0].message.content.replace(/```json\n?|\n?```/g, "").trim();
+  // Log the raw response from Perplexity
+  logInfo(`Perplexity response received: ${safeStringify(data)}`);
 
   try {
-    return JSON.parse(jsonContent) as DupeResponse;
+    const parsedData = JSON.parse(jsonContent) as DupeResponse;
+    // Log the parsed JSON data
+    logInfo(`Perplexity JSON parsed successfully: ${safeStringify(parsedData)}`);
+    return parsedData;
   } catch (error) {
     logError("Perplexity response is not valid JSON. Attempting repair with OpenAI.");
     return await repairJsonWithOpenAI(jsonContent);
@@ -204,6 +231,8 @@ async function getPerplexityResponse(searchText: string): Promise<DupeResponse> 
 
 /** Repairs invalid JSON using OpenAI */
 async function repairJsonWithOpenAI(perplexityContent: string): Promise<DupeResponse> {
+  // Log before making the API call
+  logInfo("Sending request to OpenAI for JSON repair");
   const openaiPrompt = `Convert this text data to valid JSON that follows the schema:\nSchema Definition:\n${SCHEMA_DEFINITION}\nInput Text:\n${perplexityContent}\nReturn only the structured JSON.`;
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -224,7 +253,10 @@ async function repairJsonWithOpenAI(perplexityContent: string): Promise<DupeResp
 
   if (!response.ok) throw new Error(`OpenAI API error: ${await response.text()}`);
   const data = await response.json();
-  return JSON.parse(data.choices[0].message.content.replace(/```json\n?|\n?```/g, "").trim()) as DupeResponse;
+  const repairedJson = data.choices[0].message.content.replace(/```json\n?|\n?```/g, "").trim();
+  // Log the repaired JSON from OpenAI
+  logInfo(`OpenAI repaired JSON: ${repairedJson}`);
+  return JSON.parse(repairedJson) as DupeResponse;
 }
 
 /** Main server handler */
@@ -267,6 +299,8 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Insert original product into database
+    // Log before inserting product
+    logInfo(`Inserting product into database: ${original.name}`);
     const { data: productData, error: productError } = await supabase
       .from("products")
       .insert({
@@ -282,8 +316,12 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (productError) throw productError;
+    // Log after successful insertion
+    logInfo(`Product inserted successfully with ID: ${productData.id}`);
 
     // Insert dupes into database
+    // Log before inserting dupes
+    logInfo(`Inserting dupes into database for product ID: ${productData.id}`);
     const { error: dupesError } = await supabase
       .from("dupes")
       .insert(
@@ -306,8 +344,12 @@ serve(async (req: Request): Promise<Response> => {
       );
 
     if (dupesError) throw dupesError;
+    // Log after successful insertion
+    logInfo(`Dupes inserted successfully for product ID: ${productData.id}`);
 
     // Insert resources into database
+    // Log before inserting resources
+    logInfo(`Inserting resources into database for product ID: ${productData.id}`);
     const { error: resourcesError } = await supabase
       .from("resources")
       .insert(
@@ -320,6 +362,8 @@ serve(async (req: Request): Promise<Response> => {
       );
 
     if (resourcesError) throw resourcesError;
+    // Log after successful insertion
+    logInfo(`Resources inserted successfully for product ID: ${productData.id}`);
 
     return new Response(
       JSON.stringify({ success: true, data: { id: productData.id, slug } }),
