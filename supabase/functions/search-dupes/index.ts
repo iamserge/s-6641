@@ -3,6 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
+import { HfInference } from "https://esm.sh/@huggingface/inference@2.3.2";
 
 // **CORS Headers for Cross-Origin Requests**
 const corsHeaders = {
@@ -17,16 +18,16 @@ const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
 const GOOGLE_CSE_ID = Deno.env.get("GOOGLE_CSE_ID");
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-// Optional Hugging Face API key for better background removal
-const HF_API_KEY = Deno.env.get("HF_API_KEY");
+const HF_API_KEY = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
 
 // **Check for Required Environment Variables**
 if (!PERPLEXITY_API_KEY || !OPENAI_API_KEY || !GOOGLE_API_KEY || !GOOGLE_CSE_ID || !supabaseUrl || !supabaseServiceKey) {
   throw new Error("Missing required environment variables. Please check your configuration.");
 }
 
-// **Initialize Supabase Client**
+// **Initialize clients**
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const hf = new HfInference(HF_API_KEY);
 
 // **Schema Definition for API Responses**
 const SCHEMA_DEFINITION = `{
@@ -130,37 +131,30 @@ async function fetchProductImage(productName: string, brand: string): Promise<st
   }
 }
 
-/** Remove background from image using Hugging Face API or fallback to free API */
+/** Remove background from image using Hugging Face Inference API */
 async function removeImageBackground(imageBlob: Blob): Promise<Blob> {
   logInfo("Processing image to remove background");
   
-  // Try with Hugging Face first if API key is available
+  // Only try with Hugging Face if API key is available
   if (HF_API_KEY) {
     try {
       logInfo("Using Hugging Face for background removal");
+      
+      // Convert blob to array buffer
       const arrayBuffer = await imageBlob.arrayBuffer();
-      const imageBuffer = new Uint8Array(arrayBuffer);
       
-      // Call Hugging Face API with the RMBG-1.4 model
-      const response = await fetch(
-        "https://api-inference.huggingface.co/models/briaai/RMBG-1.4",
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${HF_API_KEY}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: imageBuffer,
-        }
-      );
+      // Use the HfInference client to call the U2Net model for background removal
+      const result = await hf.imageSegmentation({
+        model: "briaai/RMBG-1.4",
+        data: new Uint8Array(arrayBuffer),
+      });
       
-      if (!response.ok) {
-        throw new Error(`Hugging Face API error: ${response.status}`);
+      if (result instanceof Blob) {
+        logInfo("Background removed successfully with Hugging Face");
+        return result;
+      } else {
+        throw new Error("Invalid response from Hugging Face Inference API");
       }
-      
-      const processedImageBlob = await response.blob();
-      logInfo("Background removed successfully with Hugging Face");
-      return processedImageBlob;
     } catch (error) {
       logError("Failed to remove background with Hugging Face:", error);
       // Fall through to try alternative method
