@@ -90,6 +90,7 @@ export type Database = {
       dupes: {
         Row: {
           brand: string
+          brand_id: string | null
           created_at: string
           finish: string
           id: string
@@ -108,6 +109,7 @@ export type Database = {
         }
         Insert: {
           brand: string
+          brand_id?: string | null
           created_at?: string
           finish: string
           id?: string
@@ -126,6 +128,7 @@ export type Database = {
         }
         Update: {
           brand?: string
+          brand_id?: string | null
           created_at?: string
           finish?: string
           id?: string
@@ -143,6 +146,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "dupes_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dupes_product_id_fkey"
             columns: ["product_id"]
@@ -240,6 +250,7 @@ export type Database = {
         Row: {
           attributes: string[]
           brand: string
+          brand_id: string | null
           created_at: string
           id: string
           image_url: string | null
@@ -252,6 +263,7 @@ export type Database = {
         Insert: {
           attributes: string[]
           brand: string
+          brand_id?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
@@ -264,6 +276,7 @@ export type Database = {
         Update: {
           attributes?: string[]
           brand?: string
+          brand_id?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
@@ -273,7 +286,15 @@ export type Database = {
           summary?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       resources: {
         Row: {

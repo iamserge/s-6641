@@ -1,3 +1,4 @@
+
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Footer from "../components/Footer";
@@ -26,7 +27,14 @@ const RecentDupes = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("name, brand, slug")
+        .select(`
+          name,
+          brand,
+          slug,
+          brands!products_brand_id_fkey (
+            name
+          )
+        `)
         .order("created_at", { ascending: false })
         .limit(6);
 
@@ -34,7 +42,12 @@ const RecentDupes = () => {
         console.error("Error fetching recent dupes:", error);
         throw error;
       }
-      return data;
+      
+      // Transform the data to maintain backward compatibility
+      return data.map(product => ({
+        ...product,
+        brand: product.brands?.name || product.brand // Use brand name from relationship if available, fallback to direct brand field
+      }));
     },
   });
 
