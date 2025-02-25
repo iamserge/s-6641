@@ -1,4 +1,3 @@
-
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import ResultsGallery from "../components/ResultsGallery";
@@ -14,10 +13,10 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useEffect, useCallback } from 'react';
 
 const TrendingPill = ({ product }: { product: { name: string; brand: string } }) => (
-  <div className="bg-white/60 px-4 py-2 rounded-full border border-pink-100 inline-flex items-center gap-2 hover:bg-white/80 transition-all duration-200 cursor-pointer shadow-sm min-w-fit mx-2">
+  <div className="bg-[#F1F0FB] hover:bg-[#E5DEFF] px-6 py-3 rounded-full inline-flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm min-w-fit mx-2">
     <div className="flex flex-col items-start">
       <span className="text-gray-800 text-sm font-medium leading-snug">{product.name}</span>
-      <span className="text-gray-500 text-xs leading-none">by {product.brand}</span>
+      <span className="text-gray-500 text-[11px] leading-none mt-0.5">by {product.brand}</span>
     </div>
   </div>
 );
@@ -121,7 +120,7 @@ const Index = () => {
   const startAutoplay = () => {
     autoplayInterval = setInterval(() => {
       if (emblaApi) emblaApi.scrollNext();
-    }, 50); // Adjust speed by changing this value
+    }, 3000);
   };
 
   useEffect(() => {
@@ -147,7 +146,7 @@ const Index = () => {
         <Hero />
         
         {/* Trending Section with Auto-sliding Pills */}
-        <div className="container mx-auto px-4 -mt-12 relative z-10">
+        <div className="container mx-auto px-4 mt-20 relative z-10">
           <div className="flex items-center gap-4 max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -164,7 +163,6 @@ const Index = () => {
               onMouseLeave={onMouseLeave}
             >
               <div className="flex">
-                {/* Double the items for seamless looping */}
                 {[...trendingProducts, ...trendingProducts].map((product, index) => (
                   <motion.div
                     key={`${product.name}-${index}`}
