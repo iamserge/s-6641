@@ -258,6 +258,8 @@ async function getPerplexityResponse(searchText: string): Promise<DupeResponse> 
   Include a high-quality image URL from the brand's official website or a major retailer.
 
   Dupe Recommendations:
+
+  Find dupes arcoss the internet, start with websites like https://skinsort.com/dupes, https://dupeshopbeauty.com/ and so on, also check reddit and other social media.
   For each recommended dupe, include:
   - Product Name & Brand: e.g., 'Revolution Miracle Cream' by 'Revolution Beauty'
   - Image URL: A high-quality product image URL from the brand's website or a major retailer.
