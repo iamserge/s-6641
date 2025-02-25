@@ -9,9 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import useEmblaCarousel from 'embla-carousel-react';
+import { useEffect, useCallback } from 'react';
 
 const TrendingPill = ({ product }: { product: { name: string; brand: string } }) => (
-  <div className="bg-white/60 px-4 py-2 rounded-full border border-pink-100 inline-flex items-center gap-2 hover:bg-white/80 transition-all duration-200 cursor-pointer shadow-sm">
+  <div className="bg-white/60 px-4 py-2 rounded-full border border-pink-100 inline-flex items-center gap-2 hover:bg-white/80 transition-all duration-200 cursor-pointer shadow-sm min-w-fit mx-2">
     <div className="flex flex-col items-start">
       <span className="text-gray-800 text-sm font-medium leading-snug">{product.name}</span>
       <span className="text-gray-500 text-xs leading-none">by {product.brand}</span>
@@ -95,6 +97,27 @@ const Index = () => {
     { name: "No. 3 Hair Perfector", brand: "Olaplex" },
   ];
 
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: true,
+    dragFree: true,
+    containScroll: "trimSnaps",
+    speed: 5,
+  });
+
+  const onMouseEnter = useCallback(() => {
+    if (emblaApi) emblaApi.stop();
+  }, [emblaApi]);
+
+  const onMouseLeave = useCallback(() => {
+    if (emblaApi) emblaApi.play();
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (emblaApi) {
+      emblaApi.play();
+    }
+  }, [emblaApi]);
+
   const stats = [
     { label: "Products", value: "1,249+" },
     { label: "Brands", value: "350+" },
@@ -108,33 +131,38 @@ const Index = () => {
       <div className="relative">
         <Hero />
         
-        {/* Trending Icon and Products Section */}
-        <div className="container mx-auto px-4 -mt-12 relative z-10 flex flex-col items-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mb-5"
-          >
-            <Flame className="w-6 h-6 text-orange-500" />
-          </motion.div>
-          
-          <motion.div 
-            className="flex flex-wrap gap-2 justify-center max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            {trendingProducts.map((product, index) => (
-              <motion.div
-                key={product.name}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <TrendingPill product={product} />
-              </motion.div>
-            ))}
-          </motion.div>
+        {/* Trending Section with Auto-sliding Pills */}
+        <div className="container mx-auto px-4 -mt-12 relative z-10">
+          <div className="flex items-center gap-4 max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex-shrink-0"
+            >
+              <Flame className="w-6 h-6 text-orange-500" />
+            </motion.div>
+            
+            <div 
+              className="overflow-hidden flex-1" 
+              ref={emblaRef}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
+            >
+              <div className="flex">
+                {/* Double the items for seamless looping */}
+                {[...trendingProducts, ...trendingProducts].map((product, index) => (
+                  <motion.div
+                    key={`${product.name}-${index}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <TrendingPill product={product} />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
