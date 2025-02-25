@@ -51,7 +51,7 @@ async function fetchProductImage(
   return "https://example.com/placeholder.jpg";
 }
 
-// Function to get response from Perplexity (simplified for this example)
+// Function to get response from Perplexity with improved error handling
 async function getPerplexityResponse(searchText: string): Promise<{
   original: any;
   dupes: any[];
@@ -72,8 +72,13 @@ async function getPerplexityResponse(searchText: string): Promise<{
   try {
     data = JSON.parse(text);
   } catch (e) {
-    const repaired = await repairJsonWithOpenAI(text);
-    data = JSON.parse(repaired);
+    try {
+      const repaired = await repairJsonWithOpenAI(text);
+      data = JSON.parse(repaired);
+    } catch (repairError) {
+      logError("Failed to repair JSON from Perplexity response:", repairError);
+      throw new Error("Unable to parse or repair Perplexity response.");
+    }
   }
   return {
     original: data.original || { name: searchText, brand: "Unknown" },
@@ -83,23 +88,39 @@ async function getPerplexityResponse(searchText: string): Promise<{
   };
 }
 
-// Function to repair invalid JSON with OpenAI
+// Function to repair invalid JSON with OpenAI with robust error handling
 async function repairJsonWithOpenAI(invalidJson: string): Promise<string> {
   logInfo("Repairing invalid JSON with OpenAI");
-  const response = await fetch("https://api.openai.com/v1/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "text-davinci-003",
-      prompt: `Fix this invalid JSON:\n${invalidJson}\n\nReturn valid JSON.`,
-      max_tokens: 1000,
-    }),
-  });
-  const result = await response.json();
-  return result.choices[0].text.trim();
+  try {
+    const response = await fetch("https://api.openai.com/v1/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "text-davinci-003",
+        prompt: `Fix this invalid JSON:\n${invalidJson}\n\nReturn valid JSON.`,
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`OpenAI API request failed: ${response.status} ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.choices || !Array.isArray(result.choices) || result.choices.length === 0) {
+      throw new Error("OpenAI API response does not contain valid choices.");
+    }
+
+    return result.choices[0].text.trim();
+  } catch (error) {
+    logError("Failed to repair JSON with OpenAI:", error);
+    throw error; // Re-throw to allow caller to handle
+  }
 }
 
 // Function to upload image to Supabase with existence check
@@ -122,7 +143,7 @@ async function uploadImageToSupabase(
   if (fileExists) {
     logInfo(`File ${filePath} already exists, retrieving public URL`);
     const publicUrl = supabase.storage.from("productimages").getPublicUrl(filePath);
-    return publicUrl.data.publicUrl; // Updated to access the nested publicUrl property
+    return publicUrl.data.publicUrl;
   }
 
   logInfo(`Uploading image to Supabase: ${filePath}`);
@@ -139,7 +160,7 @@ async function uploadImageToSupabase(
 
     const publicUrl = supabase.storage.from("productimages").getPublicUrl(filePath);
     logInfo(`Image uploaded successfully: ${publicUrl.data.publicUrl}`);
-    return publicUrl.data.publicUrl; // Updated to access the nested publicUrl property
+    return publicUrl.data.publicUrl;
   } catch (error) {
     logError(`Failed to upload image ${filePath}:`, error);
     return undefined;
