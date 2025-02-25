@@ -18,7 +18,7 @@ const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
 const GOOGLE_CSE_ID = Deno.env.get("GOOGLE_CSE_ID");
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const HF_API_KEY = Deno.env.get("HF_API_KEY");
+const HF_API_KEY = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
 
 // **Check for Required Environment Variables**
 if (!PERPLEXITY_API_KEY || !OPENAI_API_KEY || !GOOGLE_API_KEY || !GOOGLE_CSE_ID || !supabaseUrl || !supabaseServiceKey) {
@@ -114,7 +114,7 @@ function safeStringify(obj: any): string {
 
 /** Fetches a product image using Google Custom Search API */
 async function fetchProductImage(productName: string, brand: string): Promise<string | null> {
-  const query = `product image for ${productName} by ${brand} -model -face -person -woman -man`;
+  const query = `product image for ${productName} by ${brand}`;
   logInfo(`Fetching image for product: ${productName} by ${brand}, ${query}`);
   const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}&searchType=image&q=${encodeURIComponent(query)}`;
 
@@ -142,19 +142,29 @@ async function removeImageBackground(imageBlob: Blob): Promise<Blob> {
       
       // Convert blob to array buffer
       const arrayBuffer = await imageBlob.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer);
       
-      // Use the HfInference client to call the U2Net model for background removal
-      const result = await hf.imageSegmentation({
-        model: "briaai/RMBG-1.4",
-        data: new Uint8Array(arrayBuffer),
-      });
+      // Since the HfInference client doesn't support trust_remote_code parameter directly,
+      // we'll use a direct API call to the Inference API
+      const response = await fetch(
+        "https://api-inference.huggingface.co/models/briaai/RMBG-1.4",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${HF_API_KEY}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: buffer,
+        }
+      );
       
-      if (result instanceof Blob) {
-        logInfo("Background removed successfully with Hugging Face");
-        return result;
-      } else {
-        throw new Error("Invalid response from Hugging Face Inference API");
+      if (!response.ok) {
+        throw new Error(`Hugging Face API error: ${response.status} - ${await response.text()}`);
       }
+      
+      const processedImageBlob = await response.blob();
+      logInfo("Background removed successfully with Hugging Face");
+      return processedImageBlob;
     } catch (error) {
       logError("Failed to remove background with Hugging Face:", error);
       // Fall through to try alternative method
@@ -258,8 +268,6 @@ async function getPerplexityResponse(searchText: string): Promise<DupeResponse> 
   Include a high-quality image URL from the brand's official website or a major retailer.
 
   Dupe Recommendations:
-
-  Find dupes arcoss the internet, start with websites like https://skinsort.com/dupes, https://dupeshopbeauty.com/ and so on, also check reddit and other social media.
   For each recommended dupe, include:
   - Product Name & Brand: e.g., 'Revolution Miracle Cream' by 'Revolution Beauty'
   - Image URL: A high-quality product image URL from the brand's website or a major retailer.
