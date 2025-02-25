@@ -1,4 +1,3 @@
-
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Footer from "../components/Footer";
@@ -85,6 +84,64 @@ const RecentDupes = () => {
   );
 };
 
+const AnimatedBackground = () => (
+  <div className="fixed inset-0 -z-10">
+    <div className="absolute inset-0 bg-gradient-to-b from-pink-50 to-white">
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(circle at center, rgba(252, 231, 243, 0.8) 0%, transparent 70%)",
+          filter: "blur(80px)",
+        }}
+        animate={{
+          scale: [1, 1.1, 1],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "easeInOut",
+        }}
+      />
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(circle at 70% 30%, rgba(252, 231, 243, 0.8) 0%, transparent 70%)",
+          filter: "blur(80px)",
+        }}
+        animate={{
+          scale: [1.1, 1, 1.1],
+          opacity: [0.5, 0.3, 0.5],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "easeInOut",
+        }}
+      />
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(circle at 30% 70%, rgba(252, 231, 243, 0.8) 0%, transparent 70%)",
+          filter: "blur(80px)",
+        }}
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.4, 0.6, 0.4],
+        }}
+        transition={{
+          duration: 12,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "easeInOut",
+        }}
+      />
+    </div>
+  </div>
+);
+
 const Index = () => {
   const trendingProducts = [
     { name: "Flawless Filter", brand: "Charlotte Tilbury" },
@@ -95,7 +152,8 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
+    <div className="min-h-screen">
+      <AnimatedBackground />
       <Navbar />
       
       <div className="relative">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Globe, CircleDollarSign } from "lucide-react";
@@ -35,7 +34,7 @@ const currencies: Currency[] = [
 const SelectorsGroup = ({ selectedLanguage, selectedCurrency, setSelectedLanguage, setSelectedCurrency, className = "" }) => (
   <div className={`flex items-center gap-4 ${className}`}>
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+      <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-white hover:bg-gray-50 transition-colors shadow-sm">
         <span className="text-lg">{selectedLanguage.flag}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40 bg-white">
@@ -53,7 +52,7 @@ const SelectorsGroup = ({ selectedLanguage, selectedCurrency, setSelectedLanguag
     </DropdownMenu>
 
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+      <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-white hover:bg-gray-50 transition-colors shadow-sm">
         <span className="text-base font-medium">{selectedCurrency.symbol}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-24 bg-white">
