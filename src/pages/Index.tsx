@@ -1,4 +1,3 @@
-
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import ResultsGallery from "../components/ResultsGallery";
@@ -20,9 +19,9 @@ interface ProductWithCounts {
   resources: { count: number; };
 }
 
-const TrendingPill = ({ text }: { text: string }) => (
+const TrendingPill = ({ product }: { product: { name: string; brand: string } }) => (
   <motion.div 
-    className="bg-gradient-to-r from-pink-50 to-purple-50 px-4 py-2 rounded-full 
+    className="bg-gradient-to-r from-pink-50 to-purple-50 px-4 py-3 rounded-full 
                border border-pink-100 inline-flex items-center gap-2 hover:scale-105 transition-transform"
     animate={{ 
       y: [0, -10, 0],
@@ -34,7 +33,10 @@ const TrendingPill = ({ text }: { text: string }) => (
     }}
   >
     <Flame className="w-4 h-4 text-orange-500" />
-    <span className="text-gray-700">{text}</span>
+    <div className="flex flex-col">
+      <span className="text-gray-700 font-medium">{product.name}</span>
+      <span className="text-gray-500 text-sm">by {product.brand}</span>
+    </div>
   </motion.div>
 );
 
@@ -58,7 +60,6 @@ const RecentDupes = () => {
 
       if (error) throw error;
       
-      // Transform the data to match our interface
       const transformedData = (data || []).map(product => ({
         ...product,
         dupes: { count: product.dupes[0]?.count || 0 },
@@ -120,41 +121,42 @@ const RecentDupes = () => {
 
 const Index = () => {
   const trendingProducts = [
-    "Charlotte Tilbury Flawless Filter",
-    "Rare Beauty Blush",
-    "Dyson Airwrap",
-    "Drunk Elephant Protini",
-    "Glossier Cloud Paint",
-    "Olaplex No. 3",
+    { name: "Flawless Filter", brand: "Charlotte Tilbury" },
+    { name: "Soft Pinch Liquid Blush", brand: "Rare Beauty" },
+    { name: "Airwrap Complete", brand: "Dyson" },
+    { name: "Protini Polypeptide Cream", brand: "Drunk Elephant" },
+    { name: "Cloud Paint", brand: "Glossier" },
+    { name: "No. 3 Hair Perfector", brand: "Olaplex" },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
       <Navbar />
-      <Hero />
-
-      {/* Trending Products Section - Moved right after Hero */}
-      <section className="container mx-auto px-4 py-8">
+      
+      <div className="relative">
+        <Hero />
+        
         <motion.div 
-          className="flex flex-wrap gap-3 justify-center"
+          className="container mx-auto px-4 -mt-12 relative z-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          {trendingProducts.map((product, index) => (
-            <motion.div
-              key={product}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: index * 0.2 }}
-            >
-              <TrendingPill text={product} />
-            </motion.div>
-          ))}
+          <div className="flex flex-wrap gap-3 justify-center">
+            {trendingProducts.map((product, index) => (
+              <motion.div
+                key={product.name}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.2 }}
+              >
+                <TrendingPill product={product} />
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
-      </section>
-      
-      {/* Stats Section */}
-      <section className="container mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+      </div>
+
+      <section className="container mx-auto px-4 py-24 grid grid-cols-1 md:grid-cols-3 gap-8">
         <motion.div 
           className="text-center"
           initial={{ opacity: 0, y: 20 }}
@@ -187,7 +189,6 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* Recent Dupes Section */}
       <section className="container mx-auto px-4 py-12">
         <motion.h2 
           className="text-3xl font-bold text-gray-800 mb-8 text-center"

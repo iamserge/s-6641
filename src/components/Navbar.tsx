@@ -1,14 +1,50 @@
 
 import { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { Globe, CircleDollarSign } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+interface Language {
+  code: string;
+  name: string;
+  flag: string;
+}
+
+interface Currency {
+  code: string;
+  symbol: string;
+}
+
+const languages: Language[] = [
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+];
+
+const currencies: Currency[] = [
+  { code: 'USD', symbol: '$' },
+  { code: 'GBP', symbol: '£' },
+  { code: 'EUR', symbol: '€' },
+];
 
 const Navbar = () => {
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+  const [selectedCurrency, setSelectedCurrency] = useState(currencies[0]);
 
   useEffect(() => {
+    const searchElement = document.querySelector('.hero-search-section');
+    if (!searchElement) return;
+
     const unsubscribe = scrollY.onChange(value => {
-      setIsScrolled(value > window.innerHeight - 100);
+      const searchBottom = searchElement.getBoundingClientRect().bottom;
+      setIsScrolled(value > searchBottom);
     });
     return () => unsubscribe();
   }, [scrollY]);
@@ -25,8 +61,13 @@ const Navbar = () => {
     [0, 1]
   );
 
+  if (!isScrolled) return null;
+
   return (
     <motion.nav 
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ type: "spring", stiffness: 100 }}
       className="fixed w-full z-50 px-6 py-4 backdrop-blur-sm"
       style={{ 
         backgroundColor,
@@ -34,15 +75,52 @@ const Navbar = () => {
       }}
     >
       <div className="max-w-[1200px] mx-auto">
-        <div className="flex items-center gap-2">
-          <img 
-            src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
-            alt="Dupe Academy Logo" 
-            className="h-8"
-          />
-          <span className="text-gray-600 font-light ml-auto">
-            Save on your favorite products
-          </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img 
+              src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
+              alt="Dupe Academy Logo" 
+              className="h-8"
+            />
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                <span className="text-lg">{selectedLanguage.flag}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                {languages.map((lang) => (
+                  <DropdownMenuItem
+                    key={lang.code}
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => setSelectedLanguage(lang)}
+                  >
+                    <span>{lang.flag}</span>
+                    <span>{lang.name}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                <span className="text-base font-medium">{selectedCurrency.symbol}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-24">
+                {currencies.map((currency) => (
+                  <DropdownMenuItem
+                    key={currency.code}
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => setSelectedCurrency(currency)}
+                  >
+                    <span>{currency.symbol}</span>
+                    <span>{currency.code}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </motion.nav>
