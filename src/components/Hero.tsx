@@ -262,7 +262,7 @@ const Hero = () => {
       </motion.div>
       
       <motion.form 
-        className="relative w-full max-w-3xl"
+        className="relative w-full max-w-3xl hero-search-section"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.6, duration: 0.8 }}

@@ -61,12 +61,10 @@ const Navbar = () => {
     [0, 1]
   );
 
-  if (!isScrolled) return null;
-
   return (
     <motion.nav 
       initial={{ y: -100 }}
-      animate={{ y: 0 }}
+      animate={{ y: isScrolled ? 0 : -100 }}
       transition={{ type: "spring", stiffness: 100 }}
       className="fixed w-full z-50 px-6 py-4 backdrop-blur-sm"
       style={{ 
