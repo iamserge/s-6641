@@ -1,7 +1,6 @@
 
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
-import ResultsGallery from "../components/ResultsGallery";
 import Footer from "../components/Footer";
 import { motion } from "framer-motion";
 import { Flame } from "lucide-react";
@@ -95,12 +94,6 @@ const Index = () => {
     { name: "No. 3 Hair Perfector", brand: "Olaplex" },
   ];
 
-  const stats = [
-    { label: "Products", value: "1,249+" },
-    { label: "Brands", value: "350+" },
-    { label: "Happy Users", value: "15,000+" },
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
       <Navbar />
@@ -135,26 +128,10 @@ const Index = () => {
         </div>
       </div>
 
-      <section className="container mx-auto px-4 py-24 grid grid-cols-1 md:grid-cols-3 gap-8">
-        {stats.map((stat) => (
-          <motion.div
-            key={stat.label}
-            className="text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <div className="text-4xl font-bold text-primary">{stat.value}</div>
-            <div className="text-lg text-secondary">{stat.label}</div>
-          </motion.div>
-        ))}
-      </section>
-
       <section className="container mx-auto px-4 py-12">
         <RecentDupes />
       </section>
 
-      <ResultsGallery />
       <Footer />
     </div>
   );
