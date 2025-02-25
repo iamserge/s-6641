@@ -32,6 +32,46 @@ const currencies: Currency[] = [
   { code: 'EUR', symbol: '€' },
 ];
 
+const SelectorsGroup = ({ selectedLanguage, selectedCurrency, setSelectedLanguage, setSelectedCurrency, className = "" }) => (
+  <div className={`flex items-center gap-4 ${className}`}>
+    <DropdownMenu>
+      <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+        <span className="text-lg">{selectedLanguage.flag}</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40 bg-white">
+        {languages.map((lang) => (
+          <DropdownMenuItem
+            key={lang.code}
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setSelectedLanguage(lang)}
+          >
+            <span>{lang.flag}</span>
+            <span>{lang.name}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+
+    <DropdownMenu>
+      <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+        <span className="text-base font-medium">{selectedCurrency.symbol}</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-24 bg-white">
+        {currencies.map((currency) => (
+          <DropdownMenuItem
+            key={currency.code}
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setSelectedCurrency(currency)}
+          >
+            <span>{currency.symbol}</span>
+            <span>{currency.code}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+);
+
 const Navbar = () => {
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -62,66 +102,58 @@ const Navbar = () => {
   );
 
   return (
-    <motion.nav 
-      initial={{ y: -100 }}
-      animate={{ y: isScrolled ? 0 : -100 }}
-      transition={{ type: "spring", stiffness: 100 }}
-      className="fixed w-full z-50 px-6 py-4 backdrop-blur-sm"
-      style={{ 
-        backgroundColor,
-        borderBottom: borderOpacity.get() > 0 ? "1px solid rgba(236, 72, 153, 0.1)" : "none"
-      }}
-    >
-      <div className="max-w-[1200px] mx-auto">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img 
-              src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
-              alt="Dupe Academy Logo" 
-              className="h-8"
+    <>
+      {/* Static top navbar */}
+      <div className="absolute top-0 left-0 right-0 z-40 px-6 py-4">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img 
+                src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
+                alt="Dupe Academy Logo" 
+                className="h-8"
+              />
+            </div>
+            <SelectorsGroup
+              selectedLanguage={selectedLanguage}
+              selectedCurrency={selectedCurrency}
+              setSelectedLanguage={setSelectedLanguage}
+              setSelectedCurrency={setSelectedCurrency}
             />
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                <span className="text-lg">{selectedLanguage.flag}</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                {languages.map((lang) => (
-                  <DropdownMenuItem
-                    key={lang.code}
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => setSelectedLanguage(lang)}
-                  >
-                    <span>{lang.flag}</span>
-                    <span>{lang.name}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                <span className="text-base font-medium">{selectedCurrency.symbol}</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-24">
-                {currencies.map((currency) => (
-                  <DropdownMenuItem
-                    key={currency.code}
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => setSelectedCurrency(currency)}
-                  >
-                    <span>{currency.symbol}</span>
-                    <span>{currency.code}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
       </div>
-    </motion.nav>
+
+      {/* Sticky navbar that appears on scroll */}
+      <motion.nav 
+        initial={{ y: -100 }}
+        animate={{ y: isScrolled ? 0 : -100 }}
+        transition={{ type: "spring", stiffness: 100 }}
+        className="fixed w-full z-50 px-6 py-4 backdrop-blur-sm"
+        style={{ 
+          backgroundColor,
+          borderBottom: borderOpacity.get() > 0 ? "1px solid rgba(236, 72, 153, 0.1)" : "none"
+        }}
+      >
+        <div className="max-w-[1200px] mx-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img 
+                src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
+                alt="Dupe Academy Logo" 
+                className="h-8"
+              />
+            </div>
+            <SelectorsGroup
+              selectedLanguage={selectedLanguage}
+              selectedCurrency={selectedCurrency}
+              setSelectedLanguage={setSelectedLanguage}
+              setSelectedCurrency={setSelectedCurrency}
+            />
+          </div>
+        </div>
+      </motion.nav>
+    </>
   );
 };
 
