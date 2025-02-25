@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Footer from "../components/Footer";
 import { motion } from "framer-motion";
-import { Flame, Shield, Globe, Star } from "lucide-react";
+import { Flame, Shield, Globe, Star, Droplet, Check, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -36,6 +36,13 @@ const RecentDupes = () => {
           longevity_rating,
           free_of,
           best_for,
+          dupes (
+            coverage,
+            confidence_level,
+            longevity_comparison,
+            cruelty_free,
+            vegan
+          ),
           brands!products_brand_id_fkey (
             name,
             country_of_origin,
@@ -55,7 +62,8 @@ const RecentDupes = () => {
       return data.map(product => ({
         ...product,
         brand: product.brands?.name || product.brand,
-        brandInfo: product.brands || null
+        brandInfo: product.brands || null,
+        dupeInfo: product.dupes?.[0] || null
       }));
     },
   });
@@ -101,18 +109,39 @@ const RecentDupes = () => {
             <p className="text-sm text-secondary mb-2">by {dupe.brand}</p>
             
             <div className="flex flex-wrap gap-2 mb-3">
+              {dupe.dupeInfo?.coverage && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                  <Droplet className="w-3 h-3 mr-1" />
+                  {dupe.dupeInfo.coverage} Coverage
+                </Badge>
+              )}
+              {dupe.dupeInfo?.confidence_level && (
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                  <Check className="w-3 h-3 mr-1" />
+                  {dupe.dupeInfo.confidence_level}% Match
+                </Badge>
+              )}
+              {dupe.dupeInfo?.longevity_comparison && (
+                <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {dupe.dupeInfo.longevity_comparison} Wear Time
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-3">
               {dupe.brandInfo?.sustainable_packaging && (
                 <Badge variant="secondary" className="bg-green-100 text-green-800">
                   <Shield className="w-3 h-3 mr-1" />
                   Sustainable
                 </Badge>
               )}
-              {dupe.brandInfo?.cruelty_free && (
+              {(dupe.dupeInfo?.cruelty_free || dupe.brandInfo?.cruelty_free) && (
                 <Badge variant="secondary" className="bg-purple-100 text-purple-800">
                   Cruelty-Free
                 </Badge>
               )}
-              {dupe.brandInfo?.vegan && (
+              {(dupe.dupeInfo?.vegan || dupe.brandInfo?.vegan) && (
                 <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
                   Vegan
                 </Badge>

@@ -101,12 +101,16 @@ export type Database = {
           brand: string
           brand_id: string | null
           color_match_score: number | null
+          confidence_level: number | null
+          coverage: string | null
           created_at: string
+          cruelty_free: boolean | null
           dupe_type: string | null
           finish: string
           formula_match_score: number | null
           id: string
           image_url: string | null
+          longevity_comparison: string | null
           match_score: number
           name: string
           notes: string | null
@@ -119,18 +123,23 @@ export type Database = {
           texture: string
           updated_at: string
           validation_source: string | null
+          vegan: boolean | null
           verified: boolean | null
         }
         Insert: {
           brand: string
           brand_id?: string | null
           color_match_score?: number | null
+          confidence_level?: number | null
+          coverage?: string | null
           created_at?: string
+          cruelty_free?: boolean | null
           dupe_type?: string | null
           finish: string
           formula_match_score?: number | null
           id?: string
           image_url?: string | null
+          longevity_comparison?: string | null
           match_score: number
           name: string
           notes?: string | null
@@ -143,18 +152,23 @@ export type Database = {
           texture: string
           updated_at?: string
           validation_source?: string | null
+          vegan?: boolean | null
           verified?: boolean | null
         }
         Update: {
           brand?: string
           brand_id?: string | null
           color_match_score?: number | null
+          confidence_level?: number | null
+          coverage?: string | null
           created_at?: string
+          cruelty_free?: boolean | null
           dupe_type?: string | null
           finish?: string
           formula_match_score?: number | null
           id?: string
           image_url?: string | null
+          longevity_comparison?: string | null
           match_score?: number
           name?: string
           notes?: string | null
@@ -167,6 +181,7 @@ export type Database = {
           texture?: string
           updated_at?: string
           validation_source?: string | null
+          vegan?: boolean | null
           verified?: boolean | null
         }
         Relationships: [
