@@ -1,3 +1,4 @@
+
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import ResultsGallery from "../components/ResultsGallery";
@@ -11,10 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
 const TrendingPill = ({ product }: { product: { name: string; brand: string } }) => (
-  <div className="bg-[#F1F0FB] hover:bg-[#E5DEFF] px-6 py-3 rounded-full inline-flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm">
+  <div className="bg-[#F1F0FB] hover:bg-[#E5DEFF] px-8 py-2 rounded-full inline-flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm min-w-[200px]">
     <div className="flex flex-col items-start">
-      <span className="text-gray-800 text-sm font-medium leading-snug">{product.name}</span>
-      <span className="text-gray-500 text-[11px] leading-none mt-0.5">by {product.brand}</span>
+      <span className="text-gray-800 text-sm font-medium">{product.name}</span>
+      <span className="text-gray-500 text-[10px]">by {product.brand}</span>
     </div>
   </div>
 );
@@ -90,7 +91,6 @@ const Index = () => {
     { name: "Flawless Filter", brand: "Charlotte Tilbury" },
     { name: "Soft Pinch Liquid Blush", brand: "Rare Beauty" },
     { name: "Airwrap Complete", brand: "Dyson" },
-    { name: "Protini Polypeptide Cream", brand: "Drunk Elephant" },
     { name: "Cloud Paint", brand: "Glossier" },
     { name: "No. 3 Hair Perfector", brand: "Olaplex" },
   ];
@@ -108,6 +108,7 @@ const Index = () => {
       <div className="relative">
         <Hero />
         
+        {/* Trending Section */}
         <div className="container mx-auto px-4 mt-12 relative z-10">
           <div className="flex items-center gap-6 max-w-4xl mx-auto overflow-x-auto no-scrollbar">
             <motion.div
