@@ -1,29 +1,19 @@
+
 import { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Globe, CircleDollarSign } from "lucide-react";
+import { CircleDollarSign, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface Language {
-  code: string;
-  name: string;
-  flag: string;
-}
+import { Button } from "@/components/ui/button";
 
 interface Currency {
   code: string;
   symbol: string;
 }
-
-const languages: Language[] = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-];
 
 const currencies: Currency[] = [
   { code: 'USD', symbol: '$' },
@@ -31,50 +21,29 @@ const currencies: Currency[] = [
   { code: 'EUR', symbol: '€' },
 ];
 
-const SelectorsGroup = ({ selectedLanguage, selectedCurrency, setSelectedLanguage, setSelectedCurrency, className = "" }) => (
-  <div className={`flex items-center gap-4 ${className}`}>
-    <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-white hover:bg-gray-50 transition-colors shadow-sm">
-        <span className="text-lg">{selectedLanguage.flag}</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40 bg-white">
-        {languages.map((lang) => (
-          <DropdownMenuItem
-            key={lang.code}
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setSelectedLanguage(lang)}
-          >
-            <span>{lang.flag}</span>
-            <span>{lang.name}</span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-
-    <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-white hover:bg-gray-50 transition-colors shadow-sm">
-        <span className="text-base font-medium">{selectedCurrency.symbol}</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-24 bg-white">
-        {currencies.map((currency) => (
-          <DropdownMenuItem
-            key={currency.code}
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setSelectedCurrency(currency)}
-          >
-            <span>{currency.symbol}</span>
-            <span>{currency.code}</span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
+const CurrencySelector = ({ selectedCurrency, setSelectedCurrency, className = "" }) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
+      <span className="text-base font-medium">{selectedCurrency.symbol}</span>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end" className="w-24 bg-white">
+      {currencies.map((currency) => (
+        <DropdownMenuItem
+          key={currency.code}
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => setSelectedCurrency(currency)}
+        >
+          <span>{currency.symbol}</span>
+          <span>{currency.code}</span>
+        </DropdownMenuItem>
+      ))}
+    </DropdownMenuContent>
+  </DropdownMenu>
 );
 
 const Navbar = () => {
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
   const [selectedCurrency, setSelectedCurrency] = useState(currencies[0]);
 
   useEffect(() => {
@@ -87,18 +56,6 @@ const Navbar = () => {
     });
     return () => unsubscribe();
   }, [scrollY]);
-
-  const backgroundColor = useTransform(
-    scrollY,
-    [0, window.innerHeight - 100],
-    ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.9)"]
-  );
-
-  const borderOpacity = useTransform(
-    scrollY,
-    [0, window.innerHeight - 100],
-    [0, 1]
-  );
 
   return (
     <>
@@ -113,26 +70,25 @@ const Navbar = () => {
                 className="h-8"
               />
             </div>
-            <SelectorsGroup
-              selectedLanguage={selectedLanguage}
-              selectedCurrency={selectedCurrency}
-              setSelectedLanguage={setSelectedLanguage}
-              setSelectedCurrency={setSelectedCurrency}
-            />
+            <div className="flex items-center gap-4">
+              <CurrencySelector
+                selectedCurrency={selectedCurrency}
+                setSelectedCurrency={setSelectedCurrency}
+              />
+              <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30">
+                <User className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Sticky navbar that appears on scroll */}
       <motion.nav 
-        initial={{ y: -100 }}
-        animate={{ y: isScrolled ? 0 : -100 }}
-        transition={{ type: "spring", stiffness: 100 }}
-        className="fixed w-full z-50 px-6 py-4 backdrop-blur-sm"
-        style={{ 
-          backgroundColor,
-          borderBottom: borderOpacity.get() > 0 ? "1px solid rgba(236, 72, 153, 0.1)" : "none"
-        }}
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: isScrolled ? 0 : -100, opacity: isScrolled ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="fixed w-full z-50 px-6 py-4 backdrop-blur-[5px] bg-white/20"
       >
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-center justify-between">
@@ -143,12 +99,15 @@ const Navbar = () => {
                 className="h-8"
               />
             </div>
-            <SelectorsGroup
-              selectedLanguage={selectedLanguage}
-              selectedCurrency={selectedCurrency}
-              setSelectedLanguage={setSelectedLanguage}
-              setSelectedCurrency={setSelectedCurrency}
-            />
+            <div className="flex items-center gap-4">
+              <CurrencySelector
+                selectedCurrency={selectedCurrency}
+                setSelectedCurrency={setSelectedCurrency}
+              />
+              <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30">
+                <User className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </motion.nav>

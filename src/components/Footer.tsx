@@ -1,17 +1,40 @@
+
+import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+interface Language {
+  code: string;
+  name: string;
+}
+
+const languages: Language[] = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' },
+  { code: 'ru', name: 'Русский' },
+];
+
 const Footer = () => {
+  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+
   return (
     <footer className="bg-primary text-white mt-24 py-16">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
             <div className="flex items-center gap-2 mb-6">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span className="font-medium">Antimetal</span>
+              <img 
+                src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
+                alt="Dupe Academy Logo" 
+                className="h-8 brightness-0 invert"
+              />
             </div>
             <p className="text-accent text-sm">
-              Save time and money on AWS. Automated cloud cost optimization platform.
+              Discover authentic dupes for your favorite beauty products.
             </p>
           </div>
           
@@ -48,8 +71,26 @@ const Footer = () => {
         
         <div className="border-t border-white/10 mt-16 pt-8 text-accent text-sm">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p>© 2024 Antimetal. All rights reserved.</p>
-            <div className="flex gap-6">
+            <p>© 2024 Dupe Academy. All rights reserved.</p>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="text-sm hover:text-white transition-colors">
+                    {selectedLanguage.name}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-white">
+                    {languages.map((lang) => (
+                      <DropdownMenuItem
+                        key={lang.code}
+                        className="cursor-pointer"
+                        onClick={() => setSelectedLanguage(lang)}
+                      >
+                        {lang.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
             </div>
