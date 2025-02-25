@@ -114,7 +114,7 @@ function safeStringify(obj: any): string {
 
 /** Fetches a product image using Google Custom Search API */
 async function fetchProductImage(productName: string, brand: string): Promise<string | null> {
-  const query = `"${productName}" "${brand}" product image -model -face -person -woman -man`;
+  const query = `product image for ${productName} by ${brand} -model -face -person -woman -man`;
   logInfo(`Fetching image for product: ${productName} by ${brand}, ${query}`);
   const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}&searchType=image&q=${encodeURIComponent(query)}`;
 
