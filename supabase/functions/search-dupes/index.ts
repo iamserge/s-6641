@@ -1,3 +1,5 @@
+/// <reference lib="es2015" />
+
 // Import necessary dependencies
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "https://deno.land/x/cors@v1.2.2/mod.ts";
@@ -29,10 +31,9 @@ async function fetchProductImage(
   name: string,
   brand: string
 ): Promise<string | undefined> {
-  // This is a placeholder. In a real implementation, you'd use Google Custom Search
-  // or another service to fetch an image URL based on name and brand.
+  // Placeholder: Replace with actual image fetching logic (e.g., Google Custom Search)
   logInfo(`Fetching image for ${name} by ${brand}`);
-  return "https://example.com/placeholder.jpg"; // Replace with actual logic
+  return "https://example.com/placeholder.jpg";
 }
 
 // Function to get response from Perplexity (simplified for this example)
@@ -43,7 +44,7 @@ async function getPerplexityResponse(searchText: string): Promise<{
   resources: any[];
 }> {
   logInfo(`Fetching Perplexity response for: ${searchText}`);
-  // Simulated response; replace with actual API call
+  // Simulated response; replace with actual Perplexity API call
   const response = await fetch("https://api.perplexity.ai/query", {
     method: "POST",
     headers: {
@@ -57,11 +58,10 @@ async function getPerplexityResponse(searchText: string): Promise<{
   try {
     data = JSON.parse(text);
   } catch (e) {
-    // If JSON parsing fails, attempt to repair with OpenAI (as per requirement)
+    // If JSON parsing fails, repair it with OpenAI
     const repaired = await repairJsonWithOpenAI(text);
     data = JSON.parse(repaired);
   }
-  // Assuming the response has this structure
   return {
     original: data.original || { name: searchText, brand: "Unknown" },
     dupes: data.dupes || [],
@@ -70,7 +70,7 @@ async function getPerplexityResponse(searchText: string): Promise<{
   };
 }
 
-// Function to repair JSON with OpenAI (stubbed out; implement as needed)
+// Function to repair invalid JSON with OpenAI
 async function repairJsonWithOpenAI(invalidJson: string): Promise<string> {
   logInfo("Repairing invalid JSON with OpenAI");
   const response = await fetch("https://api.openai.com/v1/completions", {
@@ -99,45 +99,36 @@ async function uploadImageToSupabase(
   // Check if file already exists in Supabase storage
   const { data: files, error: listError } = await supabase.storage
     .from("productimages")
-    .list("", { search: filePath });
+    .list();
 
   if (listError) {
-    logError(`Failed to list files for ${filePath}:`, listError);
+    logError(`Failed to list files:`, listError);
     return undefined;
   }
 
   const fileExists = files.some((file) => file.name === filePath);
   if (fileExists) {
     logInfo(`File ${filePath} already exists, retrieving public URL`);
-    const { publicURL, error: urlError } = supabase.storage
-      .from("productimages")
-      .getPublicUrl(filePath);
-    if (urlError) {
-      logError(`Failed to get public URL for ${filePath}:`, urlError);
-      return undefined;
-    }
-    return publicURL;
+    const publicUrl = supabase.storage.from("productimages").getPublicUrl(filePath);
+    return publicUrl;
   }
 
   // File does not exist, proceed with upload
   logInfo(`Uploading image to Supabase: ${filePath}`);
   try {
     const response = await fetch(imageUrl);
-    if (!response.ok)
+    if (!response.ok) {
       throw new Error(`Failed to download image: ${response.status}`);
+    }
     const imageBlob = await response.blob();
     const { error: uploadError } = await supabase.storage
       .from("productimages")
       .upload(filePath, imageBlob, { contentType: "image/jpeg" });
     if (uploadError) throw uploadError;
 
-    const { publicURL, error: urlError } = supabase.storage
-      .from("productimages")
-      .getPublicUrl(filePath);
-    if (urlError) throw urlError;
-
-    logInfo(`Image uploaded successfully: ${publicURL}`);
-    return publicURL;
+    const publicUrl = supabase.storage.from("productimages").getPublicUrl(filePath);
+    logInfo(`Image uploaded successfully: ${publicUrl}`);
+    return publicUrl;
   } catch (error) {
     logError(`Failed to upload image ${filePath}:`, error);
     return undefined;
