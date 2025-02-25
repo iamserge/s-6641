@@ -1,10 +1,15 @@
 /// <reference lib="es2015" />
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 // Import necessary dependencies
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { corsHeaders } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
+
+
 
 // Environment variables (ensure these are set in your environment)
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY");
