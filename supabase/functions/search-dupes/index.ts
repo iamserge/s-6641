@@ -18,7 +18,7 @@ const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
 const GOOGLE_CSE_ID = Deno.env.get("GOOGLE_CSE_ID");
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const HF_API_KEY = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
+const HF_API_KEY = Deno.env.get("HF_API_KEY");
 
 // **Check for Required Environment Variables**
 if (!PERPLEXITY_API_KEY || !OPENAI_API_KEY || !GOOGLE_API_KEY || !GOOGLE_CSE_ID || !supabaseUrl || !supabaseServiceKey) {
