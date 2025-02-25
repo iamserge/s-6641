@@ -1,3 +1,4 @@
+
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import ResultsGallery from "../components/ResultsGallery";
@@ -101,21 +102,35 @@ const Index = () => {
     loop: true,
     dragFree: true,
     containScroll: "trimSnaps",
-    speed: 5,
   });
 
   const onMouseEnter = useCallback(() => {
-    if (emblaApi) emblaApi.stop();
+    if (emblaApi) {
+      clearInterval(autoplayInterval);
+    }
   }, [emblaApi]);
 
   const onMouseLeave = useCallback(() => {
-    if (emblaApi) emblaApi.play();
+    if (emblaApi) {
+      startAutoplay();
+    }
   }, [emblaApi]);
+
+  let autoplayInterval: NodeJS.Timeout;
+
+  const startAutoplay = () => {
+    autoplayInterval = setInterval(() => {
+      if (emblaApi) emblaApi.scrollNext();
+    }, 50); // Adjust speed by changing this value
+  };
 
   useEffect(() => {
     if (emblaApi) {
-      emblaApi.play();
+      startAutoplay();
     }
+    return () => {
+      clearInterval(autoplayInterval);
+    };
   }, [emblaApi]);
 
   const stats = [
