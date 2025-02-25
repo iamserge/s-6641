@@ -11,35 +11,44 @@ export type Database = {
     Tables: {
       brands: {
         Row: {
+          country_of_origin: string | null
           created_at: string
           cruelty_free: boolean | null
           description: string
           id: string
           name: string
+          parent_company: string | null
           price_range: string
           slug: string
+          sustainable_packaging: boolean | null
           updated_at: string
           vegan: boolean | null
         }
         Insert: {
+          country_of_origin?: string | null
           created_at?: string
           cruelty_free?: boolean | null
           description: string
           id?: string
           name: string
+          parent_company?: string | null
           price_range: string
           slug: string
+          sustainable_packaging?: boolean | null
           updated_at?: string
           vegan?: boolean | null
         }
         Update: {
+          country_of_origin?: string | null
           created_at?: string
           cruelty_free?: boolean | null
           description?: string
           id?: string
           name?: string
+          parent_company?: string | null
           price_range?: string
           slug?: string
+          sustainable_packaging?: boolean | null
           updated_at?: string
           vegan?: boolean | null
         }
@@ -91,8 +100,11 @@ export type Database = {
         Row: {
           brand: string
           brand_id: string | null
+          color_match_score: number | null
           created_at: string
+          dupe_type: string | null
           finish: string
+          formula_match_score: number | null
           id: string
           image_url: string | null
           match_score: number
@@ -106,12 +118,17 @@ export type Database = {
           spf: number | null
           texture: string
           updated_at: string
+          validation_source: string | null
+          verified: boolean | null
         }
         Insert: {
           brand: string
           brand_id?: string | null
+          color_match_score?: number | null
           created_at?: string
+          dupe_type?: string | null
           finish: string
+          formula_match_score?: number | null
           id?: string
           image_url?: string | null
           match_score: number
@@ -125,12 +142,17 @@ export type Database = {
           spf?: number | null
           texture: string
           updated_at?: string
+          validation_source?: string | null
+          verified?: boolean | null
         }
         Update: {
           brand?: string
           brand_id?: string | null
+          color_match_score?: number | null
           created_at?: string
+          dupe_type?: string | null
           finish?: string
+          formula_match_score?: number | null
           id?: string
           image_url?: string | null
           match_score?: number
@@ -144,6 +166,8 @@ export type Database = {
           spf?: number | null
           texture?: string
           updated_at?: string
+          validation_source?: string | null
+          verified?: boolean | null
         }
         Relationships: [
           {
@@ -169,8 +193,12 @@ export type Database = {
           concerns: string[]
           created_at: string
           description: string
+          ethically_sourced: boolean | null
           id: string
+          inci_name: string | null
+          is_controversial: boolean | null
           name: string
+          restricted_in: string[] | null
           skin_types: string[]
           slug: string
           updated_at: string
@@ -182,8 +210,12 @@ export type Database = {
           concerns: string[]
           created_at?: string
           description: string
+          ethically_sourced?: boolean | null
           id?: string
+          inci_name?: string | null
+          is_controversial?: boolean | null
           name: string
+          restricted_in?: string[] | null
           skin_types: string[]
           slug: string
           updated_at?: string
@@ -195,8 +227,12 @@ export type Database = {
           concerns?: string[]
           created_at?: string
           description?: string
+          ethically_sourced?: boolean | null
           id?: string
+          inci_name?: string | null
+          is_controversial?: boolean | null
           name?: string
+          restricted_in?: string[] | null
           skin_types?: string[]
           slug?: string
           updated_at?: string
@@ -249,12 +285,17 @@ export type Database = {
       products: {
         Row: {
           attributes: string[]
+          best_for: string[] | null
           brand: string
           brand_id: string | null
+          country_of_origin: string | null
           created_at: string
+          free_of: string[] | null
           id: string
           image_url: string | null
+          longevity_rating: number | null
           name: string
+          oxidation_tendency: string | null
           price: number
           slug: string
           summary: string
@@ -262,12 +303,17 @@ export type Database = {
         }
         Insert: {
           attributes: string[]
+          best_for?: string[] | null
           brand: string
           brand_id?: string | null
+          country_of_origin?: string | null
           created_at?: string
+          free_of?: string[] | null
           id?: string
           image_url?: string | null
+          longevity_rating?: number | null
           name: string
+          oxidation_tendency?: string | null
           price: number
           slug: string
           summary: string
@@ -275,12 +321,17 @@ export type Database = {
         }
         Update: {
           attributes?: string[]
+          best_for?: string[] | null
           brand?: string
           brand_id?: string | null
+          country_of_origin?: string | null
           created_at?: string
+          free_of?: string[] | null
           id?: string
           image_url?: string | null
+          longevity_rating?: number | null
           name?: string
+          oxidation_tendency?: string | null
           price?: number
           slug?: string
           summary?: string

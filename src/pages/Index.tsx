@@ -3,12 +3,13 @@ import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Footer from "../components/Footer";
 import { motion } from "framer-motion";
-import { Flame } from "lucide-react";
+import { Flame, Shield, Globe, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const TrendingPill = ({ product }: { product: { name: string; brand: string } }) => (
   <div className="bg-[#F1F0FB] hover:bg-[#E5DEFF] px-8 py-2 rounded-full inline-flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm min-w-[200px]">
@@ -31,8 +32,16 @@ const RecentDupes = () => {
           name,
           brand,
           slug,
+          country_of_origin,
+          longevity_rating,
+          free_of,
+          best_for,
           brands!products_brand_id_fkey (
-            name
+            name,
+            country_of_origin,
+            sustainable_packaging,
+            cruelty_free,
+            vegan
           )
         `)
         .order("created_at", { ascending: false })
@@ -43,10 +52,10 @@ const RecentDupes = () => {
         throw error;
       }
       
-      // Transform the data to maintain backward compatibility
       return data.map(product => ({
         ...product,
-        brand: product.brands?.name || product.brand // Use brand name from relationship if available, fallback to direct brand field
+        brand: product.brands?.name || product.brand,
+        brandInfo: product.brands || null
       }));
     },
   });
@@ -84,12 +93,59 @@ const RecentDupes = () => {
         {recentDupes?.map((dupe) => (
           <motion.div
             key={dupe.slug}
-            className="p-4 rounded-md shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+            className="p-4 rounded-md shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer bg-white/50 backdrop-blur-sm"
             onClick={() => navigate(`/dupes/for/${dupe.slug}`)}
             whileHover={{ scale: 1.05 }}
           >
             <h3 className="text-lg font-semibold text-primary">{dupe.name}</h3>
-            <p className="text-sm text-secondary">by {dupe.brand}</p>
+            <p className="text-sm text-secondary mb-2">by {dupe.brand}</p>
+            
+            <div className="flex flex-wrap gap-2 mb-3">
+              {dupe.brandInfo?.sustainable_packaging && (
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  <Shield className="w-3 h-3 mr-1" />
+                  Sustainable
+                </Badge>
+              )}
+              {dupe.brandInfo?.cruelty_free && (
+                <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                  Cruelty-Free
+                </Badge>
+              )}
+              {dupe.brandInfo?.vegan && (
+                <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
+                  Vegan
+                </Badge>
+              )}
+            </div>
+
+            {dupe.country_of_origin && (
+              <div className="flex items-center text-xs text-gray-600 mb-2">
+                <Globe className="w-3 h-3 mr-1" />
+                {dupe.country_of_origin}
+              </div>
+            )}
+
+            {dupe.longevity_rating && (
+              <div className="flex items-center text-xs text-gray-600 mb-2">
+                <Star className="w-3 h-3 mr-1" />
+                Longevity: {dupe.longevity_rating}/10
+              </div>
+            )}
+
+            {dupe.best_for && dupe.best_for.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {dupe.best_for.map((tag, index) => (
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className="text-xs bg-blue-50 border-blue-200 text-blue-700"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </motion.div>
         ))}
       </CardContent>
