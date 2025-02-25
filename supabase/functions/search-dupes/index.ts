@@ -1,4 +1,5 @@
 /// <reference lib="es2015" />
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -9,18 +10,13 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
 
-
-
 // Environment variables (ensure these are set in your environment)
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
 const GOOGLE_CSE_ID = Deno.env.get("GOOGLE_CSE_ID");
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_KEY");
-
-// Initialize Supabase client
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 // Logging functions (for debugging and monitoring)
 function logInfo(message: string) {
@@ -31,12 +27,26 @@ function logError(message: string, error?: any) {
   console.error(`[ERROR] ${message}`, error);
 }
 
+// Validate critical environment variables
+if (!supabaseUrl) {
+  throw new Error("SUPABASE_URL is not set in environment variables.");
+}
+if (!supabaseServiceKey) {
+  throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set in environment variables.");
+}
+
+// Log environment variable values for debugging
+logInfo(`supabaseUrl: ${supabaseUrl}`);
+logInfo(`supabaseServiceKey: ${supabaseServiceKey ? 'set' : 'not set'}`);
+
+// Initialize Supabase client
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
 // Function to fetch product image (stubbed out; implement as needed)
 async function fetchProductImage(
   name: string,
   brand: string
 ): Promise<string | undefined> {
-  // Placeholder: Replace with actual image fetching logic (e.g., Google Custom Search)
   logInfo(`Fetching image for ${name} by ${brand}`);
   return "https://example.com/placeholder.jpg";
 }
@@ -49,7 +59,6 @@ async function getPerplexityResponse(searchText: string): Promise<{
   resources: any[];
 }> {
   logInfo(`Fetching Perplexity response for: ${searchText}`);
-  // Simulated response; replace with actual Perplexity API call
   const response = await fetch("https://api.perplexity.ai/query", {
     method: "POST",
     headers: {
@@ -63,7 +72,6 @@ async function getPerplexityResponse(searchText: string): Promise<{
   try {
     data = JSON.parse(text);
   } catch (e) {
-    // If JSON parsing fails, repair it with OpenAI
     const repaired = await repairJsonWithOpenAI(text);
     data = JSON.parse(repaired);
   }
@@ -101,7 +109,6 @@ async function uploadImageToSupabase(
 ): Promise<string | undefined> {
   const filePath = `${fileName}.jpg`;
 
-  // Check if file already exists in Supabase storage
   const { data: files, error: listError } = await supabase.storage
     .from("productimages")
     .list();
@@ -115,10 +122,9 @@ async function uploadImageToSupabase(
   if (fileExists) {
     logInfo(`File ${filePath} already exists, retrieving public URL`);
     const publicUrl = supabase.storage.from("productimages").getPublicUrl(filePath);
-    return publicUrl;
+    return publicUrl.data.publicUrl; // Updated to access the nested publicUrl property
   }
 
-  // File does not exist, proceed with upload
   logInfo(`Uploading image to Supabase: ${filePath}`);
   try {
     const response = await fetch(imageUrl);
@@ -132,8 +138,8 @@ async function uploadImageToSupabase(
     if (uploadError) throw uploadError;
 
     const publicUrl = supabase.storage.from("productimages").getPublicUrl(filePath);
-    logInfo(`Image uploaded successfully: ${publicUrl}`);
-    return publicUrl;
+    logInfo(`Image uploaded successfully: ${publicUrl.data.publicUrl}`);
+    return publicUrl.data.publicUrl; // Updated to access the nested publicUrl property
   } catch (error) {
     logError(`Failed to upload image ${filePath}:`, error);
     return undefined;
@@ -142,13 +148,11 @@ async function uploadImageToSupabase(
 
 // Main handler
 serve(async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Validate environment variables
     if (
       !PERPLEXITY_API_KEY ||
       !OPENAI_API_KEY ||
@@ -161,17 +165,14 @@ serve(async (req: Request): Promise<Response> => {
       throw new Error("Supabase URL or service key missing.");
     }
 
-    // Parse request body
     const { searchText } = await req.json();
     if (!searchText) throw new Error("No search query provided");
 
     logInfo(`Searching for dupes for: ${searchText}`);
 
-    // Fetch data from Perplexity
     const data = await getPerplexityResponse(searchText);
     const { original, dupes, summary, resources } = data;
 
-    // Check if the product already exists by name and brand
     const { data: existingProduct, error: existingError } = await supabase
       .from("products")
       .select("id, slug")
@@ -180,7 +181,6 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (existingError && existingError.code !== "PGRST116") {
-      // PGRST116 means no rows found, which is fine
       throw existingError;
     }
 
@@ -195,12 +195,10 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate unique slug including brand name
     const slug = slugify(`${original.name}-by-${original.brand}`, {
       lower: true,
     });
 
-    // Handle original product image
     const originalImageUrl = await fetchProductImage(
       original.name,
       original.brand
@@ -209,7 +207,6 @@ serve(async (req: Request): Promise<Response> => {
       ? await uploadImageToSupabase(originalImageUrl, `${slug}-original`)
       : undefined;
 
-    // Handle dupe images
     for (let i = 0; i < dupes.length; i++) {
       const dupeImageUrl = await fetchProductImage(dupes[i].name, dupes[i].brand);
       dupes[i].imageUrl = dupeImageUrl
@@ -217,7 +214,6 @@ serve(async (req: Request): Promise<Response> => {
         : undefined;
     }
 
-    // Insert original product into database
     logInfo(`Inserting product into database: ${original.name} by ${original.brand}`);
     const { data: productData, error: productError } = await supabase
       .from("products")
@@ -236,7 +232,6 @@ serve(async (req: Request): Promise<Response> => {
     if (productError) throw productError;
     logInfo(`Product inserted successfully with ID: ${productData.id}`);
 
-    // Insert dupes into database
     logInfo(`Inserting dupes into database for product ID: ${productData.id}`);
     const { error: dupesError } = await supabase.from("dupes").insert(
       dupes.map((dupe) => ({
@@ -259,7 +254,6 @@ serve(async (req: Request): Promise<Response> => {
     if (dupesError) throw dupesError;
     logInfo(`Dupes inserted successfully for product ID: ${productData.id}`);
 
-    // Insert resources into database
     logInfo(`Inserting resources into database for product ID: ${productData.id}`);
     const { error: resourcesError } = await supabase.from("resources").insert(
       resources.map((resource) => ({
@@ -272,7 +266,6 @@ serve(async (req: Request): Promise<Response> => {
     if (resourcesError) throw resourcesError;
     logInfo(`Resources inserted successfully for product ID: ${productData.id}`);
 
-    // Return success response
     return new Response(
       JSON.stringify({ success: true, data: { id: productData.id, slug } }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
