@@ -17,6 +17,8 @@ const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
 const GOOGLE_CSE_ID = Deno.env.get("GOOGLE_CSE_ID");
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+// Optional Hugging Face API key for better background removal
+const HF_API_KEY = Deno.env.get("HF_API_KEY");
 
 // **Check for Required Environment Variables**
 if (!PERPLEXITY_API_KEY || !OPENAI_API_KEY || !GOOGLE_API_KEY || !GOOGLE_CSE_ID || !supabaseUrl || !supabaseServiceKey) {
@@ -128,23 +130,120 @@ async function fetchProductImage(productName: string, brand: string): Promise<st
   }
 }
 
+/** Remove background from image using Hugging Face API or fallback to free API */
+async function removeImageBackground(imageBlob: Blob): Promise<Blob> {
+  logInfo("Processing image to remove background");
+  
+  // Try with Hugging Face first if API key is available
+  if (HF_API_KEY) {
+    try {
+      logInfo("Using Hugging Face for background removal");
+      const arrayBuffer = await imageBlob.arrayBuffer();
+      const imageBuffer = new Uint8Array(arrayBuffer);
+      
+      // Call Hugging Face API with the RMBG-1.4 model
+      const response = await fetch(
+        "https://api-inference.huggingface.co/models/briaai/RMBG-1.4",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${HF_API_KEY}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: imageBuffer,
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Hugging Face API error: ${response.status}`);
+      }
+      
+      const processedImageBlob = await response.blob();
+      logInfo("Background removed successfully with Hugging Face");
+      return processedImageBlob;
+    } catch (error) {
+      logError("Failed to remove background with Hugging Face:", error);
+      // Fall through to try alternative method
+    }
+  }
+  
+  // Fallback to free API service
+  try {
+    logInfo("Using free API service for background removal");
+    
+    // Convert blob to base64
+    const arrayBuffer = await imageBlob.arrayBuffer();
+    const buffer = new Uint8Array(arrayBuffer);
+    const base64Image = btoa(String.fromCharCode(...buffer));
+    
+    // Using a free API service
+    const response = await fetch("https://api.easyimg.io/v1/remove-background", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        image_base64: base64Image,
+        output_type: "cutout", // transparent background
+        crop: false,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Background removal API error: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success || !result.image_base64) {
+      throw new Error("API returned success: false or no image data");
+    }
+    
+    // Convert base64 back to blob
+    const binaryString = atob(result.image_base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    const processedImageBlob = new Blob([bytes.buffer], { type: "image/png" });
+    logInfo("Background removed successfully with free API");
+    return processedImageBlob;
+  } catch (error) {
+    logError("Failed to remove background with free API:", error);
+    
+    // Return original image if all background removal attempts fail
+    logInfo("Returning original image without background removal");
+    return imageBlob;
+  }
+}
+
 /** Uploads an image to Supabase storage and returns the public URL */
 async function uploadImageToSupabase(imageUrl: string, fileName: string): Promise<string | undefined> {
-  logInfo(`Uploading image to Supabase: ${fileName}`);
+  logInfo(`Downloading and processing image for: ${fileName}`);
   try {
     const response = await fetch(imageUrl);
     if (!response.ok) throw new Error(`Failed to download image: ${response.status}`);
     const imageBlob = await response.blob();
-
+    
+    // Remove background from image
+    const processedImageBlob = await removeImageBackground(imageBlob);
+    
+    // Determine content type based on whether background was successfully removed
+    // If background was removed, we'll have a PNG with transparency
+    const contentType = processedImageBlob !== imageBlob ? "image/png" : "image/jpeg";
+    const fileExtension = contentType === "image/png" ? "png" : "jpg";
+    
+    logInfo(`Uploading processed image to Supabase: ${fileName}.${fileExtension}`);
     const { error } = await supabase.storage
       .from("productimages")
-      .upload(`${fileName}.jpg`, imageBlob, { contentType: "image/jpeg" });
+      .upload(`${fileName}.${fileExtension}`, processedImageBlob, { contentType });
 
     if (error) throw error;
 
     const { data, error: urlError } = supabase.storage
       .from("productimages")
-      .getPublicUrl(`${fileName}.jpg`);
+      .getPublicUrl(`${fileName}.${fileExtension}`);
 
     if (urlError) throw urlError;
     logInfo(`Image uploaded successfully: ${data.publicUrl}`);
