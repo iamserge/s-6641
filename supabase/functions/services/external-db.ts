@@ -8,7 +8,7 @@ const UPCITEMDB_API_BASE_URL = "https://api.upcitemdb.com/prod/v1";
 const UPCDB_API_KEY = Deno.env.get("UPCDB_API_KEY") || "23bc948d2588e5ea98fb4e0c5b47e6b9";
 
 // Throttle settings
-const REQUEST_INTERVAL_MS = 7000; // 1050 ms between requests
+const REQUEST_INTERVAL_MS = 10500; // 1050 ms between requests
 let lastRequestTime = 0;
 
 /**
