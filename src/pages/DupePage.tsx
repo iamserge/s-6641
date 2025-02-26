@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from 'lucide-react';
 import { motion } from "framer-motion";
-import { Product, Dupe } from "@/types/dupe";
+import { Product } from "@/types/dupe";
 import { HeroProduct } from "@/components/dupe/HeroProduct";
 import { DupeCard } from "@/components/dupe/DupeCard";
 import Navbar from '@/components/Navbar';
@@ -32,7 +32,7 @@ const DupePage = () => {
             brand_info:brands(*)
           `)
           .eq('slug', slug)
-          .maybeSingle();
+          .single();
 
         if (productError) throw productError;
         if (!product) throw new Error('Product not found');
@@ -43,10 +43,7 @@ const DupePage = () => {
           .select(`
             match_score,
             savings_percentage,
-            dupe:products!product_dupes_dupe_product_id_fkey(
-              *,
-              brand_info:brands(*)
-            )
+            dupe:products!product_dupes_dupe_product_id_fkey(*)
           `)
           .eq('original_product_id', product.id);
 
@@ -69,15 +66,17 @@ const DupePage = () => {
                 match_score: relation.match_score,
                 savings_percentage: relation.savings_percentage,
                 ingredients: []
-              } as Dupe;
+              };
             }
+
+            const ingredients = ingredientsData.map(item => item.ingredients);
 
             return {
               ...relation.dupe,
               match_score: relation.match_score,
               savings_percentage: relation.savings_percentage,
-              ingredients: ingredientsData.map(item => item.ingredients)
-            } as Dupe;
+              ingredients
+            };
           })
         );
 
