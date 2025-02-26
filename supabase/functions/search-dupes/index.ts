@@ -1,13 +1,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { searchAndProcessDupes } from "./handlers.ts";
+import { searchAndProcessDupes } from "../services/external-db.ts";
 import { logInfo, logError } from "../shared/utils.ts";
+import { supabase } from "../shared/db-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Credentials': 'true',
 };
 
 serve(async (req) => {
@@ -27,7 +27,7 @@ serve(async (req) => {
 
     if (!searchText) {
       return new Response(
-        JSON.stringify({ success: false, error: "Search text is required" }),
+        JSON.stringify({ error: "Search text is required" }),
         { 
           status: 400, 
           headers: { 
@@ -38,52 +38,77 @@ serve(async (req) => {
       );
     }
 
-    logInfo(`Processing search request for: ${searchText}`);
-
-    // Set up the SSE stream
+    // Set up SSE response
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
-        const onProgress = (message: string) => {
-          const event = `data: ${JSON.stringify({ type: "progress", message })}\n\n`;
-          controller.enqueue(encoder.encode(event));
-        };
-
         try {
-          const result = await searchAndProcessDupes(searchText, onProgress);
-          const finalEvent = `data: ${JSON.stringify({ type: "result", data: result })}\n\n`;
-          controller.enqueue(encoder.encode(finalEvent));
+          // Send progress updates
+          const sendProgress = (message: string) => {
+            const progressEvent = JSON.stringify({ type: "progress", message });
+            controller.enqueue(encoder.encode(`data: ${progressEvent}\n\n`));
+          };
+
+          sendProgress("🔍 Starting search process...");
+
+          // Search for dupes
+          const result = await searchAndProcessDupes(searchText);
+
+          // If data needs to be processed in background
+          if (result.success && result.data) {
+            // Use EdgeRuntime.waitUntil for background task
+            EdgeRuntime.waitUntil((async () => {
+              try {
+                const { error } = await supabase.functions.invoke('populate-data', {
+                  body: { productData: result.data }
+                });
+                
+                if (error) {
+                  logError('Background task error:', error);
+                } else {
+                  logInfo('Background task completed successfully');
+                }
+              } catch (error) {
+                logError('Error in background task:', error);
+              }
+            })());
+          }
+
+          // Send final result
+          const finalEvent = JSON.stringify({ type: "result", data: result });
+          controller.enqueue(encoder.encode(`data: ${finalEvent}\n\n`));
         } catch (error) {
-          const errorEvent = `data: ${JSON.stringify({ type: "error", error: error.message })}\n\n`;
-          controller.enqueue(encoder.encode(errorEvent));
+          const errorEvent = JSON.stringify({ 
+            type: "error", 
+            error: error instanceof Error ? error.message : "An unknown error occurred" 
+          });
+          controller.enqueue(encoder.encode(`data: ${errorEvent}\n\n`));
         } finally {
           controller.close();
         }
-      },
+      }
     });
 
-    return new Response(stream, { 
+    return new Response(stream, {
       headers: {
         ...corsHeaders,
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
       }
     });
   } catch (error) {
-    logError("Error processing search request:", error);
+    logError('Error in request handler:', error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: "Failed to process search request",
-        details: error.message,
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : "An unknown error occurred" 
       }),
       { 
-        status: 500, 
-        headers: { 
+        status: 500,
+        headers: {
           ...corsHeaders,
-          "Content-Type": "application/json" 
-        } 
+          "Content-Type": "application/json"
+        }
       }
     );
   }
