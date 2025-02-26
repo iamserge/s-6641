@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { handleDupeSearch } from "./handlers";
+import { handleDupeSearch } from "./handlers.ts";
 import { corsHeaders } from "../shared/constants";
 import { logInfo } from "../shared/utils";
 
