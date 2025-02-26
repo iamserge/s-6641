@@ -152,12 +152,12 @@ export async function processProductImage(imageUrl: string): Promise<string | nu
     let processedImage: string | null = null;
     
     // Step 1: Upscale image if GetImg API key is available
-    if (GETIMG_API_KEY) {
-      processedImage = await upscaleImage(imageUrl);
-    }
+    // if (GETIMG_API_KEY) {
+    //   processedImage = await upscaleImage(imageUrl);
+    // }
     
     // If upscaling failed or was skipped, fetch the original image
-    if (!processedImage) {
+    //if (!processedImage) {
       logInfo(`Using original image without upscaling: ${imageUrl}`);
       const imageResponse = await fetch(imageUrl);
       if (!imageResponse.ok) {
@@ -165,7 +165,7 @@ export async function processProductImage(imageUrl: string): Promise<string | nu
       }
       const imageBlob = await imageResponse.blob();
       processedImage = await blobToBase64(imageBlob);
-    }
+    //}
     
     // // Step 2: Remove background if Hugging Face API key is available
     // if (HF_API_KEY && processedImage) {
