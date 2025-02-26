@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -32,10 +33,9 @@ const Hero = () => {
       setIsProcessing(true);
       setProgressMessage("Connecting to the beauty lab... 🔬");
   
-      // Connect to the Supabase function endpoint
-      const supabaseUrl = "https://your-supabase-project.supabase.co"; // Replace with your Supabase project URL
+      // Use the correct Supabase URL from the client configuration
       const eventSource = new EventSource(
-        `${supabaseUrl}/functions/v1/search-dupes?searchText=${encodeURIComponent(searchText)}`
+        `${supabase.supabaseUrl}/functions/v1/search-dupes?searchText=${encodeURIComponent(searchText)}`
       );
   
       eventSource.onmessage = (event) => {
