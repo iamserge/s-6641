@@ -86,12 +86,14 @@ const DupePage = () => {
           })
         );
 
-        setData({
+        // Create the final product data object that matches the Product type
+        const productData: Product = {
           ...product,
-          brand_info: product.brand_info,
           ingredients: product.product_ingredients?.map(item => item.ingredients) || [],
           dupes
-        });
+        };
+
+        setData(productData);
       } catch (error) {
         console.error('Error fetching dupe data:', error);
         setError('Failed to load product data');
