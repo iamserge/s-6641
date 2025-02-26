@@ -23,11 +23,16 @@ export async function uploadProcessedImageToSupabase(base64Image: string, fileNa
     if (error) throw error;
 
     // Get public URL
-    const { data, error: urlError } = getPublicUrl("productimages", `${fileName}.png`);
-    if (urlError) throw urlError;
+    const result = getPublicUrl("productimages", `${fileName}.png`);
     
-    logInfo(`Image uploaded successfully: ${data.publicUrl}`);
-    return data.publicUrl;
+    // Add proper null/undefined check
+    if (!result || !result.data) {
+      logError(`getPublicUrl returned invalid data for ${fileName}`);
+      return undefined;
+    }
+    
+    logInfo(`Image uploaded successfully: ${result.data.publicUrl}`);
+    return result.data.publicUrl;
   } catch (error) {
     logError(`Failed to upload image ${fileName}:`, error);
     return undefined;

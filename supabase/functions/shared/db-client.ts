@@ -225,10 +225,12 @@ export async function uploadImage(bucket: string, path: string, file: Blob, cont
     .upload(path, file, { contentType });
 }
 
-export async function getPublicUrl(bucket: string, path: string) {
-  return supabase.storage
-    .from(bucket)
-    .getPublicUrl(path);
+export function getPublicUrl(bucket: string, path: string) {
+  // In newer Supabase JS client versions, this might return a different structure
+  const result = supabase.storage.from(bucket).getPublicUrl(path);
+  // Add some debugging to see the actual structure
+  console.log("getPublicUrl result:", JSON.stringify(result));
+  return result;
 }
 
 /**
