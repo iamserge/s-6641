@@ -29,6 +29,12 @@ Find makeup dupes for "${searchText}".
 Prioritize verified dupes from credible beauty sources (Temptalia's dupe list, Dupeshop, beauty blogs, and Reddit discussions), but if no obvious dupes are found, search the broader internet for relevant alternatives.
 Always make an effort to return at least one dupe, even if it's not a perfect match.
 Assign a match score based on how closely the dupe matches the original in terms of color, texture, finish, and other relevant attributes.
+
+
+Each dupe should be from a different brand and not the original product.
+Be precise with product names and include the exact shade/color if relevant.
+
+
 Return ONLY a JSON object with this exact structure:
 {
   "originalName": "full product name",
@@ -40,9 +46,6 @@ Return ONLY a JSON object with this exact structure:
     // include up to 5 dupes, ordered by match score (highest first)
   ]
 }
-
-Each dupe should be from a different brand and not the original product.
-Be precise with product names and include the exact shade/color if relevant.
 `;
 /**
  * System prompt for detailed dupe analysis
