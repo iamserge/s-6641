@@ -38,45 +38,57 @@ export interface DupeResponse {
     name: string;
     brand: string;
     price: number;
-    category: ProductCategory; // Added product category
+    category: ProductCategory; 
     attributes: string[];
     keyIngredients?: string[];
+    texture?: string;           // Added to match dupe schema
+    finish?: string;            // Added to match dupe schema
+    coverage?: string;          // Added to match dupe schema
+    spf?: number;               // Added to match dupe schema
+    skinTypes?: string[];       // Added to match dupe schema
     images?: string[];
     imageUrl?: string;
     countryOfOrigin?: string;
-    freeOf?: string[];
-    longevityRating?: number; // 1-10 scale
-    oxidationTendency?: string; // "None", "Minor", "Significant"
+    longevityRating?: number;
+    oxidationTendency?: string;
     bestFor?: string[];
+    freeOf?: string[];
+    crueltyFree?: boolean;      // Added to match dupe schema
+    vegan?: boolean;            // Added to match dupe schema
+    notes?: string;             // Added to match dupe schema
   };
   dupes: Array<{
     name: string;
     brand: string;
     price: number;
-    category?: ProductCategory; // Added product category (optional as may be same as original)
-    savingsPercentage: number;
+    category?: ProductCategory;
+    attributes?: string[];      // Added to match original schema
     keyIngredients: string[];
     texture: string;
     finish: string;
     coverage?: string;
     spf?: number;
     skinTypes: string[];
-    matchScore: number; // Overall match score (0-100)
-    colorMatchScore?: number; // Color match (0-100)
-    formulaMatchScore?: number; // Formula match (0-100)
-    dupeType?: string; // "Shade Match", "Formula Match", "Exact Dupe", etc.
-    validationSource?: string; // Where validated, e.g., "Temptalia", "Reddit"
-    confidenceLevel?: string; // "High", "Medium", or "Low"
-    longevityComparison?: string;
-    notes: string;
-    purchaseLink?: string;
+    longevityRating?: number;   // Added to match original schema
     images?: string[];
     imageUrl?: string;
-    bestFor?: string[]; // Best conditions/skin types
+    bestFor?: string[];
     countryOfOrigin?: string;
+    freeOf?: string[];
     crueltyFree?: boolean;
     vegan?: boolean;
-    freeOf?: string[]; // Claims about excluded ingredients
+    notes: string;
+    
+    // Dupe-specific comparison fields
+    savingsPercentage: number;
+    matchScore: number;
+    colorMatchScore?: number;
+    formulaMatchScore?: number;
+    dupeType?: string;
+    validationSource?: string;
+    confidenceLevel?: string;
+    longevityComparison?: string;
+    purchaseLink?: string;
   }>;
   summary: string;
   resources: Array<{
@@ -85,7 +97,6 @@ export interface DupeResponse {
     type: "Video" | "YouTube" | "Instagram" | "TikTok" | "Article" | "Reddit";
   }>;
 }
-
 // Brand Info from OpenAI
 export interface BrandInfo {
   description: string;

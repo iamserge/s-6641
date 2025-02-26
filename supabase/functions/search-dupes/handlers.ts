@@ -130,25 +130,33 @@ export async function storeDataInDatabase(data: DupeResponse) {
 
     // 3. Store original product with processed image
     const { data: originalProduct, error: productError } = await supabase
-      .from('products')
-      .insert({
-        name: data.original.name,
-        brand: data.original.brand,
-        // Brand ID will be populated in background
-        slug: productSlug,
-        price: data.original.price,
-        category: data.original.category,
-        attributes: data.original.attributes || [],
-        image_url: processedOriginalImageUrl, // Use processed image URL
-        summary: data.summary,
-        country_of_origin: data.original.countryOfOrigin,
-        longevity_rating: data.original.longevityRating,
-        oxidation_tendency: data.original.oxidationTendency,
-        free_of: data.original.freeOf || [],
-        best_for: data.original.bestFor || []
-      })
-      .select()
-      .single();
+    .from('products')
+    .insert({
+      name: data.original.name,
+      brand: data.original.brand,
+      // Brand ID will be populated in background
+      slug: productSlug,
+      price: data.original.price,
+      category: data.original.category,
+      attributes: data.original.attributes || [],
+      image_url: processedOriginalImageUrl, // Use processed image URL
+      summary: data.summary,
+      texture: data.original.texture,
+      finish: data.original.finish,
+      coverage: data.original.coverage,
+      spf: data.original.spf,
+      skin_types: data.original.skinTypes,
+      country_of_origin: data.original.countryOfOrigin,
+      longevity_rating: data.original.longevityRating,
+      oxidation_tendency: data.original.oxidationTendency,
+      free_of: data.original.freeOf || [],
+      best_for: data.original.bestFor || [],
+      cruelty_free: data.original.crueltyFree,
+      vegan: data.original.vegan,
+      notes: data.original.notes
+    })
+    .select()
+    .single();
 
     if (productError) {
       logError('Error storing original product:', productError);
@@ -165,28 +173,32 @@ export async function storeDataInDatabase(data: DupeResponse) {
         const processedDupeImageUrl = await processAndUploadImage(dupeImageUrl, `${productSlug}-dupe-${index + 1}`);
 
         const { data: dupeProduct, error: dupeError } = await supabase
-          .from('products')
-          .insert({
-            name: dupe.name,
-            brand: dupe.brand,
-            // Brand ID will be populated in background
-            slug: dupeSlug,
-            price: dupe.price,
-            category: dupe.category || data.original.category,
-            texture: dupe.texture,
-            finish: dupe.finish,
-            coverage: dupe.coverage,
-            spf: dupe.spf,
-            skin_types: dupe.skinTypes,
-            notes: dupe.notes,
-            purchase_link: dupe.purchaseLink,
-            image_url: processedDupeImageUrl, // Use processed image URL
-            cruelty_free: dupe.crueltyFree,
-            vegan: dupe.vegan,
-            best_for: dupe.bestFor || []
-          })
-          .select()
-          .single();
+        .from('products')
+        .insert({
+          name: dupe.name,
+          brand: dupe.brand,
+          // Brand ID will be populated in background
+          slug: dupeSlug,
+          price: dupe.price,
+          category: dupe.category || data.original.category,
+          attributes: dupe.attributes || [],
+          image_url: processedDupeImageUrl, // Use processed image URL
+          texture: dupe.texture,
+          finish: dupe.finish,
+          coverage: dupe.coverage,
+          spf: dupe.spf,
+          skin_types: dupe.skinTypes,
+          country_of_origin: dupe.countryOfOrigin,
+          longevity_rating: dupe.longevityRating,
+          free_of: dupe.freeOf || [],
+          best_for: dupe.bestFor || [],
+          cruelty_free: dupe.crueltyFree,
+          vegan: dupe.vegan,
+          notes: dupe.notes,
+          purchase_link: dupe.purchaseLink
+        })
+        .select()
+        .single();
 
         if (dupeError) {
           logError(`Error storing dupe ${dupe.name}:`, dupeError);

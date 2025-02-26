@@ -50,42 +50,54 @@ export const SCHEMA_DEFINITION = `{
     "brand": string,                 // Brand name only
     "price": number,                 // Current retail price in USD
     "category": string,              // Product category (Foundation, Lipstick, Eyeshadow, etc.)
-    "attributes": string[],          // Array of key characteristics (e.g., "matte finish", "full coverage")
     "keyIngredients": string[],      // Array of main ingredients, especially actives
-    "imageUrl": string,   // URL to high-quality product image
-    "countryOfOrigin": string, // Manufacturing country (useful for regulatory standards)
-    "freeOf": string[] ,   // Claims about excluded ingredients
-    "longevityRating": number , // 1-10 scale
-    "oxidationTendency": string , // "None", "Minor", or "Significant"
-    "bestFor": string[]  // Skin types or conditions product works well with
+    "imageUrl": string,              // URL to high-quality product image
+    "texture": string,               // Texture description (e.g., "creamy", "lightweight")
+    "finish": string,                // Finish type (e.g., "matte", "dewy", "satin")
+    "coverage": string,              // Coverage level if applicable
+    "spf": number,                   // SPF rating if present
+    "skinTypes": string[],           // Array of compatible skin types
+    "attributes": string[],          // Array of key characteristics
+    "countryOfOrigin": string,       // Manufacturing country
+    "longevityRating": number,       // 1-10 scale
+    "oxidationTendency": string,     // "None", "Minor", or "Significant"
+    "bestFor": string[],             // Skin types or conditions product works well with
+    "freeOf": string[],              // Claims about excluded ingredients
+    "crueltyFree": boolean,          // Cruelty-free status
+    "vegan": boolean,                // Vegan status
+    "notes": string                  // Additional product information
   },
   "dupes": [{
     "name": string,                  // Full product name including shade
     "brand": string,                 // Brand name only
     "price": number,                 // Current retail price in USD
-    "category": string ,   // Product category (can differ from original)
-    "savingsPercentage": number,     // Calculated savings vs original
+    "category": string,              // Product category (can differ from original)
     "keyIngredients": string[],      // Main ingredients
+    "imageUrl": string,              // URL to high-quality product image
     "texture": string,               // Texture description (e.g., "creamy", "lightweight")
     "finish": string,                // Finish type (e.g., "matte", "dewy", "satin")
-    "coverage": string ,   // Coverage level if applicable
-    "spf": number ,        // SPF rating if present
+    "coverage": string,              // Coverage level if applicable
+    "spf": number,                   // SPF rating if present
     "skinTypes": string[],           // Array of compatible skin types
-    "matchScore": number,            // Overall similarity score (0-100)
-    "colorMatchScore": number , // Color similarity (0-100)
-    "formulaMatchScore": number , // Formula similarity (0-100)
-    "dupeType": string ,   // Categorization of the dupe
-    "validationSource": string , // Where this dupe was validated
-    "confidenceLevel": string , // "High", "Medium", or "Low"
-    "longevityComparison": string , // How it compares to original
+    "attributes": string[],          // Array of key characteristics
+    "countryOfOrigin": string,       // Manufacturing country
+    "longevityRating": number,       // 1-10 scale
+    "bestFor": string[],             // Best conditions/skin types
+    "freeOf": string[],              // Claims about excluded ingredients
+    "crueltyFree": boolean,          // Cruelty-free status
+    "vegan": boolean,                // Vegan status
     "notes": string,                 // Additional observations, differences
-    "purchaseLink": string , // Where to buy the dupe
-    "imageUrl": string ,   // URL to high-quality product image
-    "bestFor": string[] ,  // Best conditions/skin types
-    "countryOfOrigin": string , // Manufacturing country
-    "crueltyFree": boolean , // Cruelty-free status
-    "vegan": boolean ,     // Vegan status
-    "freeOf": string[]     // Claims about excluded ingredients
+    
+    // Dupe-specific comparison fields
+    "savingsPercentage": number,     // Calculated savings vs original
+    "matchScore": number,            // Overall similarity score (0-100)
+    "colorMatchScore": number,       // Color similarity (0-100)
+    "formulaMatchScore": number,     // Formula similarity (0-100)
+    "dupeType": string,              // Categorization of the dupe
+    "validationSource": string,      // Where this dupe was validated
+    "confidenceLevel": string,       // "High", "Medium", or "Low"
+    "longevityComparison": string,   // How it compares to original
+    "purchaseLink": string           // Where to buy the dupe
   }],
   "summary": string,                 // Concise overview comparing original and dupes
   "resources": [{
@@ -93,4 +105,4 @@ export const SCHEMA_DEFINITION = `{
     "url": string,                   // Link to resource
     "type": "Video" | "YouTube" | "Instagram" | "TikTok" | "Article" | "Reddit" // Resource type
   }]
-}`;
+}`
