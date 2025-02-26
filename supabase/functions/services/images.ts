@@ -1,157 +1,31 @@
 /// <reference lib="es2015" />
 
-import { logInfo, logError, blobToBase64, base64ToBlob } from "../shared/utils.ts";
+import { logInfo, logError, base64ToBlob } from "../shared/utils.ts";
 import { uploadImage, getPublicUrl } from "../shared/db-client.ts";
-import { 
-  GOOGLE_API_KEY, 
-  GOOGLE_CSE_ID, 
-  HF_API_KEY, 
-  HF_API_ENDPOINT, 
-  BACKGROUND_REMOVAL_API 
-} from "../shared/constants.ts";
+import { processProductImage } from "./image-enhancement.ts";
+import { getProductImageUrl } from "./product-search.ts";
 
 /**
- * Fetches a product image using Google Custom Search API
+ * Uploads a processed image (base64) to Supabase storage and returns the public URL
  */
-export async function fetchProductImage(productName: string, brand: string): Promise<string | null> {
-  const query = `"${productName}" "${brand}" product image -model -face -person -woman -man`;
-  logInfo(`Fetching image for product: ${productName} by ${brand}, ${query}`);
-  const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}&searchType=image&q=${encodeURIComponent(query)}`;
-
+export async function uploadProcessedImageToSupabase(base64Image: string, fileName: string): Promise<string | undefined> {
+  logInfo(`Uploading processed image to Supabase: ${fileName}`);
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      // Get detailed error information
-      let errorDetails = `${response.status} ${response.statusText}`;
-      try {
-        const errorBody = await response.text();
-        errorDetails += ` - ${errorBody}`;
-      } catch (e) {
-        // Ignore errors when trying to read the error body
-      }
-      throw new Error(`Google API error: ${errorDetails}`);
-    }
-    const data = await response.json();
-    const imageUrl = data.items?.[0]?.link || null;
-    logInfo(`Image URL found: ${imageUrl ? "Yes" : "No"}`);
-    return imageUrl;
-  } catch (error) {
-    logError(`Failed to fetch image for ${productName} by ${brand}:`, error);
-    return null;
-  }
-}
-
-/**
- * Remove background from image using Hugging Face Inference API
- */
-export async function removeImageBackground(imageBlob: Blob): Promise<Blob> {
-  logInfo("Processing image to remove background");
-  
-  // Only try with Hugging Face if API key is available
-  if (HF_API_KEY) {
-    try {
-      logInfo("Using Hugging Face for background removal");
-      
-      // Convert blob to array buffer
-      const arrayBuffer = await imageBlob.arrayBuffer();
-      const buffer = new Uint8Array(arrayBuffer);
-      
-      // Since the HfInference client doesn't support trust_remote_code parameter directly,
-      // we'll use a direct API call to the Inference API
-      const response = await fetch(HF_API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${HF_API_KEY}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: buffer,
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Hugging Face API error: ${response.status} - ${await response.text()}`);
-      }
-      
-      const processedImageBlob = await response.blob();
-      logInfo("Background removed successfully with Hugging Face");
-      return processedImageBlob;
-    } catch (error) {
-      logError("Failed to remove background with Hugging Face:", error);
-      // Fall through to try alternative method
-    }
-  }
-  
-  // Fallback to free API service
-  try {
-    logInfo("Using free API service for background removal");
+    // Convert base64 to blob
+    const imageBlob = base64ToBlob(base64Image, "image/png");
     
-    // Convert blob to base64
-    const base64Image = await blobToBase64(imageBlob);
-    
-    // Using a free API service
-    const response = await fetch(BACKGROUND_REMOVAL_API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        image_base64: base64Image,
-        output_type: "cutout", // transparent background
-        crop: false,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Background removal API error: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    
-    if (!result.success || !result.image_base64) {
-      throw new Error("API returned success: false or no image data");
-    }
-    
-    // Convert base64 back to blob
-    const processedImageBlob = base64ToBlob(result.image_base64);
-    logInfo("Background removed successfully with free API");
-    return processedImageBlob;
-  } catch (error) {
-    logError("Failed to remove background with free API:", error);
-    
-    // Return original image if all background removal attempts fail
-    logInfo("Returning original image without background removal");
-    return imageBlob;
-  }
-}
-
-/**
- * Uploads an image to Supabase storage and returns the public URL
- */
-export async function uploadImageToSupabase(imageUrl: string, fileName: string): Promise<string | undefined> {
-  logInfo(`Downloading and processing image for: ${fileName}`);
-  try {
-    const response = await fetch(imageUrl);
-    if (!response.ok) throw new Error(`Failed to download image: ${response.status}`);
-    const imageBlob = await response.blob();
-    
-    // Remove background from image
-    const processedImageBlob = await removeImageBackground(imageBlob);
-    
-    // Determine content type based on whether background was successfully removed
-    // If background was removed, we'll have a PNG with transparency
-    const contentType = processedImageBlob !== imageBlob ? "image/png" : "image/jpeg";
-    const fileExtension = contentType === "image/png" ? "png" : "jpg";
-    
-    logInfo(`Uploading processed image to Supabase: ${fileName}.${fileExtension}`);
+    // Upload to Supabase
     const { error } = await uploadImage(
       "productimages", 
-      `${fileName}.${fileExtension}`, 
-      processedImageBlob, 
-      contentType
+      `${fileName}.png`, 
+      imageBlob, 
+      "image/png"
     );
 
     if (error) throw error;
 
-    const { data, error: urlError } = getPublicUrl("productimages", `${fileName}.${fileExtension}`);
+    // Get public URL
+    const { data, error: urlError } = getPublicUrl("productimages", `${fileName}.png`);
     if (urlError) throw urlError;
     
     logInfo(`Image uploaded successfully: ${data.publicUrl}`);
@@ -163,7 +37,14 @@ export async function uploadImageToSupabase(imageUrl: string, fileName: string):
 }
 
 /**
- * Downloads and processes multiple product images in parallel
+ * Downloads and processes product images for original product and dupes
+ * Handles product search, image enhancement, background removal, and storage
+ * 
+ * @param productName Product name
+ * @param brand Brand name
+ * @param slug Unique product slug for file naming
+ * @param dupes Array of dupe products
+ * @returns Object with image URLs
  */
 export async function processProductImages(
   productName: string, 
@@ -180,59 +61,93 @@ export async function processProductImages(
     dupeImageUrls: {} as Record<number, string | undefined>
   };
   
+  logInfo(`Starting image processing for ${productName} by ${brand}`);
+  const startTime = Date.now();
+  
   try {
-    // Fetch original product image
-    const originalImageUrl = await fetchProductImage(productName, brand);
+    // Step 1: Find the original product image
+    const originalImageUrl = await getProductImageUrl(productName, brand);
     
     if (originalImageUrl) {
       try {
-        result.originalImageUrl = await uploadImageToSupabase(originalImageUrl, `${slug}-original`);
-      } catch (uploadError) {
-        logError(`Error processing original image for ${productName}:`, uploadError);
-        // Continue with the flow even if image processing fails
+        // Step 2: Process the image (upscale and remove background)
+        const processedImageBase64 = await processProductImage(originalImageUrl);
+        
+        if (processedImageBase64) {
+          // Step 3: Upload processed image to Supabase
+          result.originalImageUrl = await uploadProcessedImageToSupabase(
+            processedImageBase64, 
+            `${slug}-original`
+          );
+          
+          logInfo(`Original product image processed and uploaded successfully: ${result.originalImageUrl}`);
+        } else {
+          // If processing fails, use the original URL
+          logInfo(`Image processing failed for ${productName}, using original URL`);
+          result.originalImageUrl = originalImageUrl;
+        }
+      } catch (processError) {
+        logError(`Error processing original image:`, processError);
+        // Use original unprocessed image on error
+        result.originalImageUrl = originalImageUrl;
       }
+    } else {
+      logInfo(`No image found for original product ${productName}`);
     }
   } catch (error) {
-    logError(`Error fetching original image for ${productName}:`, error);
-    // Continue with dupes processing even if original image fails
+    logError(`Error getting original product image:`, error);
   }
   
-  // Process dupe images with better error handling
-  const dupePromises = dupes.map(async (dupe, index) => {
+  // Process dupe images in sequence to avoid rate limits
+  for (let i = 0; i < dupes.length; i++) {
     try {
-      const dupeImageUrl = await fetchProductImage(dupe.name, dupe.brand);
+      const dupe = dupes[i];
+      logInfo(`Processing image for dupe #${i + 1}: ${dupe.name} by ${dupe.brand}`);
+      
+      // Step 1: Find the dupe product image
+      const dupeImageUrl = await getProductImageUrl(dupe.name, dupe.brand);
       
       if (dupeImageUrl) {
         try {
-          const processedUrl = await uploadImageToSupabase(dupeImageUrl, `${slug}-dupe-${index + 1}`);
-          return { index, url: processedUrl };
-        } catch (uploadError) {
-          logError(`Error processing dupe image for ${dupe.name}:`, uploadError);
-          return { index, url: undefined };
+          // Step 2: Process dupe image
+          const processedImageBase64 = await processProductImage(dupeImageUrl);
+          
+          if (processedImageBase64) {
+            // Step 3: Upload processed image to Supabase
+            result.dupeImageUrls[i] = await uploadProcessedImageToSupabase(
+              processedImageBase64, 
+              `${slug}-dupe-${i + 1}`
+            );
+            
+            logInfo(`Dupe image for ${dupe.name} processed and uploaded successfully`);
+          } else {
+            // If processing fails, use the original URL
+            result.dupeImageUrls[i] = dupeImageUrl;
+            logInfo(`Image processing failed for dupe ${dupe.name}, using original URL: ${dupeImageUrl}`);
+          }
+        } catch (processError) {
+          logError(`Error processing dupe image for ${dupe.name}:`, processError);
+          // Use original unprocessed image on error
+          result.dupeImageUrls[i] = dupeImageUrl;
         }
+      } else {
+        logInfo(`No image found for dupe ${dupe.name}`);
+        result.dupeImageUrls[i] = undefined;
       }
-      
-      return { index, url: undefined };
     } catch (error) {
-      logError(`Error fetching dupe image for ${dupe.name}:`, error);
-      return { index, url: undefined };
+      logError(`Error getting dupe image for index ${i}:`, error);
+      result.dupeImageUrls[i] = undefined;
     }
-  });
-  
-  // Wait for all promises to settle (not just resolve)
-  const dupeResults = await Promise.allSettled(dupePromises);
-  
-  // Process results, including both fulfilled and rejected promises
-  dupeResults.forEach((dupeResult, index) => {
-    if (dupeResult.status === 'fulfilled') {
-      const { index: dupeIndex, url } = dupeResult.value;
-      result.dupeImageUrls[dupeIndex] = url;
-    } else {
-      // For rejected promises, log the error and set the URL to undefined
-      logError(`Promise rejected for dupe image at index ${index}:`, dupeResult.reason);
-      result.dupeImageUrls[index] = undefined;
+    
+    // Add a small delay between processing dupe images to avoid rate limits
+    if (i < dupes.length - 1) {
+      logInfo(`Adding delay before processing next dupe image`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
-  });
+  }
+  
+  const endTime = Date.now();
+  logInfo(`Image processing completed in ${endTime - startTime}ms`);
   
   return result;
 }

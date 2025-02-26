@@ -1,50 +1,250 @@
+import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
+import { supabase } from "../shared/db-client.ts";
+import { logInfo, logError } from "../shared/utils.ts";
+import {  getInitialDupes, getDetailedDupeAnalysis } from "../services/perplexity.ts";
+import { processBrand } from "../services/brands.ts";
+import { processProductIngredients, processDupeIngredients } from "../services/ingredients.ts";
+import { processProductImages } from "../services/images.ts";
+import { cleanupAndStructureData } from "../services/openai.ts";
+import { DupeResponse } from "../shared/types.ts";
+import { fetchProductDataFromExternalDb } from "../services/external-db.ts";
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { Database } from '../shared/types.ts';
-
-// Initialize Supabase client
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const supabase = createClient<Database>(supabaseUrl, supabaseKey);
-
-export async function processSearchRequest(searchText: string, getimgApiKey: string) {
-  console.log('Processing search request for:', searchText);
-  
+/**
+ * Main handler for searching and processing dupes
+ */
+export async function searchAndProcessDupes(searchText: string) {
   try {
-    // Search for products matching the search text
-    const { data: products, error: searchError } = await supabase
+    // Step 1: Check if we already have this product in our database
+    const { data: existingProducts, error: searchError } = await supabase
       .from('products')
-      .select('*')
-      .ilike('name', `%${searchText}%`)
+      .select('id, name, brand, slug')
+      .or(`name.ilike.%${searchText}%,brand.ilike.%${searchText}%`)
       .limit(1);
 
     if (searchError) {
-      console.error('Error searching products:', searchError);
+      logError('Error searching existing products:', searchError);
       throw searchError;
     }
 
-    if (!products || products.length === 0) {
-      console.log('No products found for search text:', searchText);
+    // If we found an existing product, return its data
+    if (existingProducts && existingProducts.length > 0) {
+      logInfo(`Found existing product: ${existingProducts[0].name}`);
       return {
-        success: false,
-        message: 'No products found matching your search'
+        success: true,
+        data: {
+          name: existingProducts[0].name,
+          brand: existingProducts[0].brand,
+          slug: existingProducts[0].slug
+        }
       };
     }
 
-    const product = products[0];
-    console.log('Found product:', product.name);
-
+    // Step 2: Initial product search with Perplexity - just get names and brands
+    logInfo('No existing product found. Getting initial dupes from Perplexity...');
+    const initialDupes = await getInitialDupes(searchText);
+    
+    if (!initialDupes.originalName || !initialDupes.originalBrand) {
+      throw new Error('Could not identify original product from search text');
+    }
+    
+    // Step 3: Enrich product data from external databases (UPC Item DB)
+    logInfo('Enriching product data from UPC Item DB...');
+    const originalProductData = await fetchProductDataFromExternalDb(
+      initialDupes.originalName, 
+      initialDupes.originalBrand
+    );
+    
+    const enrichedDupes = await Promise.all(
+      initialDupes.dupes.map(async (dupe) => {
+        const dupeData = await fetchProductDataFromExternalDb(dupe.name, dupe.brand);
+        return { 
+          name: dupe.name, 
+          brand: dupe.brand, 
+          ...dupeData 
+        };
+      })
+    );
+    
+    // Step 4: Detailed dupe analysis with a second Perplexity request
+    logInfo('Getting detailed dupe analysis with enriched data...');
+    const enrichedOriginal = { 
+      name: initialDupes.originalName, 
+      brand: initialDupes.originalBrand,
+      ...originalProductData 
+    };
+    
+    const detailedAnalysis = await getDetailedDupeAnalysis(
+      enrichedOriginal, 
+      enrichedDupes
+    );
+    
+    // Step 5: Data cleanup and structuring with OpenAI
+    logInfo('Cleaning up and structuring data...');
+    const structuredData = await cleanupAndStructureData(detailedAnalysis);
+    
+    // Step 6: Store in database
+    logInfo('Storing data in database...');
+    const result = await storeDataInDatabase(structuredData);
+    
     return {
       success: true,
-      data: {
-        name: product.name,
-        brand: product.brand,
-        slug: product.slug,
-        category: product.category
-      }
+      data: result
     };
   } catch (error) {
-    console.error('Error in processSearchRequest:', error);
+    logError('Error in searchAndProcessDupes:', error);
+    throw error;
+  }
+}
+
+/**
+ * Store structured data in the database
+ */
+async function storeDataInDatabase(data: DupeResponse) {
+  try {
+    // 1. Process and store brand information
+    const originalBrand = await processBrand(data.original.brand);
+    
+    // 2. Create slug for the original product
+    const productSlug = slugify(`${data.original.brand}-${data.original.name}`, { lower: true });
+    
+    // 3. Store original product
+    const { data: originalProduct, error: productError } = await supabase
+      .from('products')
+      .insert({
+        name: data.original.name,
+        brand: data.original.brand,
+        brand_id: originalBrand,
+        slug: productSlug,
+        price: data.original.price,
+        category: data.original.category,
+        attributes: data.original.attributes || [],
+        image_url: data.original.imageUrl,
+        summary: data.summary,
+        country_of_origin: data.original.countryOfOrigin,
+        longevity_rating: data.original.longevityRating,
+        oxidation_tendency: data.original.oxidationTendency,
+        free_of: data.original.freeOf || [],
+        best_for: data.original.bestFor || []
+      })
+      .select()
+      .single();
+      
+    if (productError) {
+      logError('Error storing original product:', productError);
+      throw productError;
+    }
+    
+    // 4. Process product ingredients
+    if (data.original.keyIngredients && data.original.keyIngredients.length > 0) {
+      await processProductIngredients(
+        originalProduct.id, 
+        data.original.keyIngredients
+      );
+    }
+    
+    // 5. Process and store dupes
+    const dupeIds = await Promise.all(
+      data.dupes.map(async (dupe, index) => {
+        // Process dupe brand
+        const dupeBrandId = await processBrand(dupe.brand);
+        
+        // Create dupe slug
+        const dupeSlug = slugify(`${dupe.brand}-${dupe.name}`, { lower: true });
+        
+        // Store dupe product
+        const { data: dupeProduct, error: dupeError } = await supabase
+          .from('products')
+          .insert({
+            name: dupe.name,
+            brand: dupe.brand,
+            brand_id: dupeBrandId,
+            slug: dupeSlug,
+            price: dupe.price,
+            category: dupe.category || data.original.category,
+            texture: dupe.texture,
+            finish: dupe.finish,
+            coverage: dupe.coverage,
+            spf: dupe.spf,
+            skin_types: dupe.skinTypes,
+            notes: dupe.notes,
+            purchase_link: dupe.purchaseLink,
+            image_url: dupe.imageUrl,
+            cruelty_free: dupe.crueltyFree,
+            vegan: dupe.vegan,
+            best_for: dupe.bestFor || []
+          })
+          .select()
+          .single();
+          
+        if (dupeError) {
+          logError(`Error storing dupe ${dupe.name}:`, dupeError);
+          throw dupeError;
+        }
+        
+        // Create product_dupes relationship
+        const { error: relationError } = await supabase
+          .from('product_dupes')
+          .insert({
+            original_product_id: originalProduct.id,
+            dupe_product_id: dupeProduct.id,
+            match_score: dupe.matchScore,
+            savings_percentage: dupe.savingsPercentage
+          });
+          
+        if (relationError) {
+          logError(`Error creating dupe relationship for ${dupe.name}:`, relationError);
+          throw relationError;
+        }
+        
+        // Process dupe ingredients
+        if (dupe.keyIngredients && dupe.keyIngredients.length > 0) {
+          await processDupeIngredients(dupeProduct.id, dupe.keyIngredients);
+        }
+        
+        return dupeProduct.id;
+      })
+    );
+    
+    // 6. Store resources
+    if (data.resources && data.resources.length > 0) {
+      const resourcesData = data.resources.map(resource => ({
+        title: resource.title,
+        url: resource.url,
+        type: resource.type,
+        product_id: originalProduct.id
+      }));
+      
+      const { error: resourcesError } = await supabase
+        .from('resources')
+        .insert(resourcesData);
+        
+      if (resourcesError) {
+        logError('Error storing resources:', resourcesError);
+        // Non-critical error, continue without throwing
+      }
+    }
+    
+    // 7. Process images for original product and dupes
+    try {
+      await processProductImages(
+        data.original.name,
+        data.original.brand,
+        productSlug,
+        data.dupes
+      );
+    } catch (imageError) {
+      logError('Error processing images:', imageError);
+      // Non-critical error, continue without throwing
+    }
+    
+    // Return data for the frontend
+    return {
+      slug: productSlug,
+      name: originalProduct.name,
+      brand: originalProduct.brand
+    };
+  } catch (error) {
+    logError('Error in storeDataInDatabase:', error);
     throw error;
   }
 }

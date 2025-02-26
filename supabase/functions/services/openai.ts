@@ -1,8 +1,8 @@
 /// <reference lib="es2015" />
 
 import { logInfo, logError } from "../shared/utils.ts";
-import { OPENAI_API_KEY, OPENAI_API_ENDPOINT } from "../shared/constants.ts";
 import { BrandInfo, IngredientInfo, DupeResponse } from "../shared/types.ts";
+import { OPENAI_API_KEY, OPENAI_API_ENDPOINT, SCHEMA_DEFINITION } from "../shared/constants.ts";
 
 /**
  * Generic function to get structured data from OpenAI
@@ -37,7 +37,7 @@ async function getStructuredData<T>(
         console.error(errorMessage);
         throw new Error(errorMessage);
       } catch (parseError) {
-        // Fallback if response isn’t valid JSON
+        // Fallback if response isn't valid JSON
         const rawBody = await response.text();
         const errorMessage = `OpenAI API error: ${response.status} - ${rawBody}`;
         console.error(errorMessage);
@@ -231,5 +231,43 @@ export async function repairPerplexityResponse(perplexityContent: string, schema
   } catch (error) {
     logError("Failed to repair Perplexity response with OpenAI:", error);
     throw new Error("Could not repair the JSON response from Perplexity");
+  }
+}
+
+/**
+ * Cleans up and structures the dupe analysis data
+ */
+export async function cleanupAndStructureData(dupeAnalysis: any): Promise<DupeResponse> {
+  logInfo("Cleaning up and structuring dupe analysis data");
+  
+  const prompt = `
+  Please clean up and structure the following dupe analysis data to ensure it conforms to our schema:
+  
+  ${JSON.stringify(dupeAnalysis, null, 2)}
+  
+  The data should follow this schema:
+  
+  ${SCHEMA_DEFINITION}
+  
+  Ensure:
+  1. All required fields are present
+  2. Data types match what's expected in the schema
+  3. Calculations like savings_percentage and match_score are accurate
+  4. Any missing information is set to null or empty arrays
+  5. All URLs are properly formatted
+  `;
+  
+  try {
+    return await getStructuredData<DupeResponse>(
+      prompt,
+      "You are a data structure expert. Clean and format the provided data according to the specified schema.",
+      // We don't need to specify the schema here as it's included in the prompt
+      {}
+    );
+  } catch (error) {
+    logError("Failed to clean up and structure dupe analysis:", error);
+    
+    // If OpenAI fails, return the original data as is
+    return dupeAnalysis;
   }
 }

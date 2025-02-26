@@ -101,20 +101,26 @@ export interface IngredientInfo {
 
 // Database Entity Types
 export interface Brand {
-  id: string;
+  id?: string;
   name: string;
   slug: string;
   description: string;
+  founded_year?: number;
+  headquarters?: string;
+  website_url?: string;
   price_range: string;
   cruelty_free: boolean | null;
   vegan: boolean | null;
-  country_of_origin?: string;
+  clean_beauty?: boolean;
   sustainable_packaging?: boolean;
+  key_values?: string[];
   parent_company?: string;
+  product_categories?: string[];
+  country_of_origin?: string;
 }
 
 export interface Ingredient {
-  id: string;
+  id?: string;
   name: string;
   slug: string;
   description: string;
@@ -130,63 +136,195 @@ export interface Ingredient {
 }
 
 export interface Product {
-  id: string;
-  brand: string;
-  brand_id: string;
+  id?: string;
   name: string;
+  brand: string;
+  brand_id?: string;
   slug: string;
-  category?: ProductCategory; // Added product category
+  ean?: string;
+  upc?: string;
+  gtin?: string;
+  asin?: string;
+  model?: string;
+  category?: ProductCategory;
   price: number;
   attributes: string[];
+  description?: string;
   image_url?: string;
-  summary: string;
+  images?: string[];
+  summary?: string;
   country_of_origin?: string;
   longevity_rating?: number;
   oxidation_tendency?: string;
   free_of?: string[];
   best_for?: string[];
-}
-
-export interface Dupe {
-  id: string;
-  product_id: string;
-  brand_id: string;
-  name: string;
-  category?: ProductCategory; // Added product category
-  price: number;
-  savings_percentage: number;
-  texture: string;
-  finish: string;
+  texture?: string;
+  finish?: string;
   coverage?: string;
   spf?: number;
-  skin_types: string[];
-  match_score: number;
+  skin_types?: string[];
   color_match_score?: number;
   formula_match_score?: number;
   dupe_type?: string;
   validation_source?: string;
   confidence_level?: string;
   longevity_comparison?: string;
-  verified?: boolean;
   notes?: string;
   purchase_link?: string;
-  image_url?: string;
-  best_for?: string[];
   cruelty_free?: boolean;
   vegan?: boolean;
-  country_of_origin?: string;
-  free_of?: string[]; // Added field for excluded ingredients claims
+  lowest_recorded_price?: number;
+  highest_recorded_price?: number;
+}
+
+export interface ProductDupe {
+  id?: string;
+  original_product_id: string;
+  dupe_product_id: string;
+  match_score: number;
+  savings_percentage: number;
+  verified?: boolean;
+}
+
+export interface ProductIngredient {
+  id?: string;
+  product_id: string;
+  ingredient_id: string;
+  is_key_ingredient: boolean;
+}
+
+export interface Merchant {
+  id?: string;
+  name: string;
+  domain?: string;
+  logo_url?: string;
+}
+
+export interface Offer {
+  id?: string;
+  merchant_id: string;
+  title?: string;
+  currency?: string;
+  list_price?: number;
+  price: number;
+  shipping?: string;
+  condition?: string;
+  availability?: string;
+  link: string;
+  updated_t?: number;
+}
+
+export interface ProductOffer {
+  id?: string;
+  product_id: string;
+  offer_id: string;
+  is_best_price?: boolean;
 }
 
 export interface Resource {
   id?: string;
+  title: string;
+  url: string;
+  type: "Video" | "YouTube" | "Instagram" | "TikTok" | "Article" | "Reddit";
   product_id?: string;
   brand_id?: string;
   ingredient_id?: string;
-  title: string;
-  url: string;
-  type: string;
 }
+
+// Database structure type for Supabase JS client
+export type Database = {
+  public: {
+    Tables: {
+      brands: {
+        Row: Brand & { 
+          id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Brand;
+        Update: Partial<Brand>;
+      };
+      ingredients: {
+        Row: Ingredient & {
+          id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Ingredient;
+        Update: Partial<Ingredient>;
+      };
+      products: {
+        Row: Product & {
+          id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Product;
+        Update: Partial<Product>;
+      };
+      product_dupes: {
+        Row: ProductDupe & {
+          id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: ProductDupe;
+        Update: Partial<ProductDupe>;
+      };
+      product_ingredients: {
+        Row: ProductIngredient & {
+          id: string;
+          created_at: string;
+        };
+        Insert: ProductIngredient;
+        Update: Partial<ProductIngredient>;
+      };
+      merchants: {
+        Row: Merchant & {
+          id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Merchant;
+        Update: Partial<Merchant>;
+      };
+      offers: {
+        Row: Offer & {
+          id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Offer;
+        Update: Partial<Offer>;
+      };
+      product_offers: {
+        Row: ProductOffer & {
+          id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: ProductOffer;
+        Update: Partial<ProductOffer>;
+      };
+      resources: {
+        Row: Resource & {
+          id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Resource;
+        Update: Partial<Resource>;
+      };
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: {
+      product_category: ProductCategory;
+      resource_type: "Video" | "YouTube" | "Instagram" | "TikTok" | "Article" | "Reddit";
+    };
+    CompositeTypes: Record<string, never>;
+  };
+};
 
 // API Response Types
 export interface ApiResponse<T> {

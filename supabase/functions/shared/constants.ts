@@ -14,11 +14,19 @@ export const GOOGLE_CSE_ID = Deno.env.get("GOOGLE_CSE_ID");
 export const HF_API_KEY = Deno.env.get("HF_API_KEY");
 export const supabaseUrl = Deno.env.get("SUPABASE_URL");
 export const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+export const UPC_ITEMDB_API_KEY = Deno.env.get("UPC_ITEMDB_API_KEY");
 
 // Check required environment variables
-if (!PERPLEXITY_API_KEY || !OPENAI_API_KEY || !GOOGLE_API_KEY || !GOOGLE_CSE_ID || !supabaseUrl || !supabaseServiceKey) {
+if (!PERPLEXITY_API_KEY || !OPENAI_API_KEY || !supabaseUrl || !supabaseServiceKey) {
   throw new Error("Missing required environment variables. Please check your configuration.");
 }
+
+// API Endpoints
+export const PERPLEXITY_API_ENDPOINT = "https://api.perplexity.ai/chat/completions";
+export const OPENAI_API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
+export const UPC_ITEMDB_API_ENDPOINT = "https://api.upcitemdb.com/prod/trial/lookup";
+export const HF_API_ENDPOINT = "https://api-inference.huggingface.co/models/briaai/RMBG-1.4";
+export const BACKGROUND_REMOVAL_API = "https://api.easyimg.io/v1/remove-background";
 
 // Schema Definition for API Responses
 export const SCHEMA_DEFINITION = `{
@@ -71,9 +79,3 @@ export const SCHEMA_DEFINITION = `{
     "type": "Video" | "YouTube" | "Instagram" | "TikTok" | "Article" | "Reddit" // Resource type
   }]
 }`;
-
-// API Endpoints
-export const PERPLEXITY_API_ENDPOINT = "https://api.perplexity.ai/chat/completions";
-export const OPENAI_API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
-export const HF_API_ENDPOINT = "https://api-inference.huggingface.co/models/briaai/RMBG-1.4";
-export const BACKGROUND_REMOVAL_API = "https://api.easyimg.io/v1/remove-background";
