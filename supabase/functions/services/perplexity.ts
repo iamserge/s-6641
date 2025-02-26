@@ -19,6 +19,18 @@ As a beauty expert, you are resourceful in finding makeup dupes and always make 
 Focus on finding verified dupes mentioned by credible sources like Temptalia, Dupeshop, r/MakeupAddiction, and respected beauty blogs, but also search the whole internet if necessary.
 Use sources with side-by-side comparisons, ingredient analysis, and performance testing as well as social media.
 Return ONLY a JSON object in the exact format requested - no explanations or other text.
+
+
+{
+  "originalName": "full product name",
+  "originalBrand": "brand name", 
+  "originalCategory": "product category",
+  "dupes": [
+    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100 },
+    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100 }
+    // include up to 5 dupes, ordered by match score (highest first)
+  ]
+}
 `;
 
 /**
@@ -35,17 +47,7 @@ Each dupe should be from a different brand and not the original product.
 Be precise with product names and include the exact shade/color if relevant.
 
 
-Return ONLY a JSON object with this exact structure:
-{
-  "originalName": "full product name",
-  "originalBrand": "brand name", 
-  "originalCategory": "product category",
-  "dupes": [
-    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100 },
-    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100 }
-    // include up to 5 dupes, ordered by match score (highest first)
-  ]
-}
+
 `;
 /**
  * System prompt for detailed dupe analysis
@@ -205,7 +207,7 @@ export async function getInitialDupes(searchText: string): Promise<{
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "sonar-reasoning-pro",
+        model: "sonar-pro",
         messages: [
           {
             role: "system",
