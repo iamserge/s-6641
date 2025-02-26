@@ -81,10 +81,10 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
     const data = await response.json();
     
     if (data.items && data.items.length > 0) {
-      const item = findClosestMatch(data.items, brand, productName);
+      const item = data.items[0]
       
       if (item) {
-        logInfo(`Found external data for: ${brand} ${productName}`);
+        logInfo(`Found external data for: ${brand} ${productName} ${item.images}`);
         return {
           name: item.title,
           upc: item.upc,
