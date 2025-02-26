@@ -11,7 +11,7 @@ export const corsHeaders = {
   export const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
   export const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
   export const GOOGLE_CSE_ID = Deno.env.get("GOOGLE_CSE_ID");
-  export const HF_API_KEY = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
+  export const HF_API_KEY = Deno.env.get("HF_API_KEY");
   export const supabaseUrl = Deno.env.get("SUPABASE_URL");
   export const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   
