@@ -2,25 +2,35 @@
 
 // Common type definitions used across the application
 
-// Product Category Type
-export type ProductCategory = 
-  | 'Foundation' 
-  | 'Concealer' 
-  | 'Powder' 
-  | 'Blush' 
-  | 'Bronzer' 
-  | 'Highlighter' 
-  | 'Eyeshadow' 
-  | 'Eyeliner' 
-  | 'Mascara' 
-  | 'Lipstick' 
-  | 'Lip Gloss'
-  | 'Lip Liner'
-  | 'Setting Spray'
-  | 'Primer'
-  | 'Skincare'
-  | 'Haircare'
-  | 'Other';
+export const PRODUCT_CATEGORIES = [
+  'Foundation',
+  'Concealer',
+  'Powder',
+  'Blush',
+  'Bronzer',
+  'Contour',
+  'Highlighter',
+  'Eyeshadow',
+  'Eyeliner',
+  'Mascara',
+  'Eyebrow Products',
+  'Lipstick',
+  'Lip Gloss',
+  'Lip Liner',
+  'Lip Balm',
+  'Lip Stain',
+  'Setting Spray',
+  'Primer',
+  'Eye Primer',
+  'Makeup Remover',
+  'Skincare',
+  'Haircare',
+  'Tools',
+  'Other'
+] as const;
+
+// Define the type based on the array
+export type ProductCategory = typeof PRODUCT_CATEGORIES[number];
 
 // Perplexity API Response Types with enhanced fields from report
 export interface DupeResponse {

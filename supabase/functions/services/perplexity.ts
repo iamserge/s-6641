@@ -1,7 +1,7 @@
 /// <reference lib="es2015" />
 
 import { logInfo, logError, safeStringify, cleanMarkdownCodeBlock } from "../shared/utils.ts";
-import { DupeResponse } from "../shared/types.ts";
+import { DupeResponse, PRODUCT_CATEGORIES  } from "../shared/types.ts";
 import { 
   PERPLEXITY_API_KEY, 
   PERPLEXITY_API_ENDPOINT,
@@ -75,7 +75,7 @@ ${SCHEMA_DEFINITION}
 
 For each product (original and dupes), analyze and include all of these fields:
 1. Full product name and brand
-2. Exact product category
+2. Exact product category (must be one of the following: ${PRODUCT_CATEGORIES.map(cat => `'${cat}'`).join(', ')})
 3. Price in USD
 4. Key ingredients (list the top 5-10 active/functional ingredients)
 5. Complete attributes list (texture, finish, coverage, etc.)
