@@ -1,10 +1,11 @@
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
 import { supabase } from "../shared/db-client.ts";
 import { logInfo, logError } from "../shared/utils.ts";
-import {  getInitialDupes, getDetailedDupeAnalysis } from "../services/perplexity.ts";
+import { getInitialDupes, getDetailedDupeAnalysis } from "../services/perplexity.ts";
 import { processBrand } from "../services/brands.ts";
 import { processProductIngredients, processDupeIngredients } from "../services/ingredients.ts";
-import { processProductImages } from "../services/images.ts";
+import { processProductImage } from "./image-enhancement.ts";
+import { uploadProcessedImageToSupabase } from "./images.ts";
 import { cleanupAndStructureData } from "../services/openai.ts";
 import { DupeResponse } from "../shared/types.ts";
 import { fetchProductDataFromExternalDb } from "../services/external-db.ts";
@@ -96,6 +97,21 @@ export async function searchAndProcessDupes(searchText: string) {
   }
 }
 
+// Helper function to process and upload an image
+async function processAndUploadImage(imageUrl: string | undefined, fileName: string): Promise<string | undefined> {
+  if (!imageUrl) return undefined;
+  try {
+    const processedImageBase64 = await processProductImage(imageUrl);
+    if (processedImageBase64) {
+      return await uploadProcessedImageToSupabase(processedImageBase64, fileName);
+    }
+    return imageUrl; // Return original URL if processing fails
+  } catch (error) {
+    logError(`Error processing image for ${fileName}:`, error);
+    return imageUrl; // Return original URL on error
+  }
+}
+
 /**
  * Store structured data in the database
  */
@@ -103,11 +119,27 @@ async function storeDataInDatabase(data: DupeResponse) {
   try {
     // 1. Process and store brand information
     const originalBrand = await processBrand(data.original.brand);
-    
+
     // 2. Create slug for the original product
     const productSlug = slugify(`${data.original.brand}-${data.original.name}`, { lower: true });
-    
-    // 3. Store original product
+
+    // 3. Process original product image (use first image from external DB)
+    const originalImageUrl = await processAndUploadImage(
+      data.original.imageUrl, // Already fetched from external DB
+      `${productSlug}-original`
+    );
+
+    // 4. Process dupe images concurrently (use first image from external DB)
+    const dupeImageUrls = await Promise.all(
+      data.dupes.map((dupe, index) =>
+        processAndUploadImage(
+          dupe.imageUrl, // Already fetched from external DB
+          `${productSlug}-dupe-${index + 1}`
+        )
+      )
+    );
+
+    // 5. Store original product with processed image URL
     const { data: originalProduct, error: productError } = await supabase
       .from('products')
       .insert({
@@ -118,7 +150,7 @@ async function storeDataInDatabase(data: DupeResponse) {
         price: data.original.price,
         category: data.original.category,
         attributes: data.original.attributes || [],
-        image_url: data.original.imageUrl,
+        image_url: originalImageUrl, // Use processed image URL or fallback to original
         summary: data.summary,
         country_of_origin: data.original.countryOfOrigin,
         longevity_rating: data.original.longevityRating,
@@ -128,30 +160,27 @@ async function storeDataInDatabase(data: DupeResponse) {
       })
       .select()
       .single();
-      
+
     if (productError) {
       logError('Error storing original product:', productError);
       throw productError;
     }
-    
-    // 4. Process product ingredients
+
+    // 6. Process product ingredients
     if (data.original.keyIngredients && data.original.keyIngredients.length > 0) {
-      await processProductIngredients(
-        originalProduct.id, 
-        data.original.keyIngredients
-      );
+      await processProductIngredients(originalProduct.id, data.original.keyIngredients);
     }
-    
-    // 5. Process and store dupes
+
+    // 7. Process and store dupes with processed image URLs
     const dupeIds = await Promise.all(
       data.dupes.map(async (dupe, index) => {
         // Process dupe brand
         const dupeBrandId = await processBrand(dupe.brand);
-        
+
         // Create dupe slug
         const dupeSlug = slugify(`${dupe.brand}-${dupe.name}`, { lower: true });
-        
-        // Store dupe product
+
+        // Store dupe product with processed image URL
         const { data: dupeProduct, error: dupeError } = await supabase
           .from('products')
           .insert({
@@ -168,19 +197,19 @@ async function storeDataInDatabase(data: DupeResponse) {
             skin_types: dupe.skinTypes,
             notes: dupe.notes,
             purchase_link: dupe.purchaseLink,
-            image_url: dupe.imageUrl,
+            image_url: dupeImageUrls[index], // Use processed image URL or fallback to original
             cruelty_free: dupe.crueltyFree,
             vegan: dupe.vegan,
             best_for: dupe.bestFor || []
           })
           .select()
           .single();
-          
+
         if (dupeError) {
           logError(`Error storing dupe ${dupe.name}:`, dupeError);
           throw dupeError;
         }
-        
+
         // Create product_dupes relationship
         const { error: relationError } = await supabase
           .from('product_dupes')
@@ -190,22 +219,22 @@ async function storeDataInDatabase(data: DupeResponse) {
             match_score: dupe.matchScore,
             savings_percentage: dupe.savingsPercentage
           });
-          
+
         if (relationError) {
           logError(`Error creating dupe relationship for ${dupe.name}:`, relationError);
           throw relationError;
         }
-        
+
         // Process dupe ingredients
         if (dupe.keyIngredients && dupe.keyIngredients.length > 0) {
           await processDupeIngredients(dupeProduct.id, dupe.keyIngredients);
         }
-        
+
         return dupeProduct.id;
       })
     );
-    
-    // 6. Store resources
+
+    // 8. Store resources
     if (data.resources && data.resources.length > 0) {
       const resourcesData = data.resources.map(resource => ({
         title: resource.title,
@@ -213,30 +242,17 @@ async function storeDataInDatabase(data: DupeResponse) {
         type: resource.type,
         product_id: originalProduct.id
       }));
-      
+
       const { error: resourcesError } = await supabase
         .from('resources')
         .insert(resourcesData);
-        
+
       if (resourcesError) {
         logError('Error storing resources:', resourcesError);
         // Non-critical error, continue without throwing
       }
     }
-    
-    // 7. Process images for original product and dupes
-    try {
-      await processProductImages(
-        data.original.name,
-        data.original.brand,
-        productSlug,
-        data.dupes
-      );
-    } catch (imageError) {
-      logError('Error processing images:', imageError);
-      // Non-critical error, continue without throwing
-    }
-    
+
     // Return data for the frontend
     return {
       slug: productSlug,
