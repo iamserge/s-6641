@@ -24,10 +24,9 @@ Return ONLY a JSON object in the exact format requested - no explanations or oth
   "originalName": "full product name",
   "originalBrand": "brand name", 
   "originalCategory": "product category",
-  "originalUpc": "product upc",
   "dupes": [
-    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100, "upc": "products upc number" },
-    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100, "upc": "products upc number" }
+    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100},
+    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100}
   ]
 }
 `;
@@ -191,8 +190,7 @@ export async function getInitialDupes(searchText: string): Promise<{
   originalName: string;
   originalBrand: string;
   originalCategory: string;
-  originalUpc: string;
-  dupes: Array<{ name: string; brand: string; matchScore: number; upc: string }>;
+  dupes: Array<{ name: string; brand: string; matchScore: number;}>;
 }> {
   logInfo(`Sending initial dupes request to Perplexity for: ${searchText}`);
 

@@ -6,7 +6,7 @@ import { processProductImage } from "../services/image-enhancement.ts";
 import { uploadProcessedImageToSupabase } from "../services/images.ts"
 import { cleanupAndStructureData } from "../services/openai.ts";
 import { DupeResponse } from "../shared/types.ts";
-import { fetchProductDataByUpc, fetchProductDataFromExternalDb } from "../services/external-db.ts";
+import { fetchProductDataFromExternalDb } from "../services/external-db.ts";
 
 /**
  * Main handler for searching and processing dupes
@@ -52,19 +52,14 @@ export async function searchAndProcessDupes(searchText: string, onProgress: (mes
     logInfo('Enriching product data from UPC Item DB...');
 
     // Prioritize UPC lookup if available, otherwise use keyword search
-    const originalProductData = initialDupes.originalUpc
-      ? await fetchProductDataByUpc(initialDupes.originalUpc)
-      : await fetchProductDataFromExternalDb(initialDupes.originalName, initialDupes.originalBrand);
+    const originalProductData = await fetchProductDataFromExternalDb(initialDupes.originalName, initialDupes.originalBrand);
 
     const enrichedDupes = await Promise.all(
       initialDupes.dupes.map(async (dupe) => {
-        const dupeData = dupe.upc
-          ? await fetchProductDataByUpc(dupe.upc)
-          : await fetchProductDataFromExternalDb(dupe.name, dupe.brand);
+        const dupeData = await fetchProductDataFromExternalDb(dupe.name, dupe.brand);
         return {
           name: dupe.name,
           brand: dupe.brand,
-          upc: dupe.upc,
           ...dupeData
         };
       })

@@ -5,7 +5,26 @@ import { logInfo, logError } from "../shared/utils.ts";
 // UPCitemdb API base URL
 const UPCITEMDB_API_BASE_URL = "https://api.upcitemdb.com/prod/v1";
 // API key from environment variables
-const UPCDB_API_KEY = Deno.env.get("UPCDB_API_KEY") || "23bc948d2588e5ea98fb4e0c5b47e6b9"; 
+const UPCDB_API_KEY = Deno.env.get("UPCDB_API_KEY") || "23bc948d2588e5ea98fb4e0c5b47e6b9";
+
+// Throttle settings
+const REQUEST_INTERVAL_MS = 1050; // 1050 ms between requests
+let lastRequestTime = 0;
+
+/**
+ * Throttles API requests to ensure they don't exceed the rate limit
+ */
+async function throttleRequest(): Promise<void> {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  if (timeSinceLastRequest < REQUEST_INTERVAL_MS) {
+    const delay = REQUEST_INTERVAL_MS - timeSinceLastRequest;
+    logInfo(`Throttling request: waiting ${delay}ms to avoid rate limit`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+  lastRequestTime = Date.now();
+}
+
 /**
  * Fetches product data from external databases by keyword search
  * This function attempts to retrieve verified product data from UPC databases using /v1/search
@@ -14,6 +33,9 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
   logInfo(`Fetching data from external DB for: ${brand} ${productName}`);
   
   try {
+    // Throttle the request
+    await throttleRequest();
+
     const response = await fetch(
       `${UPCITEMDB_API_BASE_URL}/search?s=${encodeURIComponent(brand + " " + productName)}&match_mode=0&type=product`,
       {
@@ -79,6 +101,9 @@ export async function fetchProductDataByUpc(upc: string): Promise<any> {
   }
 
   try {
+    // Throttle the request
+    await throttleRequest();
+
     const response = await fetch(
       `${UPCITEMDB_API_BASE_URL}/lookup?upc=${encodeURIComponent(upc)}`,
       {
