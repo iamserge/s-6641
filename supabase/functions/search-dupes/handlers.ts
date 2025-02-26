@@ -84,13 +84,9 @@ export async function searchAndProcessDupes(searchText: string, onProgress: (mes
       enrichedDupesForContext
     );
 
-    onProgress("Just a sec, adding the final touches... ✨");
-    logInfo('Cleaning up and structuring data...');
-    const structuredData = await cleanupAndStructureData(detailedAnalysis);
-
     onProgress("Ta-da! Your dupes are ready to shine! 🌟");
     logInfo('Storing data in database...');
-    const result = await storeDataInDatabase(structuredData);
+    const result = await storeDataInDatabase(detailedAnalysis);
 
     return {
       success: true,
