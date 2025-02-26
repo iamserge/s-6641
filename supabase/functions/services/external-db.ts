@@ -2,19 +2,26 @@
 
 import { logInfo, logError } from "../shared/utils.ts";
 
-// UPCitemdb API base URL (trial mode)
-const UPCITEMDB_API_BASE_URL = "https://api.upcitemdb.com/prod/trial";
-
+// UPCitemdb API base URL
+const UPCITEMDB_API_BASE_URL = "https://api.upcitemdb.com/prod/v1";
+// API key from environment variables
+const UPCDB_API_KEY = Deno.env.get("UPCDB_API_KEY") || "23bc948d2588e5ea98fb4e0c5b47e6b9"; 
 /**
  * Fetches product data from external databases by keyword search
- * This function attempts to retrieve verified product data from UPC databases using /trial/search
+ * This function attempts to retrieve verified product data from UPC databases using /v1/search
  */
 export async function fetchProductDataFromExternalDb(productName: string, brand: string): Promise<any> {
   logInfo(`Fetching data from external DB for: ${brand} ${productName}`);
   
   try {
     const response = await fetch(
-      `${UPCITEMDB_API_BASE_URL}/search?s=${encodeURIComponent(brand + " " + productName)}&match_mode=0&type=product`
+      `${UPCITEMDB_API_BASE_URL}/search?s=${encodeURIComponent(brand + " " + productName)}&match_mode=0&type=product`,
+      {
+        headers: {
+          "user_key": UPCDB_API_KEY,
+          "key_type": "3scale"
+        }
+      }
     );
     
     if (!response.ok) {
@@ -61,14 +68,25 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
 
 /**
  * Fetches product data from external databases by UPC number
- * This function uses the UPCitemdb API /trial/lookup endpoint for precise product matching
+ * This function uses the UPCitemdb API /v1/lookup endpoint for precise product matching
  */
 export async function fetchProductDataByUpc(upc: string): Promise<any> {
   logInfo(`Fetching data by UPC: ${upc}`);
 
+  if (!UPCDB_API_KEY) {
+    logError("UPCDB_API_KEY is not set");
+    throw new Error("Missing UPCitemdb API key");
+  }
+
   try {
     const response = await fetch(
-      `${UPCITEMDB_API_BASE_URL}/lookup?upc=${encodeURIComponent(upc)}`
+      `${UPCITEMDB_API_BASE_URL}/lookup?upc=${encodeURIComponent(upc)}`,
+      {
+        headers: {
+          "user_key": UPCDB_API_KEY,
+          "key_type": "3scale"
+        }
+      }
     );
 
     if (!response.ok) {
@@ -76,13 +94,16 @@ export async function fetchProductDataByUpc(upc: string): Promise<any> {
       let errorMessage = `UPC Item DB API error: ${status}`;
       switch (status) {
         case 400:
-          errorMessage = "Invalid query: missing required parameters";
+          errorMessage = "Invalid query: missing required parameters or invalid UPC";
+          break;
+        case 401:
+          errorMessage = "Authorization failed: invalid API key";
           break;
         case 404:
           errorMessage = "No match found for UPC";
           break;
         case 429:
-          errorMessage = "Exceeded request limit (100/day)";
+          errorMessage = "Exceeded request limit";
           break;
         case 500:
           errorMessage = "Internal server error";
