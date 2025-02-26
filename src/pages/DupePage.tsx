@@ -23,6 +23,7 @@ const DupePage = () => {
       }
 
       try {
+        // Fetch the original product with all fields
         const { data: product, error: productError } = await supabase
           .from('products')
           .select(`
@@ -36,6 +37,7 @@ const DupePage = () => {
         if (productError) throw productError;
         if (!product) throw new Error('Product not found');
 
+        // Fetch dupes with expanded fields, corrected to use 'product_offers'
         const { data: dupeRelations, error: dupesError } = await supabase
           .from('product_dupes')
           .select(`
@@ -43,13 +45,14 @@ const DupePage = () => {
             savings_percentage,
             dupe:products!product_dupes_dupe_product_id_fkey(
               *,
-              offers:offers(*)
+              offers:product_offers(*)  // Updated to 'product_offers'
             )
           `)
           .eq('original_product_id', product.id);
 
         if (dupesError) throw dupesError;
 
+        // Fetch ingredients for each dupe
         const dupes = await Promise.all(
           dupeRelations.map(async (relation) => {
             const { data: ingredientsData, error: ingredientsError } = await supabase
@@ -66,7 +69,7 @@ const DupePage = () => {
               match_score: relation.match_score,
               savings_percentage: relation.savings_percentage,
               ingredients,
-              offers: relation.dupe.offers || []
+              offers: relation.dupe.offers || []  // Now correctly linked to 'product_offers'
             };
           })
         );
