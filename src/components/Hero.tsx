@@ -33,7 +33,7 @@ const Hero = () => {
       setProgressMessage("Connecting to the beauty lab... 🔬");
   
       // Use the Supabase Functions URL construction
-      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/search-dupes?searchText=${encodeURIComponent(searchText)}`;
+      const functionUrl = `/functions/v1/search-dupes?searchText=${encodeURIComponent(searchText)}`;
       const eventSource = new EventSource(functionUrl);
   
       eventSource.onmessage = (event) => {
