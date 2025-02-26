@@ -14,7 +14,6 @@ interface Dupe {
   brand: string;
   price: number;
   savings_percentage: number;
-  key_ingredients: string[];
   texture: string;
   finish: string;
   spf: number | null;
