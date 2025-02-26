@@ -15,6 +15,7 @@ export const HF_API_KEY = Deno.env.get("HF_API_KEY");
 export const supabaseUrl = Deno.env.get("SUPABASE_URL");
 export const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 export const UPC_ITEMDB_API_KEY = Deno.env.get("UPC_ITEMDB_API_KEY");
+export const GETIMG_API_KEY = Deno.env.get("GETIMG_API_KEY");
 
 // Check required environment variables
 if (!PERPLEXITY_API_KEY || !OPENAI_API_KEY || !supabaseUrl || !supabaseServiceKey) {
@@ -27,6 +28,8 @@ export const OPENAI_API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 export const UPC_ITEMDB_API_ENDPOINT = "https://api.upcitemdb.com/prod/trial/lookup";
 export const HF_API_ENDPOINT = "https://api-inference.huggingface.co/models/briaai/RMBG-1.4";
 export const BACKGROUND_REMOVAL_API = "https://api.easyimg.io/v1/remove-background";
+export const GETIMG_BASE_URL = "https://api.getimg.ai/v1/enhancements";
+
 
 // Schema Definition for API Responses
 export const SCHEMA_DEFINITION = `{
