@@ -9,3 +9,7 @@ verify_jwt = false
 
 [functions.find-dupes]
 verify_jwt = false
+
+[functions.search-dupes]
+verify_jwt = false
+

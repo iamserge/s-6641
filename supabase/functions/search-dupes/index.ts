@@ -15,9 +15,11 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   const startTime = Date.now();
+  logInfo("Starting dupe search request...");
   const response = await handleDupeSearch(req);
   const endTime = Date.now();
   logInfo(`Request processed in ${endTime - startTime}ms`);
   
   return response;
 });
+
