@@ -42,7 +42,6 @@ export async function getPerplexityResponse(searchText: string): Promise<DupeRes
      - Match score on a scale of 0-100 (overall similarity)
      - Color match score (0-100)
      - Formula match score (0-100)
-     - Any "free-from" claims (e.g., paraben-free, fragrance-free)
      - Dupe type classification: "Shade Match", "Formula Match", "Exact Dupe", "Cross-Category Dupe" (if different category)
      - Longevity comparison with original
      - Oxidation tendency comparison
