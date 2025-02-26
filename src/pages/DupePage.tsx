@@ -210,7 +210,7 @@ const DupePage = () => {
 
                 <CardContent className="space-y-6">
                   <div className="flex flex-wrap gap-2">
-                    {dupe.key_ingredients.map((ingredient: string, i: number) => (
+                    {dupe.key_ingredients?.map((ingredient: string, i: number) => (
                       <Badge key={i} variant="outline" className="bg-white/50">
                         {ingredient}
                       </Badge>
