@@ -71,12 +71,11 @@ serve(async (req) => {
       }
     });
   } catch (error) {
-    logError("Error processing search request:", error);
+    logError('Error in request handler:', error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: "Failed to process search request",
-        details: error.message,
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "An unknown error occurred" 
       }),
       { 
         status: 500, 
