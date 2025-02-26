@@ -13,78 +13,32 @@ import {
 /**
  * Fetches a product image using Google Custom Search API
  */
-/**
- * Fetches a product image using Google Custom Search API with rate limiting and retry logic
- */
 export async function fetchProductImage(productName: string, brand: string): Promise<string | null> {
   const query = `"${productName}" "${brand}" product image -model -face -person -woman -man`;
   logInfo(`Fetching image for product: ${productName} by ${brand}, ${query}`);
   const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}&searchType=image&q=${encodeURIComponent(query)}`;
 
-  // Define retry parameters
-  const maxRetries = 3;
-  const initialDelay = 1000; // 1 second initial delay
-  let retryCount = 0;
-  
-  while (retryCount <= maxRetries) {
-    try {
-      // If this is a retry, add a delay with exponential backoff
-      if (retryCount > 0) {
-        const delay = initialDelay * Math.pow(2, retryCount - 1);
-        logInfo(`Retry attempt ${retryCount}/${maxRetries} for ${productName} after ${delay}ms delay`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      // Get detailed error information
+      let errorDetails = `${response.status} ${response.statusText}`;
+      try {
+        const errorBody = await response.text();
+        errorDetails += ` - ${errorBody}`;
+      } catch (e) {
+        // Ignore errors when trying to read the error body
       }
-      
-      const response = await fetch(url);
-      
-      // Handle rate limiting specifically
-      if (response.status === 429) {
-        retryCount++;
-        if (retryCount <= maxRetries) {
-          logInfo(`Rate limit hit (429) for ${productName}. Will retry in a moment...`);
-          continue; // Skip to next iteration with delay
-        } else {
-          throw new Error(`Google API rate limit exceeded after ${maxRetries} retries`);
-        }
-      }
-      
-      // Handle other errors
-      if (!response.ok) {
-        // Get detailed error information
-        let errorDetails = `${response.status} ${response.statusText}`;
-        try {
-          const errorBody = await response.text();
-          errorDetails += ` - ${errorBody}`;
-        } catch (e) {
-          // Ignore errors when trying to read the error body
-        }
-        throw new Error(`Google API error: ${errorDetails}`);
-      }
-      
-      const data = await response.json();
-      const imageUrl = data.items?.[0]?.link || null;
-      logInfo(`Image URL found for ${productName}: ${imageUrl ? "Yes" : "No"}`);
-      return imageUrl;
-      
-    } catch (error) {
-      if (error.message.includes('rate limit') && retryCount < maxRetries) {
-        retryCount++;
-        continue;
-      }
-      
-      logError(`Failed to fetch image for ${productName} by ${brand} (attempt ${retryCount + 1}/${maxRetries + 1}):`, error);
-      
-      // If we've exhausted all retries or hit a non-retriable error, give up
-      if (retryCount >= maxRetries) {
-        logInfo(`All retry attempts exhausted for ${productName}. Proceeding without image.`);
-        return null;
-      }
-      
-      retryCount++;
+      throw new Error(`Google API error: ${errorDetails}`);
     }
+    const data = await response.json();
+    const imageUrl = data.items?.[0]?.link || null;
+    logInfo(`Image URL found: ${imageUrl ? "Yes" : "No"}`);
+    return imageUrl;
+  } catch (error) {
+    logError(`Failed to fetch image for ${productName} by ${brand}:`, error);
+    return null;
   }
-  
-  return null; // Fallback return if we somehow exit the loop without returning
 }
 
 /**
