@@ -7,7 +7,7 @@ import {
   PERPLEXITY_API_ENDPOINT,
   SCHEMA_DEFINITION 
 } from "../shared/constants.ts";
-import { repairPerplexityResponse } from "./openai.ts";
+import { cleanupInitialDupes, repairPerplexityResponse } from "./openai.ts";
 
 /**
  * System prompt for initial product and dupe search
@@ -190,7 +190,7 @@ export async function getInitialDupes(searchText: string): Promise<{
   originalName: string;
   originalBrand: string;
   originalCategory: string;
-  dupes: Array<{ name: string; brand: string; matchScore: number; }>;
+  dupes: Array<{ name: string; brand: string; matchScore: number }>;
 }> {
   logInfo(`Sending initial dupes request to Perplexity for: ${searchText}`);
 
@@ -202,7 +202,7 @@ export async function getInitialDupes(searchText: string): Promise<{
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "sonar-reasoning-pro", 
+        model: "sonar-reasoning-pro",
         messages: [
           {
             role: "system",
@@ -221,18 +221,11 @@ export async function getInitialDupes(searchText: string): Promise<{
     if (!response.ok) {
       throw new Error(`Perplexity API error: ${await response.text()}`);
     }
-    
+
     const data = await response.json();
     const jsonContent = cleanMarkdownCodeBlock(data.choices[0].message.content);
-    
-    try {
-      const parsedData = JSON.parse(jsonContent);
-      logInfo(`Initial dupes found: ${parsedData.dupes.length}`);
-      return parsedData;
-    } catch (error) {
-      logError("Perplexity response is not valid JSON for initial dupes", error);
-      throw new Error("Invalid JSON response from Perplexity");
-    }
+
+    return await cleanupInitialDupes(jsonContent);
   } catch (error) {
     logError(`Error fetching initial dupes:`, error);
     throw error;

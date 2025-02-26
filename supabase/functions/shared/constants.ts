@@ -30,6 +30,18 @@ export const HF_API_ENDPOINT = "https://api-inference.huggingface.co/models/bria
 export const BACKGROUND_REMOVAL_API = "https://api.easyimg.io/v1/remove-background";
 export const GETIMG_BASE_URL = "https://api.getimg.ai/v1/enhancements";
 
+export const INITIAL_DUPES_SCHEMA = {
+  originalName: "string",
+  originalBrand: "string",
+  originalCategory: "string",
+  dupes: [
+    {
+      name: "string",
+      brand: "string",
+      matchScore: "number"
+    }
+  ]
+};
 
 // Schema Definition for API Responses
 export const SCHEMA_DEFINITION = `{

@@ -2,7 +2,7 @@
 
 import { logInfo, logError } from "../shared/utils.ts";
 import { BrandInfo, IngredientInfo, DupeResponse } from "../shared/types.ts";
-import { OPENAI_API_KEY, OPENAI_API_ENDPOINT, SCHEMA_DEFINITION } from "../shared/constants.ts";
+import { OPENAI_API_KEY, OPENAI_API_ENDPOINT, SCHEMA_DEFINITION, INITIAL_DUPES_SCHEMA } from "../shared/constants.ts";
 
 /**
  * Generic function to get structured data from OpenAI
@@ -269,5 +269,58 @@ export async function cleanupAndStructureData(dupeAnalysis: any): Promise<DupeRe
     
     // If OpenAI fails, return the original data as is
     return dupeAnalysis;
+  }
+}
+
+
+
+
+/**
+ * Cleans up and structures the initial dupes response from Perplexity using OpenAI
+ */
+export async function cleanupInitialDupes(perplexityContent: string): Promise<{
+  originalName: string;
+  originalBrand: string;
+  originalCategory: string;
+  dupes: Array<{ name: string; brand: string; matchScore: number }>;
+}> {
+  logInfo("Cleaning up initial dupes response with OpenAI");
+
+  const prompt = `
+  The following text is supposed to be a JSON object but may have formatting issues.
+  Please convert it to a valid JSON object that follows this schema:
+
+  {
+    "originalName": "string",
+    "originalBrand": "string",
+    "originalCategory": "string",
+    "dupes": [
+      {
+        "name": "string",
+        "brand": "string",
+        "matchScore": "number"
+      }
+    ]
+  }
+
+  Here is the text to fix:
+
+  ${perplexityContent}
+  `;
+
+  try {
+    return await getStructuredData<{
+      originalName: string;
+      originalBrand: string;
+      originalCategory: string;
+      dupes: Array<{ name: string; brand: string; matchScore: number }>;
+    }>(
+      prompt,
+      "You are a JSON repair service. Convert the provided text to valid JSON that matches the specified schema.",
+      INITIAL_DUPES_SCHEMA // Pass the schema for validation
+    );
+  } catch (error) {
+    logError("Failed to clean up initial dupes response with OpenAI:", error);
+    throw new Error("Could not clean up the initial dupes response from Perplexity");
   }
 }
