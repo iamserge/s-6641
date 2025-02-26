@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/dupe";
@@ -38,7 +37,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             transition={{ delay: 0.6 }}
             className="flex justify-center gap-3 mb-12"
           >
-            {product.attributes.map((attribute: string, index: number) => (
+            {product.attributes && product.attributes.map((attribute: string, index: number) => (
               <Badge 
                 key={index} 
                 variant="secondary" 

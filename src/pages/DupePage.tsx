@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -24,13 +23,12 @@ const DupePage = () => {
       }
 
       try {
+        // First, fetch the original product
         const { data: product, error: productError } = await supabase
           .from('products')
           .select(`
             *,
-            dupes (
-              *
-            )
+            brand_info:brands(*)
           `)
           .eq('slug', slug)
           .single();
@@ -38,33 +36,57 @@ const DupePage = () => {
         if (productError) throw productError;
         if (!product) throw new Error('Product not found');
 
-        const dupeIds = product.dupes.map((dupe) => dupe.id);
-        const { data: dupeIngredients, error: ingredientsError } = await supabase
-          .from('dupe_ingredients')
+        // Then, fetch the dupes related to this product
+        const { data: productDupes, error: dupesError } = await supabase
+          .from('product_dupes')
           .select(`
-            dupe_id,
-            ingredients (
-              id,
-              name
-            )
+            *,
+            dupe:products!product_dupes_dupe_product_id_fkey(*)
           `)
-          .in('dupe_id', dupeIds);
+          .eq('original_product_id', product.id);
 
-        if (ingredientsError) throw ingredientsError;
+        if (dupesError) throw dupesError;
 
-        const dupesWithIngredients = product.dupes.map((dupe) => {
-          const dupeIngredientsData = dupeIngredients
-            .filter(di => di.dupe_id === dupe.id)
-            .map(di => di.ingredients);
-          return {
-            ...dupe,
-            ingredients: dupeIngredientsData
-          };
-        });
+        // For each dupe, fetch its ingredients
+        const dupes = await Promise.all(
+          productDupes.map(async (productDupe) => {
+            const dupe = productDupe.dupe;
+            
+            // Fetch ingredients for this dupe
+            const { data: ingredientsData, error: ingredientsError } = await supabase
+              .from('product_ingredients')
+              .select(`
+                ingredient:ingredients(id, name)
+              `)
+              .eq('product_id', dupe.id);
 
+            if (ingredientsError) {
+              console.error('Error fetching ingredients:', ingredientsError);
+              return {
+                ...dupe,
+                match_score: productDupe.match_score,
+                savings_percentage: productDupe.savings_percentage,
+                ingredients: []
+              };
+            }
+
+            // Extract ingredient objects from the nested structure
+            const ingredients = ingredientsData.map(item => item.ingredient);
+
+            return {
+              ...dupe,
+              match_score: productDupe.match_score, 
+              savings_percentage: productDupe.savings_percentage,
+              ingredients
+            };
+          })
+        );
+
+        // Combine everything into our data structure
         setData({
           ...product,
-          dupes: dupesWithIngredients
+          brand_info: product.brand_info,
+          dupes
         });
       } catch (error) {
         console.error('Error fetching dupe data:', error);
@@ -107,7 +129,7 @@ const DupePage = () => {
           transition={{ delay: 1.2 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
-          {data.dupes.map((dupe, index) => (
+          {data.dupes && data.dupes.map((dupe, index) => (
             <DupeCard key={dupe.id} dupe={dupe} index={index} />
           ))}
         </motion.div>

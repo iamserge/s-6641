@@ -1,4 +1,3 @@
-
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Footer from "../components/Footer";
@@ -10,6 +9,35 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+// Define proper types for our data
+interface DupeInfo {
+  coverage?: string | null;
+  confidence_level?: number | null;
+  longevity_comparison?: string | null;
+  cruelty_free?: boolean | null;
+  vegan?: boolean | null;
+}
+
+interface BrandInfo {
+  name?: string | null;
+  country_of_origin?: string | null;
+  sustainable_packaging?: boolean | null;
+  cruelty_free?: boolean | null;
+  vegan?: boolean | null;
+}
+
+interface RecentDupe {
+  name: string;
+  brand: string;
+  slug: string;
+  country_of_origin?: string | null;
+  longevity_rating?: number | null;
+  free_of?: string[] | null;
+  best_for?: string[] | null;
+  brandInfo: BrandInfo | null;
+  dupeInfo: DupeInfo | null;
+}
 
 const TrendingPill = ({ product }: { product: { name: string; brand: string } }) => (
   <div className="bg-[#F1F0FB] hover:bg-[#E5DEFF] px-8 py-2 rounded-full inline-flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm min-w-[200px]">
@@ -36,7 +64,7 @@ const RecentDupes = () => {
           longevity_rating,
           free_of,
           best_for,
-          dupes (
+          dupes:product_dupes!product_dupes_original_product_id_fkey(
             coverage,
             confidence_level,
             longevity_comparison,
@@ -59,12 +87,19 @@ const RecentDupes = () => {
         throw error;
       }
       
-      return data.map(product => ({
-        ...product,
-        brand: product.brands?.name || product.brand,
-        brandInfo: product.brands || null,
-        dupeInfo: product.dupes?.[0] || null
-      }));
+      return data.map(product => {
+        // Safely extract the first dupe info
+        const dupeInfo = product.dupes && product.dupes.length > 0 ? 
+          product.dupes[0] as unknown as DupeInfo : 
+          null;
+        
+        return {
+          ...product,
+          brand: product.brands?.name || product.brand,
+          brandInfo: product.brands as unknown as BrandInfo || null,
+          dupeInfo: dupeInfo
+        } as RecentDupe;
+      });
     },
   });
 

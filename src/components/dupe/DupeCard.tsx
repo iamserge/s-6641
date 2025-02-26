@@ -1,9 +1,8 @@
-
 import { motion } from "framer-motion";
 import { ExternalLink } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Dupe, Ingredient } from "@/types/dupe";
+import { Dupe } from "@/types/dupe";
 
 interface DupeCardProps {
   dupe: Dupe;
@@ -50,7 +49,7 @@ export const DupeCard = ({ dupe, index }: DupeCardProps) => {
         <CardContent className="space-y-6">
           {dupe.ingredients && dupe.ingredients.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {dupe.ingredients.map((ingredient: Ingredient, i: number) => (
+              {dupe.ingredients.map((ingredient, i) => (
                 <Badge key={i} variant="outline" className="bg-white/50">
                   {ingredient.name}
                 </Badge>
@@ -59,26 +58,32 @@ export const DupeCard = ({ dupe, index }: DupeCardProps) => {
           )}
           
           <div className="grid grid-cols-2 gap-6 text-base">
-            <div>
-              <p className="text-gray-500 mb-2">Texture</p>
-              <p className="font-medium">{dupe.texture}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 mb-2">Finish</p>
-              <p className="font-medium">{dupe.finish}</p>
-            </div>
+            {dupe.texture && (
+              <div>
+                <p className="text-gray-500 mb-2">Texture</p>
+                <p className="font-medium">{dupe.texture}</p>
+              </div>
+            )}
+            {dupe.finish && (
+              <div>
+                <p className="text-gray-500 mb-2">Finish</p>
+                <p className="font-medium">{dupe.finish}</p>
+              </div>
+            )}
           </div>
 
-          <div>
-            <p className="text-gray-500 mb-2">Best for</p>
-            <div className="flex flex-wrap gap-2">
-              {dupe.skin_types.map((type: string, i: number) => (
-                <Badge key={i} variant="secondary" className="bg-gray-100 text-gray-600">
-                  {type}
-                </Badge>
-              ))}
+          {dupe.skin_types && dupe.skin_types.length > 0 && (
+            <div>
+              <p className="text-gray-500 mb-2">Best for</p>
+              <div className="flex flex-wrap gap-2">
+                {dupe.skin_types.map((type: string, i: number) => (
+                  <Badge key={i} variant="secondary" className="bg-gray-100 text-gray-600">
+                    {type}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {dupe.notes && (
             <p className="text-gray-600 italic border-l-2 border-[#0EA5E9]/20 pl-4">
