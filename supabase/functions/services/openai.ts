@@ -30,7 +30,19 @@ async function getStructuredData<T>(
     });
     
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      let errorBody;
+      try {
+        errorBody = await response.json(); // Parse JSON
+        const errorMessage = `OpenAI API error: ${response.status} - ${errorBody.error?.message || JSON.stringify(errorBody)}`;
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+      } catch (parseError) {
+        // Fallback if response isn’t valid JSON
+        const rawBody = await response.text();
+        const errorMessage = `OpenAI API error: ${response.status} - ${rawBody}`;
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+      }
     }
     
     const data = await response.json();
