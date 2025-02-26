@@ -4,9 +4,9 @@ import { GETIMG_API_KEY, GETIMG_BASE_URL } from "../shared/constants.ts";
 import { logInfo, logError, withRetry, blobToBase64, base64ToBlob } from "../shared/utils.ts";
 
 // Import TensorFlow.js from unpkg CDN
-import * as tf from "https://unpkg.com/@tensorflow/tfjs@3.21.0/dist/tf.min.js";
+import * as tf from "https://unpkg.com/@tensorflow/tfjs@0.13.5/dist/tf.min.js.map";
 // Import BodyPix from unpkg CDN (requires tfjs-core as a peer dependency)
-import * as bodyPix from "https://unpkg.com/@tensorflow-models/body-pix@2.0.7/dist/body-pix.min.js";
+import * as bodyPix from "https://unpkg.com/@tensorflow-models/body-pix@0.0.2/dist/body-pix.min.js";
 
 interface GetImgResponse {
   model: string;
