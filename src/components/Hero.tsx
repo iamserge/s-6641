@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Mic, Camera, Loader2, Search, X } from "lucide-react";
@@ -12,8 +12,11 @@ const Hero = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState("");
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
 
   const handleSearch = async (e?: React.FormEvent) => {
@@ -35,12 +38,10 @@ const Hero = () => {
       const { data: { session } } = await supabase.auth.getSession();
       const apikey = (supabase as any).supabaseKey;
       
-      // Construct the URL for the Edge Function
       const baseUrl = `${(supabase as any).supabaseUrl}/functions/v1/search-dupes`;
       const url = new URL(baseUrl);
       url.searchParams.append('searchText', searchText);
 
-      // Add headers as URL parameters since EventSource doesn't support custom headers
       url.searchParams.append('apikey', apikey);
       if (session?.access_token) {
         url.searchParams.append('authorization', `Bearer ${session.access_token}`);
@@ -58,8 +59,8 @@ const Hero = () => {
             setTimeout(() => {
               eventSource.close();
               navigate(`/dupes/for/${data.data.data.slug}`);
-              setIsProcessing(false); // Only close the overlay after navigation
-            }, 1500); // Increased delay to ensure message is visible
+              setIsProcessing(false);
+            }, 1500);
           } else {
             throw new Error("No product data returned");
           }
@@ -71,11 +72,10 @@ const Hero = () => {
       eventSource.onerror = (error) => {
         console.error("SSE error:", error);
         eventSource.close();
-        setIsProcessing(false); // Close overlay on error
+        setIsProcessing(false);
         throw new Error("Failed to receive updates from the server");
       };
 
-      // Clean up the EventSource on component unmount
       return () => {
         eventSource.close();
       };
@@ -86,7 +86,7 @@ const Hero = () => {
         title: "Error",
         description: "Failed to search for products. Please try again.",
       });
-      setIsProcessing(false); // Close overlay on error
+      setIsProcessing(false);
     }
   };
 
@@ -154,6 +154,78 @@ const Hero = () => {
     }
   };
 
+  const startCamera = useCallback(async () => {
+    try {
+      setIsCameraOpen(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not access camera. Please check permissions.",
+      });
+      setIsCameraOpen(false);
+    }
+  }, []);
+
+  const stopCamera = useCallback(() => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraOpen(false);
+  }, []);
+
+  const handleCameraSnap = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    setIsProcessing(true);
+    setProgressMessage("Analyzing your snapshot... 📸");
+    stopCamera();
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageDataUrl = canvas.toDataURL('image/jpeg');
+      setPreviewImage(imageDataUrl);
+
+      try {
+        const { data, error } = await supabase.functions.invoke('analyze-image', {
+          body: { image: imageDataUrl },
+        });
+
+        if (error) throw error;
+        if (!data?.product) throw new Error('No product detected in image');
+
+        setSearchText(data.product);
+        toast({
+          title: "Product Detected!",
+          description: `Found: "${data.product}"`,
+        });
+        await handleSearch();
+      } catch (error) {
+        console.error('Error processing camera image:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error instanceof Error ? error.message : "Could not process the image.",
+        });
+      } finally {
+        setTimeout(() => setIsProcessing(false), 1000);
+      }
+    }
+  };
+
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -191,7 +263,10 @@ const Hero = () => {
     }
   };
 
-  const handleCameraSearch = () => fileInputRef.current?.click();
+  const handleCameraSearch = () => {
+    startCamera();
+  };
+
   const clearPreview = () => {
     setPreviewImage(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -261,19 +336,44 @@ const Hero = () => {
         </div>
 
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2 items-center">
-          <Button type="button" variant="ghost" size="icon" onClick={handleVoiceSearch} disabled={isProcessing} className="h-12 w-12 hover:bg-pink-50">
+          <Button type="button" variant="ghost" size="icon" onClick={handleVoiceSearch} disabled={isProcessing || isCameraOpen} className="h-12 w-12 hover:bg-pink-50">
             <Mic className="w-6 h-6 text-pink-500" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" onClick={handleCameraSearch} disabled={isProcessing} className="h-12 w-12 hover:bg-pink-50">
+          <Button type="button" variant="ghost" size="icon" onClick={handleCameraSearch} disabled={isProcessing || isCameraOpen} className="h-12 w-12 hover:bg-pink-50">
             <Camera className="w-6 h-6 text-pink-500" />
           </Button>
           <div className="w-px h-8 bg-pink-100" />
-          <Button type="submit" variant="ghost" size="icon" disabled={isProcessing} className="h-12 w-12 hover:bg-pink-50 ml-2">
+          <Button type="submit" variant="ghost" size="icon" disabled={isProcessing || isCameraOpen} className="h-12 w-12 hover:bg-pink-50 ml-2">
             {isProcessing ? <Loader2 className="w-6 h-6 text-pink-500 animate-spin" /> : <Search className="w-6 h-6 text-pink-500" />}
           </Button>
         </div>
         <input type="file" ref={fileInputRef} accept="image/*" capture="environment" onChange={handleImageUpload} className="hidden" />
       </motion.form>
+
+      {isCameraOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+        >
+          <div className="relative bg-white p-4 rounded-lg">
+            <video ref={videoRef} className="w-full max-w-md rounded" autoPlay playsInline />
+            <Button
+              onClick={handleCameraSnap}
+              className="mt-4 w-full bg-pink-500 hover:bg-pink-600 text-white"
+            >
+              Snap Photo
+            </Button>
+            <Button
+              onClick={stopCamera}
+              variant="outline"
+              className="mt-2 w-full"
+            >
+              Cancel
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {isProcessing && (
         <motion.div
@@ -291,6 +391,8 @@ const Hero = () => {
           </motion.div>
         </motion.div>
       )}
+      
+      <canvas ref={canvasRef} className="hidden" />
     </section>
   );
 };

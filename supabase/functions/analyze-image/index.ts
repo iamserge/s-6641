@@ -36,7 +36,7 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Please analyze this image and extract string: {product name} by {brand} OR {product code} (if barcode )',
+                text: 'Please analyze this image and extract string: {product name} by {brand} OR {product code} (if barcode ), output just that, nothing else',
               },
               {
                 type: 'image_url',
@@ -48,11 +48,11 @@ serve(async (req) => {
       }),
     })
 
-    const data = await response.json()
-    console.log('OpenAI response:', data)
+    const text = await response.text()
+    console.log('OpenAI response:', text)
 
     return new Response(
-      JSON.stringify(data.choices[0].message.content),
+      JSON.stringify({ product: text }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
