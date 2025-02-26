@@ -215,7 +215,7 @@ export async function getInitialDupes(searchText: string): Promise<{
           },
           { role: "user", content: INITIAL_SEARCH_PROMPT(searchText) },
         ],
-        max_tokens: 1000,
+        max_tokens: 10000,
         temperature: 0.2,
         top_p: 0.9,
         search_recency_filter: "month",
