@@ -2,8 +2,11 @@
 
 import { GETIMG_API_KEY, GETIMG_BASE_URL } from "../shared/constants.ts";
 import { logInfo, logError, withRetry, blobToBase64, base64ToBlob } from "../shared/utils.ts";
-import * as tf from "https://deno.land/x/tfjs@3.21.0/mod.ts"; // TensorFlow.js for Deno
-import { BodyPix, load as loadBodyPix } from "https://deno.land/x/bodypix@2.0.7/mod.ts"; // BodyPix model
+
+// Import TensorFlow.js from unpkg CDN
+import * as tf from "https://unpkg.com/@tensorflow/tfjs@3.21.0/dist/tf.min.js";
+// Import BodyPix from unpkg CDN (requires tfjs-core as a peer dependency)
+import * as bodyPix from "https://unpkg.com/@tensorflow-models/body-pix@2.0.7/dist/body-pix.min.js";
 
 interface GetImgResponse {
   model: string;
@@ -102,16 +105,16 @@ export async function removeBackground(base64Image: string): Promise<string | nu
     await new Promise((resolve) => img.onload = resolve);
 
     // Load BodyPix model
-    const net = await loadBodyPix({
+    const net = await bodyPix.load({
       architecture: 'MobileNetV1',
       outputStride: 16,
       multiplier: 0.75,
       quantBytes: 2
     });
 
-    // Segment the image (assuming product images have a distinct foreground)
+    // Segment the image
     const segmentation = await net.segmentPerson(img, {
-      segmentationThreshold: 0.7 // Adjust for stricter foreground detection
+      segmentationThreshold: 0.7 // Adjust for product foreground detection
     });
 
     // Create a canvas to mask the background
@@ -193,3 +196,4 @@ export async function processProductImage(imageUrl: string): Promise<string | nu
     return null;
   }
 }
+
