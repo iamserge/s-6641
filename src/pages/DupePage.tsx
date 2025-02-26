@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -36,11 +37,12 @@ const DupePage = () => {
         if (productError) throw productError;
         if (!product) throw new Error('Product not found');
 
-        // Then, fetch the dupes related to this product
-        const { data: productDupes, error: dupesError } = await supabase
+        // Then, fetch the dupes related to this product through product_dupes
+        const { data: dupeRelations, error: dupesError } = await supabase
           .from('product_dupes')
           .select(`
-            *,
+            match_score,
+            savings_percentage,
             dupe:products!product_dupes_dupe_product_id_fkey(*)
           `)
           .eq('original_product_id', product.id);
@@ -49,34 +51,30 @@ const DupePage = () => {
 
         // For each dupe, fetch its ingredients
         const dupes = await Promise.all(
-          productDupes.map(async (productDupe) => {
-            const dupe = productDupe.dupe;
-            
-            // Fetch ingredients for this dupe
+          dupeRelations.map(async (relation) => {
             const { data: ingredientsData, error: ingredientsError } = await supabase
               .from('product_ingredients')
               .select(`
-                ingredient:ingredients(id, name)
+                ingredients(*)
               `)
-              .eq('product_id', dupe.id);
+              .eq('product_id', relation.dupe.id);
 
             if (ingredientsError) {
               console.error('Error fetching ingredients:', ingredientsError);
               return {
-                ...dupe,
-                match_score: productDupe.match_score,
-                savings_percentage: productDupe.savings_percentage,
+                ...relation.dupe,
+                match_score: relation.match_score,
+                savings_percentage: relation.savings_percentage,
                 ingredients: []
               };
             }
 
-            // Extract ingredient objects from the nested structure
-            const ingredients = ingredientsData.map(item => item.ingredient);
+            const ingredients = ingredientsData.map(item => item.ingredients);
 
             return {
-              ...dupe,
-              match_score: productDupe.match_score, 
-              savings_percentage: productDupe.savings_percentage,
+              ...relation.dupe,
+              match_score: relation.match_score,
+              savings_percentage: relation.savings_percentage,
               ingredients
             };
           })

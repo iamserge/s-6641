@@ -1,6 +1,6 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { searchAndProcessDupes } from "./handlers.ts";
-import { logInfo, logError } from "../shared/utils.ts";
+import { processSearchRequest } from "./handlers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,11 +29,9 @@ serve(async (req) => {
       );
     }
 
-    logInfo(`Processing search request for: ${searchText}`);
+    console.log(`Processing search request for: ${searchText}`);
 
-    // First, check if we already have this product in our database
-    // If yes, return it directly, otherwise proceed with the full dupe search flow
-    const result = await searchAndProcessDupes(searchText);
+    const result = await processSearchRequest(searchText, Deno.env.get('GETIMG_API_KEY') || '');
     
     return new Response(
       JSON.stringify(result),
@@ -42,7 +40,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    logError('Error processing search request:', error);
+    console.error('Error processing search request:', error);
     
     return new Response(
       JSON.stringify({ 
