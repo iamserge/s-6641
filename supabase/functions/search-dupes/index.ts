@@ -8,15 +8,23 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Search-dupes function invoked:', new Date().toISOString());
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { searchText } = await req.json();
+    const body = await req.json();
+    const { searchText } = body;
+    
+    console.log('Request body:', JSON.stringify(body, null, 2));
+    console.log('Search text received:', searchText);
     
     if (!searchText) {
+      console.log('Error: Search text is missing');
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -30,8 +38,12 @@ serve(async (req) => {
     }
 
     console.log(`Processing search request for: ${searchText}`);
+    
+    const apiKey = Deno.env.get('GETIMG_API_KEY');
+    console.log('API Key present:', !!apiKey);
 
-    const result = await processSearchRequest(searchText, Deno.env.get('GETIMG_API_KEY') || '');
+    const result = await processSearchRequest(searchText, apiKey || '');
+    console.log('Search processing completed successfully');
     
     return new Response(
       JSON.stringify(result),
@@ -41,12 +53,14 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error processing search request:', error);
+    console.error('Error stack:', error.stack);
     
     return new Response(
       JSON.stringify({ 
         success: false,
         error: 'Failed to process search request',
-        details: error.message 
+        details: error.message,
+        timestamp: new Date().toISOString()
       }),
       { 
         status: 500,
