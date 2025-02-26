@@ -18,7 +18,7 @@ const Hero = () => {
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-
+  
     if (!searchText) {
       toast({
         variant: "destructive",
@@ -27,32 +27,52 @@ const Hero = () => {
       });
       return;
     }
-
+  
     try {
       setIsProcessing(true);
-      setProgressMessage("Heyyy! We're on the hunt for the perfect dupes for you! 🎨");
-
-      const { data, error } = await supabase.functions.invoke('search-dupes', {
-        body: { searchText },
-      });
-
-      if (error) throw error;
-
-      if (data?.success && data?.data?.slug) {
-        setProgressMessage("Ta-da! Your dupes are ready to shine! 🌟");
-        setTimeout(() => navigate(`/dupes/for/${data.data.slug}`), 1000); // Brief delay for final message
-      } else {
-        throw new Error('No product data returned');
-      }
+      setProgressMessage("Connecting to the beauty lab... 🔬");
+  
+      // Connect to the Supabase function endpoint
+      const supabaseUrl = "https://your-supabase-project.supabase.co"; // Replace with your Supabase project URL
+      const eventSource = new EventSource(
+        `${supabaseUrl}/functions/v1/search-dupes?searchText=${encodeURIComponent(searchText)}`
+      );
+  
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === "progress") {
+          // Update progress message from backend
+          setProgressMessage(data.message);
+        } else if (data.type === "result") {
+          if (data.data.success && data.data.data.slug) {
+            // Handle successful result
+            setProgressMessage("Ta-da! Your dupes are ready to shine! 🌟");
+            setTimeout(() => {
+              navigate(`/dupes/for/${data.data.data.slug}`);
+              eventSource.close();
+            }, 1000);
+          } else {
+            throw new Error("No product data returned");
+          }
+        } else if (data.type === "error") {
+          throw new Error(data.error);
+        }
+      };
+  
+      eventSource.onerror = (error) => {
+        console.error("SSE error:", error);
+        eventSource.close();
+        throw new Error("Failed to receive updates from the server");
+      };
     } catch (error) {
-      console.error('Search error:', error);
+      console.error("Search error:", error);
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to search for products. Please try again.",
       });
     } finally {
-      setTimeout(() => setIsProcessing(false), 1000); // Ensure final message is visible
+      setTimeout(() => setIsProcessing(false), 1000);
     }
   };
 
