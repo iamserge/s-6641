@@ -83,9 +83,29 @@ export async function searchAndProcessDupes(searchText: string, onProgress: (mes
       enrichedOriginal,
       enrichedDupesForContext
     );
-
-    onProgress("Ta-da! Your dupes are ready to shine! 🌟");
-    logInfo('Storing data in database...');
+    
+    // Preserve original product images
+    if (originalProductData.images && originalProductData.images.length > 0) {
+      // Ensure the images array exists and add any images from external data
+      detailedAnalysis.original.images = [
+        ...(detailedAnalysis.original.images || []),
+        ...originalProductData.images
+      ];
+    }
+    
+    // Preserve dupe product images
+    detailedAnalysis.dupes.forEach((dupe, index) => {
+      const enrichedDupe = enrichedDupes[index];
+      if (enrichedDupe.images && enrichedDupe.images.length > 0) {
+        // Ensure the images array exists and add any images from external data
+        dupe.images = [
+          ...(dupe.images || []),
+          ...enrichedDupe.images
+        ];
+      }
+    });
+    
+    // Now store the enhanced analysis with the preserved images
     const result = await storeDataInDatabase(detailedAnalysis);
 
     return {
