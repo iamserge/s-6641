@@ -1,5 +1,5 @@
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
-import { supabase } from "../shared/db-client.ts";
+import { storeProductOffers, supabase } from "../shared/db-client.ts";
 import { logInfo, logError } from "../shared/utils.ts";
 import { getInitialDupes, getDetailedDupeAnalysis } from "../services/perplexity.ts";
 import { processProductImage } from "../services/image-enhancement.ts";
@@ -128,7 +128,7 @@ export async function storeDataInDatabase(data: DupeResponse) {
       : data.original.imageUrl; // Fallback to Perplexity-provided URL
     const processedOriginalImageUrl = await processAndUploadImage(originalImageUrl, `${productSlug}-original`);
 
-    // 3. Store original product with processed image
+    // 3. Store original product with processed image and identification data
     const { data: originalProduct, error: productError } = await supabase
     .from('products')
     .insert({
@@ -140,6 +140,7 @@ export async function storeDataInDatabase(data: DupeResponse) {
       category: data.original.category,
       attributes: data.original.attributes || [],
       image_url: processedOriginalImageUrl, // Use processed image URL
+      images: data.original.images || [],
       summary: data.summary,
       texture: data.original.texture,
       finish: data.original.finish,
@@ -153,7 +154,16 @@ export async function storeDataInDatabase(data: DupeResponse) {
       best_for: data.original.bestFor || [],
       cruelty_free: data.original.crueltyFree,
       vegan: data.original.vegan,
-      notes: data.original.notes
+      notes: data.original.notes,
+      // New fields for external data
+      ean: data.original.ean,
+      upc: data.original.upc,
+      gtin: data.original.gtin,
+      asin: data.original.asin,
+      model: data.original.model,
+      description: data.original.description,
+      lowest_recorded_price: data.original.lowest_recorded_price,
+      highest_recorded_price: data.original.highest_recorded_price
     })
     .select()
     .single();
@@ -161,6 +171,11 @@ export async function storeDataInDatabase(data: DupeResponse) {
     if (productError) {
       logError('Error storing original product:', productError);
       throw productError;
+    }
+
+    // Store offers for original product if available
+    if (data.original.offers && data.original.offers.length > 0) {
+      await storeProductOffers(originalProduct.id, data.original.offers);
     }
 
     // 4. Process and store dupes with images in main call
@@ -183,6 +198,7 @@ export async function storeDataInDatabase(data: DupeResponse) {
           category: dupe.category || data.original.category,
           attributes: dupe.attributes || [],
           image_url: processedDupeImageUrl, // Use processed image URL
+          images: dupe.images || [],
           texture: dupe.texture,
           finish: dupe.finish,
           coverage: dupe.coverage,
@@ -195,7 +211,16 @@ export async function storeDataInDatabase(data: DupeResponse) {
           cruelty_free: dupe.crueltyFree,
           vegan: dupe.vegan,
           notes: dupe.notes,
-          purchase_link: dupe.purchaseLink
+          purchase_link: dupe.purchaseLink,
+          // New fields for external data
+          ean: dupe.ean,
+          upc: dupe.upc,
+          gtin: dupe.gtin,
+          asin: dupe.asin,
+          model: dupe.model,
+          description: dupe.description,
+          lowest_recorded_price: dupe.lowest_recorded_price,
+          highest_recorded_price: dupe.highest_recorded_price
         })
         .select()
         .single();
@@ -203,6 +228,11 @@ export async function storeDataInDatabase(data: DupeResponse) {
         if (dupeError) {
           logError(`Error storing dupe ${dupe.name}:`, dupeError);
           throw dupeError;
+        }
+
+        // Store offers for dupe product if available
+        if (dupe.offers && dupe.offers.length > 0) {
+          await storeProductOffers(dupeProduct.id, dupe.offers);
         }
 
         // Create product_dupes relationship

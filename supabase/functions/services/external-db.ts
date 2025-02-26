@@ -61,12 +61,18 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
           name: item.title,
           upc: item.upc,
           ean: item.ean,
+          gtin: item.gtin,
+          asin: item.asin,
+          elid: item.elid,
+          model: item.model,
           description: item.description,
           brand: item.brand,
           price: item.lowest_recorded_price,
-          highest_price: item.highest_recorded_price,
+          lowest_recorded_price: item.lowest_recorded_price,
+          highest_recorded_price: item.highest_recorded_price,
           images: item.images,
           offers: item.offers,
+          category: item.category,
           verified: true
         };
       }

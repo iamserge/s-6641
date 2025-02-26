@@ -41,11 +41,11 @@ export interface DupeResponse {
     category: ProductCategory; 
     attributes: string[];
     keyIngredients?: string[];
-    texture?: string;           // Added to match dupe schema
-    finish?: string;            // Added to match dupe schema
-    coverage?: string;          // Added to match dupe schema
-    spf?: number;               // Added to match dupe schema
-    skinTypes?: string[];       // Added to match dupe schema
+    texture?: string;
+    finish?: string;
+    coverage?: string;
+    spf?: number;
+    skinTypes?: string[];
     images?: string[];
     imageUrl?: string;
     countryOfOrigin?: string;
@@ -53,23 +53,33 @@ export interface DupeResponse {
     oxidationTendency?: string;
     bestFor?: string[];
     freeOf?: string[];
-    crueltyFree?: boolean;      // Added to match dupe schema
-    vegan?: boolean;            // Added to match dupe schema
-    notes?: string;             // Added to match dupe schema
+    crueltyFree?: boolean;
+    vegan?: boolean;
+    notes?: string;
+    // External DB fields
+    ean?: string;
+    upc?: string;
+    gtin?: string;
+    asin?: string;
+    model?: string;
+    description?: string;
+    lowest_recorded_price?: number;
+    highest_recorded_price?: number;
+    offers?: any[]; // External DB offers
   };
   dupes: Array<{
     name: string;
     brand: string;
     price: number;
     category?: ProductCategory;
-    attributes?: string[];      // Added to match original schema
+    attributes?: string[];
     keyIngredients: string[];
     texture: string;
     finish: string;
     coverage?: string;
     spf?: number;
     skinTypes: string[];
-    longevityRating?: number;   // Added to match original schema
+    longevityRating?: number;
     images?: string[];
     imageUrl?: string;
     bestFor?: string[];
@@ -89,6 +99,17 @@ export interface DupeResponse {
     confidenceLevel?: string;
     longevityComparison?: string;
     purchaseLink?: string;
+    
+    // External DB fields
+    ean?: string;
+    upc?: string;
+    gtin?: string;
+    asin?: string;
+    model?: string;
+    description?: string;
+    lowest_recorded_price?: number;
+    highest_recorded_price?: number;
+    offers?: any[]; // External DB offers
   }>;
   summary: string;
   resources: Array<{
@@ -157,7 +178,6 @@ export interface Ingredient {
   is_controversial?: boolean;
   restricted_in?: string[];
 }
-
 export interface Product {
   id?: string;
   name: string;
@@ -198,7 +218,38 @@ export interface Product {
   vegan?: boolean;
   lowest_recorded_price?: number;
   highest_recorded_price?: number;
+  offers?: Offer[];
 }
+
+export interface Merchant {
+  id?: string;
+  name: string;
+  domain?: string;
+  logo_url?: string;
+}
+
+export interface Offer {
+  id?: string;
+  merchant_id: string;
+  merchant?: Merchant;
+  title?: string;
+  currency?: string;
+  list_price?: number;
+  price: number;
+  shipping?: string;
+  condition?: string;
+  availability?: string;
+  link: string;
+  updated_t?: number;
+}
+
+export interface ProductOffer {
+  id?: string;
+  product_id: string;
+  offer_id: string;
+  is_best_price?: boolean;
+}
+
 
 export interface ProductDupe {
   id?: string;

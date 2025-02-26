@@ -283,3 +283,69 @@ export async function linkOfferToProduct(productId: string, offerId: string, isB
       is_best_price: isBestPrice
     });
 }
+
+
+export async function storeProductOffers(productId: string, offers: any[]): Promise<void> {
+  try {
+    logInfo(`Storing ${offers.length} offers for product ${productId}`);
+    
+    for (const offer of offers) {
+      // 1. Check if merchant exists or create it
+      let merchantId: string;
+      const { data: existingMerchant, error: merchantFindError } = await getMerchantByDomain(offer.domain);
+      
+      if (merchantFindError && merchantFindError.code !== "PGRST116") {
+        logError(`Error checking for merchant ${offer.merchant}:`, merchantFindError);
+        continue; // Skip this offer on error
+      }
+      
+      if (existingMerchant) {
+        merchantId = existingMerchant.id;
+      } else {
+        // Create new merchant
+        const { data: newMerchant, error: merchantInsertError } = await insertMerchant({
+          name: offer.merchant,
+          domain: offer.domain,
+        });
+        
+        if (merchantInsertError) {
+          logError(`Error creating merchant ${offer.merchant}:`, merchantInsertError);
+          continue; // Skip this offer on error
+        }
+        
+        merchantId = newMerchant.id;
+      }
+      
+      // 2. Insert the offer
+      const { data: newOffer, error: offerInsertError } = await insertOffer({
+        merchant_id: merchantId,
+        title: offer.title,
+        price: parseFloat(offer.price) || 0, // Ensure price is a number
+        list_price: offer.list_price ? parseFloat(offer.list_price) : undefined,
+        currency: offer.currency,
+        shipping: offer.shipping,
+        condition: offer.condition,
+        availability: offer.availability,
+        link: offer.link
+      });
+      
+      if (offerInsertError) {
+        logError(`Error creating offer for ${offer.merchant}:`, offerInsertError);
+        continue; // Skip linking on error
+      }
+      
+      // 3. Link offer to product
+      const { error: linkError } = await linkOfferToProduct(productId, newOffer.id);
+      
+      if (linkError) {
+        logError(`Error linking offer to product:`, linkError);
+        // Continue to next offer even if linking fails
+      }
+    }
+    
+    logInfo(`Successfully processed offers for product ${productId}`);
+  } catch (error) {
+    logError(`Error in storeProductOffers:`, error);
+    // Don't throw to avoid interrupting the main process
+  }
+}
