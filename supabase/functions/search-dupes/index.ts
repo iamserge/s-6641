@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { searchAndProcessDupes } from "./handlers.ts";
+import { searchAndProcessDupes } from "../shared/external-db.ts";
 import { logInfo, logError } from "../shared/utils.ts";
 
 const corsHeaders = {
