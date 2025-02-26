@@ -224,6 +224,7 @@ export async function getInitialDupes(searchText: string): Promise<{
 
     const data = await response.json();
     const jsonContent = cleanMarkdownCodeBlock(data.choices[0].message.content);
+    logInfo(`Initial dupes recieved: ${jsonContent}`);
 
     return await cleanupInitialDupes(jsonContent);
   } catch (error) {
@@ -272,15 +273,10 @@ export async function getDetailedDupeAnalysis(
     
     const data = await response.json();
     const jsonContent = cleanMarkdownCodeBlock(data.choices[0].message.content);
-    logInfo(`Detailed dupe analysis received`);
+    logInfo(`Detailed dupe analysis received: ${jsonContent}`);
 
-    try {
-      const parsedData = JSON.parse(jsonContent) as DupeResponse;
-      return parsedData;
-    } catch (error) {
-      logError("Perplexity response is not valid JSON. Attempting repair with OpenAI structured format.", error);
-      return await repairPerplexityResponse(jsonContent, SCHEMA_DEFINITION);
-    }
+    return await repairPerplexityResponse(jsonContent, SCHEMA_DEFINITION);
+
   } catch (error) {
     logError(`Error fetching detailed dupe analysis:`, error);
     throw error;
