@@ -41,10 +41,13 @@ const Hero = () => {
       const url = new URL(baseUrl);
       url.searchParams.append('searchText', searchText);
 
-      // Create EventSource with proper headers
-      const eventSource = new EventSource(url.toString(), {
-        withCredentials: true,
-      });
+      // Add headers as URL parameters since EventSource doesn't support custom headers
+      url.searchParams.append('apikey', apikey);
+      if (session?.access_token) {
+        url.searchParams.append('authorization', `Bearer ${session.access_token}`);
+      }
+
+      const eventSource = new EventSource(url.toString());
   
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -69,6 +72,11 @@ const Hero = () => {
         console.error("SSE error:", error);
         eventSource.close();
         throw new Error("Failed to receive updates from the server");
+      };
+
+      // Clean up the EventSource on component unmount
+      return () => {
+        eventSource.close();
       };
     } catch (error) {
       console.error("Search error:", error);
