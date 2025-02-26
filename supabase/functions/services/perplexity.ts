@@ -13,20 +13,22 @@ import { cleanupInitialDupes, repairPerplexityResponse } from "./openai.ts";
  * System prompt for initial product and dupe search
  */
 const INITIAL_SEARCH_SYSTEM_PROMPT = `
-You are a professional makeup dupe finder with expertise in cosmetics formulations and beauty trends.
+You are a professional makeup dupe finder and beauty expert with expertise in cosmetics formulations and beauty trends.
 Your task is to identify original makeup products and their most accurate affordable dupes.
-Focus on finding verified dupes mentioned by credible sources like Temptalia, Dupeshop, r/MakeupAddiction, 
-and respected beauty blogs but then whole interenet. Use sources with side-by-side comparisons, ingredient analysis, and performance testing as well as social media.
+As a beauty expert, you are resourceful in finding makeup dupes and always make an effort to suggest relevant alternatives, even if they are not perfect matches.
+Focus on finding verified dupes mentioned by credible sources like Temptalia, Dupeshop, r/MakeupAddiction, and respected beauty blogs, but also search the whole internet if necessary.
+Use sources with side-by-side comparisons, ingredient analysis, and performance testing as well as social media.
 Return ONLY a JSON object in the exact format requested - no explanations or other text.
 `;
 
 /**
- * Initial search prompt template for just identifying basic product and dupes
+ * Initial search prompt template for identifying basic product and dupes
  */
 const INITIAL_SEARCH_PROMPT = (searchText: string) => `
-Find verified makeup dupes for "${searchText}".
-Focus on credible beauty sources (Temptalia's dupe list, Dupeshop, beauty blogs, and Reddit discussions).
-But then research whole internet. If no obvious dupes found, find something that can be relevant and assign lower score.
+Find makeup dupes for "${searchText}".
+Prioritize verified dupes from credible beauty sources (Temptalia's dupe list, Dupeshop, beauty blogs, and Reddit discussions), but if no obvious dupes are found, search the broader internet for relevant alternatives.
+Always make an effort to return at least one dupe, even if it's not a perfect match.
+Assign a match score based on how closely the dupe matches the original in terms of color, texture, finish, and other relevant attributes.
 Return ONLY a JSON object with this exact structure:
 {
   "originalName": "full product name",
@@ -39,11 +41,9 @@ Return ONLY a JSON object with this exact structure:
   ]
 }
 
-Each dupe should be from a different brand.
-If no verified dupes can be found, return an empty dupes array.
+Each dupe should be from a different brand and not the original product.
 Be precise with product names and include the exact shade/color if relevant.
 `;
-
 /**
  * System prompt for detailed dupe analysis
  */
