@@ -83,6 +83,7 @@ export async function handleDupeSearch(req: Request): Promise<Response> {
     logInfo(`Inserting product into database: ${original.name}`);
     const { data: productData, error: productError } = await insertProduct({
       name: original.name,
+      brand: original.brand,
       brand_id: originalBrandId,
       price: original.price,
       category: validatedCategory,

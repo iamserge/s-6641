@@ -130,6 +130,7 @@ export interface Ingredient {
 
 export interface Product {
   id: string;
+  brand: string;
   brand_id: string;
   name: string;
   slug: string;
