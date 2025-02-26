@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -24,12 +23,12 @@ const DupePage = () => {
       }
 
       try {
-        // First, fetch the original product
         const { data: product, error: productError } = await supabase
           .from('products')
           .select(`
             *,
-            brand_info:brands(*)
+            brand_info:brands(*),
+            product_ingredients(ingredients(*))
           `)
           .eq('slug', slug)
           .single();
@@ -37,53 +36,45 @@ const DupePage = () => {
         if (productError) throw productError;
         if (!product) throw new Error('Product not found');
 
-        // Then, fetch the dupes related to this product through product_dupes
         const { data: dupeRelations, error: dupesError } = await supabase
           .from('product_dupes')
           .select(`
             match_score,
             savings_percentage,
-            dupe:products!product_dupes_dupe_product_id_fkey(*)
+            dupe:products!product_dupes_dupe_product_id_fkey(
+              *,
+              offers:offers(*)
+            )
           `)
           .eq('original_product_id', product.id);
 
         if (dupesError) throw dupesError;
 
-        // For each dupe, fetch its ingredients
         const dupes = await Promise.all(
           dupeRelations.map(async (relation) => {
             const { data: ingredientsData, error: ingredientsError } = await supabase
               .from('product_ingredients')
-              .select(`
-                ingredients(*)
-              `)
+              .select(`ingredients(*)`)
               .eq('product_id', relation.dupe.id);
 
-            if (ingredientsError) {
-              console.error('Error fetching ingredients:', ingredientsError);
-              return {
-                ...relation.dupe,
-                match_score: relation.match_score,
-                savings_percentage: relation.savings_percentage,
-                ingredients: []
-              };
-            }
+            if (ingredientsError) console.error('Error fetching ingredients:', ingredientsError);
 
-            const ingredients = ingredientsData.map(item => item.ingredients);
+            const ingredients = ingredientsData ? ingredientsData.map(item => item.ingredients) : [];
 
             return {
               ...relation.dupe,
               match_score: relation.match_score,
               savings_percentage: relation.savings_percentage,
-              ingredients
+              ingredients,
+              offers: relation.dupe.offers || []
             };
           })
         );
 
-        // Combine everything into our data structure
         setData({
           ...product,
           brand_info: product.brand_info,
+          ingredients: product.product_ingredients?.map(item => item.ingredients) || [],
           dupes
         });
       } catch (error) {
@@ -128,7 +119,12 @@ const DupePage = () => {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
           {data.dupes && data.dupes.map((dupe, index) => (
-            <DupeCard key={dupe.id} dupe={dupe} index={index} />
+            <DupeCard
+              key={dupe.id}
+              dupe={dupe}
+              index={index}
+              originalIngredients={data.ingredients?.map(i => i.name) || []}
+            />
           ))}
         </motion.div>
       </div>
