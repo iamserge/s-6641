@@ -1,9 +1,10 @@
+
 /// <reference lib="es2015" />
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { handleDupeSearch } from "./handlers";
-import { corsHeaders } from "../shared/constants";
-import { logInfo } from "../shared/utils";
+import { handleDupeSearch } from "./handlers.ts";
+import { corsHeaders } from "../shared/constants.ts";
+import { logInfo } from "../shared/utils.ts";
 
 /**
  * Main entry point for the search-dupes Edge Function
