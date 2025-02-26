@@ -16,7 +16,7 @@ const INITIAL_SEARCH_SYSTEM_PROMPT = `
 You are a professional makeup dupe finder with expertise in cosmetics formulations and beauty trends.
 Your task is to identify original makeup products and their most accurate affordable dupes.
 Focus on finding verified dupes mentioned by credible sources like Temptalia, Dupeshop, r/MakeupAddiction, 
-and respected beauty blogs. Use sources with side-by-side comparisons, ingredient analysis, and performance testing as well as social media.
+and respected beauty blogs but then whole interenet. Use sources with side-by-side comparisons, ingredient analysis, and performance testing as well as social media.
 Return ONLY a JSON object in the exact format requested - no explanations or other text.
 `;
 
@@ -26,15 +26,15 @@ Return ONLY a JSON object in the exact format requested - no explanations or oth
 const INITIAL_SEARCH_PROMPT = (searchText: string) => `
 Find verified makeup dupes for "${searchText}".
 Focus on credible beauty sources (Temptalia's dupe list, Dupeshop, beauty blogs, and Reddit discussions).
-
+But then research whole internet. If no obvious dupes found, find something that can be relevant and assign lower score.
 Return ONLY a JSON object with this exact structure:
 {
   "originalName": "full product name",
   "originalBrand": "brand name", 
   "originalCategory": "product category",
   "dupes": [
-    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 70-100 },
-    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 70-100 }
+    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100 },
+    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100 }
     // include up to 5 dupes, ordered by match score (highest first)
   ]
 }

@@ -13,8 +13,10 @@ import { fetchProductDataFromExternalDb } from "../services/external-db.ts";
 /**
  * Main handler for searching and processing dupes
  */
-export async function searchAndProcessDupes(searchText: string) {
+export async function searchAndProcessDupes(searchText: string, onProgress: (message: string) => void) {
   try {
+    onProgress("Heyyy! We're on the hunt for the perfect dupes for you! 🎨");
+
     // Step 1: Check if we already have this product in our database
     const { data: existingProducts, error: searchError } = await supabase
       .from('products')
@@ -29,6 +31,7 @@ export async function searchAndProcessDupes(searchText: string) {
 
     if (existingProducts && existingProducts.length > 0) {
       logInfo(`Found existing product: ${existingProducts[0].name}`);
+      onProgress("Oh, we already know this one! Let's show you the dupes... 🌟");
       return {
         success: true,
         data: {
@@ -39,59 +42,59 @@ export async function searchAndProcessDupes(searchText: string) {
       };
     }
 
-    // Step 2: Initial product search with Perplexity
+    onProgress("Scouring the beauty universe for your perfect match... 💄");
     logInfo('No existing product found. Getting initial dupes from Perplexity...');
     const initialDupes = await getInitialDupes(searchText);
-    
+
     if (!initialDupes.originalName || !initialDupes.originalBrand) {
       throw new Error('Could not identify original product from search text');
     }
-    
-    // Step 3: Enrich product data from external databases
+
+    onProgress("Found some gems! Let's doll them up with more details... 💎");
     logInfo('Enriching product data from UPC Item DB...');
     const originalProductData = await fetchProductDataFromExternalDb(
-      initialDupes.originalName, 
+      initialDupes.originalName,
       initialDupes.originalBrand
     );
-    
+
     const enrichedDupes = await Promise.all(
       initialDupes.dupes.map(async (dupe) => {
         const dupeData = await fetchProductDataFromExternalDb(dupe.name, dupe.brand);
-        return { 
-          name: dupe.name, 
-          brand: dupe.brand, 
-          ...dupeData 
+        return {
+          name: dupe.name,
+          brand: dupe.brand,
+          ...dupeData
         };
       })
     );
-    
-    // Step 4: Detailed dupe analysis with a second Perplexity request
+
+    onProgress("Putting together your beauty dossier... 📋");
     logInfo('Getting detailed dupe analysis with enriched data...');
-    const enrichedOriginal = { 
-      name: initialDupes.originalName, 
+    const enrichedOriginal = {
+      name: initialDupes.originalName,
       brand: initialDupes.originalBrand,
-      ...(originalProductData.verified ? originalProductData : {}) // Only include verified data
+      ...(originalProductData.verified ? originalProductData : {})
     };
-    
+
     const enrichedDupesForContext = enrichedDupes.map(dupe => ({
       name: dupe.name,
       brand: dupe.brand,
-      ...(dupe.verified ? dupe : {}) // Only include verified data
+      ...(dupe.verified ? dupe : {})
     }));
-    
+
     const detailedAnalysis = await getDetailedDupeAnalysis(
-      enrichedOriginal, 
+      enrichedOriginal,
       enrichedDupesForContext
     );
-    
-    // Step 5: Data cleanup and structuring with OpenAI
+
+    onProgress("Just a sec, adding the final touches... ✨");
     logInfo('Cleaning up and structuring data...');
     const structuredData = await cleanupAndStructureData(detailedAnalysis);
-    
-    // Step 6: Store in database
+
+    onProgress("Ta-da! Your dupes are ready to shine! 🌟");
     logInfo('Storing data in database...');
     const result = await storeDataInDatabase(structuredData);
-    
+
     return {
       success: true,
       data: result
