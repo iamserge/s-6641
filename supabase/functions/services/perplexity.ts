@@ -202,7 +202,7 @@ export async function getInitialDupes(searchText: string): Promise<{
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "sonar-small-online", // Using smaller model for initial search
+        model: "sonar-reasoning-pro", 
         messages: [
           {
             role: "system",
@@ -309,7 +309,7 @@ export async function enrichProductData(productName: string, brand: string): Pro
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "sonar-small-online",
+        model: "sonar-reasoning-pro",
         messages: [
           {
             role: "system",
