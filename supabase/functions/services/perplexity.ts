@@ -12,6 +12,7 @@ import { repairPerplexityResponse, getProductEnrichmentData } from "./openai.ts"
 /**
  * Gets dupe recommendations from Perplexity API
  */
+
 export async function getPerplexityResponse(searchText: string): Promise<DupeResponse> {
   logInfo(`Sending request to Perplexity API for: ${searchText}`);
   
@@ -20,69 +21,59 @@ export async function getPerplexityResponse(searchText: string): Promise<DupeRes
 
   1. Original Product Description:
      - Exact product name and brand
-     - Product category (e.g., Foundation, Lipstick, Eyeshadow, etc.) - be specific about this
+     - Product category (e.g., Foundation, Lipstick, Eyeshadow, etc.) - be specific
      - Price (in USD)
-     - Complete list of key ingredients (identify active ingredients and controversial ingredients)
-     - Texture, finish, and coverage details
-     - Country of origin if known (important for regulatory compliance)
-     - Cruelty-free and vegan status of the brand (with certification if known)
-     - Sustainable packaging information if available
-     - Any "free-from" claims (e.g., paraben-free, fragrance-free)
+     - Complete list of key ingredients (identify active ingredients)
+     - Key attributes (texture, finish, coverage, etc.)
+     - Country of origin if known
+     - Free-from claims (e.g., paraben-free, fragrance-free)
      - Longevity rating on a scale of 1-10
      - Oxidation tendency (None/Minor/Significant)
-     - Best suited skin types and conditions (e.g., humid climate, dry skin)
+     - Best suited skin types and conditions
 
-  2. Dupe Recommendations - as meny as possible:
+  2. Dupe Recommendations - as many as possible:
      For each recommended dupe, provide:
      - Product name and brand
-     - Product category (especially important if different from original)
+     - Product category (especially if different from original)
      - Price and savings percentage compared to original
-     - Complete list of key ingredients, highlighting similarities with original
-     - Texture and finish details with specific comparison to original
-     - Coverage level (sheer, medium, full) if applicable
-     - SPF rating if applicable
+     - Key ingredients
+     - Texture description
+     - Finish type
+     - Coverage level (if applicable)
+     - SPF rating (if applicable)
+     - Skin types compatible with the product
      - Match score on a scale of 0-100 (overall similarity)
-     - Color match score (0-100)
-     - Formula match score (0-100)
-     - Dupe type classification: "Shade Match", "Formula Match", "Exact Dupe", "Cross-Category Dupe" (if different category)
+     - Color match score (0-100) if applicable
+     - Formula match score (0-100) if applicable
+     - Dupe type classification (e.g., "Shade Match", "Formula Match", "Exact Dupe", "Cross-Category Dupe")
+     - Validation source (e.g., "Verified by Temptalia", "Reddit consensus")
+     - Confidence level (High/Medium/Low) based on validation quality
      - Longevity comparison with original
-     - Oxidation tendency comparison
-     - Transfer-resistance comparison
-     - Notes on application differences (e.g., blendability, dry-down time)
-     - Suitable skin types
+     - Additional notes on performance or application differences
      - Purchase link if available
-     - Ethical information (cruelty-free, vegan status)
+     - Image URL if available
+     - Best for (skin types or conditions product works well with)
      - Country of origin if known
+     - Cruelty-free status (boolean)
+     - Vegan status (boolean)
+     - Free-from claims (e.g., paraben-free, fragrance-free)
 
   3. Comparison Summary:
-     - Which dupe is closest to the original and why
-     - Sustainability or ethical advantages of any dupes over the original
-     - Performance differences between dupes and original
-     - Value proposition of each dupe (why someone might choose it)
-     - Notable ingredient differences and their implications
-     - Mention if any dupes are from a different product category but achieve similar results
+     - Brief but comprehensive summary comparing the original and dupes
+     - Highlight which dupe is closest to the original and why
+     - Note any significant differences in performance or value proposition
 
   4. Resource Library:
      Include at least 5 resources with focus on credible sources:
-     - Temptalia's dupe lists if available
-     - Reddit discussions (r/MakeupAddiction, r/BeautyGuruChatter)
-     - YouTube comparison videos
-     - Beauty blog reviews with side-by-side comparisons
-     - Instagram or TikTok content from reputable beauty influencers
+     - Resource title or description
+     - URL to the resource
+     - Resource type (Video, YouTube, Instagram, TikTok, Article, or Reddit)
 
-  5. Validation Information:
-     For each dupe, specify:
-     - Validation source (e.g., "Verified by Temptalia", "Reddit consensus", "Expert beauty blogger")
-     - Confidence level (High/Medium/Low) based on number and quality of validations
-     - Whether comparisons included side-by-side swatches or wear tests
-
-  Below is the schema for your response. Pay close attention to the comments that explain each field's purpose and importance:
+  Below is the schema for your response. Pay close attention to each field:
 
   ${SCHEMA_DEFINITION}
 
-  Focus on finding dupes with high accuracy and validation from multiple sources like Temptalia, Reddit, and beauty experts. Prioritize sources that include side-by-side comparisons, ingredient analysis, and performance testing. If information is limited, clearly note the confidence level.
-  
-  Pay special attention to the product category and be aware that sometimes dupes can be from different categories (e.g., a liquid lipstick might be a dupe for a traditional lipstick, or a BB cream might be a dupe for a foundation). When this occurs, categorize it as a "Cross-Category Dupe" in the dupeType field.`;
+  Focus on finding dupes with high accuracy and validation from multiple sources like Temptalia, Reddit, and beauty experts. Prioritize sources that include side-by-side comparisons, ingredient analysis, and performance testing. If information is limited, clearly note the confidence level.`;
 
   try {
     const response = await fetch(PERPLEXITY_API_ENDPOINT, {

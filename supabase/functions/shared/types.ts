@@ -64,6 +64,7 @@ export interface DupeResponse {
     countryOfOrigin?: string;
     crueltyFree?: boolean;
     vegan?: boolean;
+    freeOf?: string[]; // Claims about excluded ingredients
   }>;
   summary: string;
   resources: Array<{
@@ -174,6 +175,7 @@ export interface Dupe {
   cruelty_free?: boolean;
   vegan?: boolean;
   country_of_origin?: string;
+  free_of?: string[]; // Added field for excluded ingredients claims
 }
 
 export interface Resource {
