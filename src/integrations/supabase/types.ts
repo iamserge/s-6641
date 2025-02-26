@@ -569,7 +569,13 @@ export type Database = {
         | "Haircare"
         | "Tools"
         | "Other"
-      resource_type: "Video" | "YouTube" | "Instagram" | "TikTok" | "Article"
+      resource_type:
+        | "Video"
+        | "YouTube"
+        | "Instagram"
+        | "TikTok"
+        | "Article"
+        | "Reddit"
     }
     CompositeTypes: {
       [_ in never]: never

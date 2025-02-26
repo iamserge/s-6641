@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +38,7 @@ const DupePage = () => {
         if (productError) throw productError;
         if (!product) throw new Error('Product not found');
 
-        // Fetch dupes with expanded fields, corrected to use 'product_offers'
+        // Fetch dupes with expanded fields through product_offers junction table
         const { data: dupeRelations, error: dupesError } = await supabase
           .from('product_dupes')
           .select(`
@@ -45,7 +46,12 @@ const DupePage = () => {
             savings_percentage,
             dupe:products!product_dupes_dupe_product_id_fkey(
               *,
-              offers:product_offers(*)  // Updated to 'product_offers'
+              product_offers(
+                offers(
+                  *,
+                  merchant:merchants(*)
+                )
+              )
             )
           `)
           .eq('original_product_id', product.id);
@@ -63,13 +69,19 @@ const DupePage = () => {
             if (ingredientsError) console.error('Error fetching ingredients:', ingredientsError);
 
             const ingredients = ingredientsData ? ingredientsData.map(item => item.ingredients) : [];
+            
+            // Process offers to flatten the nested structure
+            const offers = relation.dupe.product_offers?.map(po => ({
+              ...po.offers,
+              merchant: po.offers.merchant
+            })) || [];
 
             return {
               ...relation.dupe,
               match_score: relation.match_score,
               savings_percentage: relation.savings_percentage,
               ingredients,
-              offers: relation.dupe.offers || []  // Now correctly linked to 'product_offers'
+              offers
             };
           })
         );
