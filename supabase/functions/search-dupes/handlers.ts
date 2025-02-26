@@ -124,7 +124,7 @@ export async function handleDupeSearch(req: Request): Promise<Response> {
     await processProductIngredients(productData.id, allIngredientsList);
 
     // Insert dupes into database
-    logInfo(`Inserting dupes into database for product ID: ${productData.id}`);
+    logInfo(`Inserting bloody dupes into database for product ID: ${productData.id}`);
     const dupeIds: string[] = [];
     
     for (let i = 0; i < dupes.length; i++) {
