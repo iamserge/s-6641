@@ -1,4 +1,3 @@
-
 /// <reference lib="es2015" />
 
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
@@ -47,12 +46,6 @@ export async function handleDupeSearch(req: Request): Promise<Response> {
     const data = await getPerplexityResponse(searchText);
     const { original, dupes, summary, resources } = data;
 
-    // Ensure brand is not null
-    if (!original.brand) {
-      logError("Brand name is missing from original product");
-      throw new Error("Product brand name is required");
-    }
-
     // Generate unique slug with brand for better uniqueness
     const slug = slugify(`${original.brand}-${original.name}`, { lower: true });
 
@@ -86,11 +79,10 @@ export async function handleDupeSearch(req: Request): Promise<Response> {
     // Validate and normalize product category
     const validatedCategory = original.category ? validateProductCategory(original.category) : undefined;
 
-    // Insert original product into database with explicit brand
+    // Insert original product into database
     logInfo(`Inserting product into database: ${original.name}`);
     const { data: productData, error: productError } = await insertProduct({
       name: original.name,
-      brand: original.brand, // Explicitly set the brand
       brand_id: originalBrandId,
       price: original.price,
       category: validatedCategory,
@@ -113,13 +105,18 @@ export async function handleDupeSearch(req: Request): Promise<Response> {
     
     // Add key ingredients from original product if available
     if (original.keyIngredients && Array.isArray(original.keyIngredients)) {
-      allIngredientsList.push(...original.keyIngredients.map(i => i.trim()));
+      for (let i = 0; i < original.keyIngredients.length; i++) {
+        allIngredientsList.push(original.keyIngredients[i].trim());
+      }
     }
     
     // Collect all ingredients from dupes to associate with original product
-    for (const dupe of dupes) {
+    for (let i = 0; i < dupes.length; i++) {
+      const dupe = dupes[i];
       if (dupe.keyIngredients && Array.isArray(dupe.keyIngredients)) {
-        allIngredientsList.push(...dupe.keyIngredients.map(i => i.trim()));
+        for (let j = 0; j < dupe.keyIngredients.length; j++) {
+          allIngredientsList.push(dupe.keyIngredients[j].trim());
+        }
       }
     }
     
@@ -127,17 +124,12 @@ export async function handleDupeSearch(req: Request): Promise<Response> {
     await processProductIngredients(productData.id, allIngredientsList);
 
     // Insert dupes into database
-    logInfo(`Inserting dupes into database for product ID: ${productData.id}`);
+    logInfo(`Inserting bloody dupes into database for product ID: ${productData.id}`);
     const dupeIds: string[] = [];
     
-    for (const dupe of dupes) {
+    for (let i = 0; i < dupes.length; i++) {
+      const dupe = dupes[i];
       try {
-        // Ensure dupe brand is not null
-        if (!dupe.brand) {
-          logError(`Brand name is missing for dupe: ${dupe.name}`);
-          continue;
-        }
-
         // Process brand for this dupe
         const dupeBrandId = await processBrand(dupe.brand);
         
@@ -147,7 +139,6 @@ export async function handleDupeSearch(req: Request): Promise<Response> {
         // Insert the dupe with brand relation
         const { data: dupeData, error: dupeInsertError } = await insertDupe({
           product_id: productData.id,
-          brand: dupe.brand, // Explicitly set the brand
           brand_id: dupeBrandId,
           name: dupe.name,
           category: validatedDupeCategory,
@@ -164,13 +155,15 @@ export async function handleDupeSearch(req: Request): Promise<Response> {
           validation_source: dupe.validationSource,
           confidence_level: dupe.confidenceLevel,
           longevity_comparison: dupe.longevityComparison,
-          verified: false,
+          verified: false, // Default to false, can be updated later after manual verification
           notes: dupe.notes,
           purchase_link: dupe.purchaseLink || undefined,
           image_url: dupe.imageUrl,
           skin_types: dupe.skinTypes || [],
+          best_for: dupe.bestFor || [],
           cruelty_free: dupe.crueltyFree,
-          vegan: dupe.vegan
+          vegan: dupe.vegan,
+          country_of_origin: dupe.countryOfOrigin
         });
 
         if (dupeInsertError) throw dupeInsertError;
@@ -189,19 +182,17 @@ export async function handleDupeSearch(req: Request): Promise<Response> {
     }
 
     // Insert resources into database
-    if (resources && Array.isArray(resources)) {
-      logInfo(`Inserting resources into database for product ID: ${productData.id}`);
-      const resourcesData = resources.map(resource => ({
-        product_id: productData.id,
-        title: resource.title,
-        url: resource.url,
-        type: resource.type,
-      }));
+    logInfo(`Inserting resources into database for product ID: ${productData.id}`);
+    const resourcesData = resources.map(resource => ({
+      product_id: productData.id,
+      title: resource.title,
+      url: resource.url,
+      type: resource.type,
+    }));
 
-      const { error: resourcesError } = await insertResources(resourcesData);
-      if (resourcesError) {
-        logError(`Failed to insert resources:`, resourcesError);
-      }
+    const { error: resourcesError } = await insertResources(resourcesData);
+    if (resourcesError) {
+      logError(`Failed to insert resources:`, resourcesError);
     }
 
     // Return success response
