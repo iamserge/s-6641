@@ -110,6 +110,7 @@ export type Database = {
           dupe_type: string | null
           finish: string
           formula_match_score: number | null
+          free_of: string[] | null
           id: string
           image_url: string | null
           longevity_comparison: string | null
@@ -141,6 +142,7 @@ export type Database = {
           dupe_type?: string | null
           finish: string
           formula_match_score?: number | null
+          free_of?: string[] | null
           id?: string
           image_url?: string | null
           longevity_comparison?: string | null
@@ -172,6 +174,7 @@ export type Database = {
           dupe_type?: string | null
           finish?: string
           formula_match_score?: number | null
+          free_of?: string[] | null
           id?: string
           image_url?: string | null
           longevity_comparison?: string | null
