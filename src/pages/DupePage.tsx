@@ -2,11 +2,16 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ExternalLink, Star } from 'lucide-react';
+import { Loader2, ExternalLink } from 'lucide-react';
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from '@/components/Navbar';
+
+interface Ingredient {
+  id: string;
+  name: string;
+}
 
 interface Dupe {
   id: string;
@@ -19,9 +24,18 @@ interface Dupe {
   spf: number | null;
   skin_types: string[];
   match_score: number;
+  color_match_score?: number;
+  formula_match_score?: number;
+  dupe_type?: string;
+  coverage?: string;
+  confidence_level?: number;
+  longevity_comparison?: string;
   notes: string | null;
   purchase_link: string | null;
   image_url: string | null;
+  cruelty_free?: boolean;
+  vegan?: boolean;
+  ingredients?: Ingredient[];
 }
 
 interface Product {
@@ -51,16 +65,51 @@ const DupePage = () => {
       }
 
       try {
+        // First fetch the product with its dupes
         const { data: product, error: productError } = await supabase
           .from('products')
-          .select('*, dupes(*)')
+          .select(`
+            *,
+            dupes (
+              *
+            )
+          `)
           .eq('slug', slug)
           .single();
 
         if (productError) throw productError;
         if (!product) throw new Error('Product not found');
 
-        setData(product);
+        // Then fetch ingredients for each dupe
+        const dupeIds = product.dupes.map((dupe: Dupe) => dupe.id);
+        const { data: dupeIngredients, error: ingredientsError } = await supabase
+          .from('dupe_ingredients')
+          .select(`
+            dupe_id,
+            ingredients (
+              id,
+              name
+            )
+          `)
+          .in('dupe_id', dupeIds);
+
+        if (ingredientsError) throw ingredientsError;
+
+        // Map ingredients to their respective dupes
+        const dupesWithIngredients = product.dupes.map((dupe: Dupe) => {
+          const dupeIngredientsData = dupeIngredients
+            .filter(di => di.dupe_id === dupe.id)
+            .map(di => di.ingredients);
+          return {
+            ...dupe,
+            ingredients: dupeIngredientsData
+          };
+        });
+
+        setData({
+          ...product,
+          dupes: dupesWithIngredients
+        });
       } catch (error) {
         console.error('Error fetching dupe data:', error);
         setError('Failed to load product data');
@@ -171,7 +220,7 @@ const DupePage = () => {
           transition={{ delay: 1.2 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
-          {data.dupes.map((dupe: any, index: number) => (
+          {data?.dupes.map((dupe: Dupe, index: number) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -209,13 +258,15 @@ const DupePage = () => {
                 </CardHeader>
 
                 <CardContent className="space-y-6">
-                  <div className="flex flex-wrap gap-2">
-                    {dupe.key_ingredients?.map((ingredient: string, i: number) => (
-                      <Badge key={i} variant="outline" className="bg-white/50">
-                        {ingredient}
-                      </Badge>
-                    ))}
-                  </div>
+                  {dupe.ingredients && dupe.ingredients.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {dupe.ingredients.map((ingredient: Ingredient, i: number) => (
+                        <Badge key={i} variant="outline" className="bg-white/50">
+                          {ingredient.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                   
                   <div className="grid grid-cols-2 gap-6 text-base">
                     <div>
