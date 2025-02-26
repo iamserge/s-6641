@@ -1,3 +1,4 @@
+
 export interface Ingredient {
   id: string;
   name: string;
@@ -38,7 +39,7 @@ export interface Dupe {
   formula_match_score?: number;
   dupe_type?: string;
   coverage?: string;
-  confidence_level?: number;
+  confidence_level?: string;  // Changed from number to string
   longevity_comparison?: string;
   notes?: string | null;
   purchase_link?: string | null;
