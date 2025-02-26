@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -57,9 +56,10 @@ const Hero = () => {
           if (data.data.success && data.data.data.slug) {
             setProgressMessage("Ta-da! Your dupes are ready to shine! 🌟");
             setTimeout(() => {
-              navigate(`/dupes/for/${data.data.data.slug}`);
               eventSource.close();
-            }, 1000);
+              navigate(`/dupes/for/${data.data.data.slug}`);
+              setIsProcessing(false); // Only close the overlay after navigation
+            }, 1500); // Increased delay to ensure message is visible
           } else {
             throw new Error("No product data returned");
           }
@@ -71,6 +71,7 @@ const Hero = () => {
       eventSource.onerror = (error) => {
         console.error("SSE error:", error);
         eventSource.close();
+        setIsProcessing(false); // Close overlay on error
         throw new Error("Failed to receive updates from the server");
       };
 
@@ -85,8 +86,7 @@ const Hero = () => {
         title: "Error",
         description: "Failed to search for products. Please try again.",
       });
-    } finally {
-      setTimeout(() => setIsProcessing(false), 1000);
+      setIsProcessing(false); // Close overlay on error
     }
   };
 
