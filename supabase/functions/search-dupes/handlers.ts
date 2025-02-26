@@ -1,8 +1,8 @@
 
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
-import { logInfo, logError } from "../shared/utils";
-import { corsHeaders } from "../shared/constants";
-import { DupeResponse, ProductCategory } from "../shared/types";
+import { logInfo, logError } from "../shared/utils.ts";
+import { corsHeaders } from "../shared/constants.ts";
+import { DupeResponse, ProductCategory } from "../shared/types.ts";
 import { 
   getProductByNameAndSlug, 
   insertProduct, 
@@ -10,10 +10,10 @@ import {
   insertResources,
   processIngredients,
   linkIngredientToDupe
-} from "../shared/db-client";
-import { processBrand } from "../services/brands";
-import { getPerplexityResponse, enrichProductData } from "../services/perplexity";
-import { processProductImages } from "../services/images";
+} from "../shared/db-client.ts";
+import { processBrand } from "../services/brands.ts";
+import { getPerplexityResponse, enrichProductData } from "../services/perplexity.ts";
+import { processProductImages } from "../services/images.ts";
 
 export async function handleDupeSearch(req: Request): Promise<Response> {
   try {

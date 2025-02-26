@@ -1,11 +1,11 @@
-import { logInfo, logError, safeStringify } from "../shared/utils";
-import { DupeResponse } from "../shared/types";
+import { logInfo, logError, safeStringify } from "../shared/utils.ts";
+import { DupeResponse } from "../shared/types.ts";
 import { 
   PERPLEXITY_API_KEY, 
   PERPLEXITY_API_ENDPOINT,
   SCHEMA_DEFINITION 
-} from "../shared/constants";
-import { repairPerplexityResponse, getProductEnrichmentData } from "./openai";
+} from "../shared/constants.ts";
+import { repairPerplexityResponse, getProductEnrichmentData } from "./openai.ts";
 
 /**
  * Gets dupe recommendations from Perplexity API

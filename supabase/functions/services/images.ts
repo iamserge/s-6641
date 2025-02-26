@@ -1,5 +1,5 @@
-import { logInfo, logError, blobToBase64, base64ToBlob } from "../shared/utils";
-import { uploadImage, getPublicUrl } from "../shared/db-client";
+import { logInfo, logError, blobToBase64, base64ToBlob } from "../shared/utils.ts";
+import { uploadImage, getPublicUrl } from "../shared/db-client.ts";
 import { 
   GOOGLE_API_KEY, 
   GOOGLE_CSE_ID, 

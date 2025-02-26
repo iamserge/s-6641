@@ -1,6 +1,6 @@
 import { logInfo, logError } from "../shared/utils";
-import { OPENAI_API_KEY, OPENAI_API_ENDPOINT } from "../shared/constants";
-import { BrandInfo, IngredientInfo, DupeResponse } from "../shared/types";
+import { OPENAI_API_KEY, OPENAI_API_ENDPOINT } from "../shared/constants.ts";
+import { BrandInfo, IngredientInfo, DupeResponse } from "../shared/types.ts";
 
 /**
  * Generic function to get structured data from OpenAI

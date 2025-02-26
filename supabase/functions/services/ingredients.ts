@@ -1,12 +1,12 @@
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
-import { logInfo, logError } from "../shared/utils";
+import { logInfo, logError } from "../shared/utils.ts";
 import { 
   getIngredientByName, 
   insertIngredient, 
   linkIngredientToProduct, 
   linkIngredientToDupe 
-} from "../shared/db-client";
-import { getIngredientInfo } from "./openai";
+} from "../shared/db-client.ts";
+import { getIngredientInfo } from "./openai.ts";
 
 /**
  * Process an ingredient and return its ID

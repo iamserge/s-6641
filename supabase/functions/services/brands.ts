@@ -1,7 +1,7 @@
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
-import { logInfo, logError } from "../shared/utils";
-import { getBrandByName, insertBrand } from "../shared/db-client";
-import { getBrandInfo } from "./openai";
+import { logInfo, logError } from "../shared/utils.ts";
+import { getBrandByName, insertBrand } from "../shared/db-client.ts";
+import { getBrandInfo } from "./openai.ts";
 
 /**
  * Process a brand and return its ID
