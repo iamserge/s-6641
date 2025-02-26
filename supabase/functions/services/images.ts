@@ -8,7 +8,7 @@ import {
   HF_API_KEY, 
   HF_API_ENDPOINT, 
   BACKGROUND_REMOVAL_API 
-} from "../shared/constants";
+} from "../shared/constants.ts";
 
 /**
  * Fetches a product image using Google Custom Search API
