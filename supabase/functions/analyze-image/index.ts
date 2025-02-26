@@ -25,18 +25,18 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant that analyzes images of makeup products. Extract the product name, brand if visible, and if there\'s a hand holding the product, analyze the skin tone.',
+            content: 'You are a helpful assistant that analyzes images of makeup products. Extract the product name, brand if visible and if it is barcode output product number',
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Please analyze this image and extract: 1. Product name and brand 2. If a hand is visible, describe the skin tone. Return as JSON with fields: productName, brand, skinTone (null if no hand visible)',
+                text: 'Please analyze this image and extract string: {product name} by {brand} OR {product code} (if barcode )',
               },
               {
                 type: 'image_url',
