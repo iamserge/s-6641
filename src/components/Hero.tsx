@@ -33,9 +33,9 @@ const Hero = () => {
       setIsProcessing(true);
       setProgressMessage("Connecting to the beauty lab... 🔬");
   
-      // Use the correct Supabase URL from the client configuration
+      // Use getUrl() to get the base URL for Supabase
       const eventSource = new EventSource(
-        `${supabase.supabaseUrl}/functions/v1/search-dupes?searchText=${encodeURIComponent(searchText)}`
+        `${supabase.getUrl()}/functions/v1/search-dupes?searchText=${encodeURIComponent(searchText)}`
       );
   
       eventSource.onmessage = (event) => {
