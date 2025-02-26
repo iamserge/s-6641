@@ -123,42 +123,38 @@ async function processAndUploadImage(imageUrl: string | undefined, fileName: str
 /**
  * Store structured data in the database
  */
-async function storeDataInDatabase(data: DupeResponse) {
+/**
+ * Store structured data in the database with optimized image handling
+ */
+export async function storeDataInDatabase(data: DupeResponse) {
   try {
-    // 1. Process and store brand information
-    const originalBrand = await processBrand(data.original.brand);
+    // 1. Process all unique brands in parallel
+    const allBrands = new Set([data.original.brand, ...data.dupes.map(dupe => dupe.brand)]);
+    const brandPromises = Array.from(allBrands).map(brand => processBrand(brand));
+    const brandIds = await Promise.all(brandPromises);
+    const brandMap = new Map(Array.from(allBrands).map((brand, index) => [brand, brandIds[index]]));
+    logInfo(`Processed ${allBrands.size} unique brands`);
 
     // 2. Create slug for the original product
     const productSlug = slugify(`${data.original.brand}-${data.original.name}`, { lower: true });
 
-    // 3. Process original product image (use first image from external DB)
-    const originalImageUrl = await processAndUploadImage(
-      data.original.imageUrl, // Already fetched from external DB
-      `${productSlug}-original`
-    );
+    // 3. Determine image URL for the original product: prioritize external data
+    const originalImageUrl = data.original.images && data.original.images.length > 0
+      ? data.original.images[0] // Use first image from external data if verified
+      : data.original.imageUrl; // Fallback to Perplexity-provided URL
 
-    // 4. Process dupe images concurrently (use first image from external DB)
-    const dupeImageUrls = await Promise.all(
-      data.dupes.map((dupe, index) =>
-        processAndUploadImage(
-          dupe.imageUrl, // Already fetched from external DB
-          `${productSlug}-dupe-${index + 1}`
-        )
-      )
-    );
-
-    // 5. Store original product with processed image URL
+    // Store original product with raw image URL
     const { data: originalProduct, error: productError } = await supabase
       .from('products')
       .insert({
         name: data.original.name,
         brand: data.original.brand,
-        brand_id: originalBrand,
+        brand_id: brandMap.get(data.original.brand),
         slug: productSlug,
         price: data.original.price,
         category: data.original.category,
         attributes: data.original.attributes || [],
-        image_url: originalImageUrl, // Use processed image URL or fallback to original
+        image_url: originalImageUrl, // Use prioritized raw image URL
         summary: data.summary,
         country_of_origin: data.original.countryOfOrigin,
         longevity_rating: data.original.longevityRating,
@@ -174,27 +170,22 @@ async function storeDataInDatabase(data: DupeResponse) {
       throw productError;
     }
 
-    // 6. Process product ingredients
-    if (data.original.keyIngredients && data.original.keyIngredients.length > 0) {
-      await processProductIngredients(originalProduct.id, data.original.keyIngredients);
-    }
-
-    // 7. Process and store dupes with processed image URLs
+    // 4. Store dupes with prioritized image URLs
     const dupeIds = await Promise.all(
       data.dupes.map(async (dupe, index) => {
-        // Process dupe brand
-        const dupeBrandId = await processBrand(dupe.brand);
-
-        // Create dupe slug
         const dupeSlug = slugify(`${dupe.brand}-${dupe.name}`, { lower: true });
 
-        // Store dupe product with processed image URL
+        // Prioritize external data image for dupes
+        const dupeImageUrl = dupe.images && dupe.images.length > 0
+          ? dupe.images[0] // Use first image from external data if verified
+          : dupe.imageUrl; // Fallback to Perplexity-provided URL
+
         const { data: dupeProduct, error: dupeError } = await supabase
           .from('products')
           .insert({
             name: dupe.name,
             brand: dupe.brand,
-            brand_id: dupeBrandId,
+            brand_id: brandMap.get(dupe.brand),
             slug: dupeSlug,
             price: dupe.price,
             category: dupe.category || data.original.category,
@@ -205,7 +196,7 @@ async function storeDataInDatabase(data: DupeResponse) {
             skin_types: dupe.skinTypes,
             notes: dupe.notes,
             purchase_link: dupe.purchaseLink,
-            image_url: dupeImageUrls[index], // Use processed image URL or fallback to original
+            image_url: dupeImageUrl, // Use prioritized raw image URL
             cruelty_free: dupe.crueltyFree,
             vegan: dupe.vegan,
             best_for: dupe.bestFor || []
@@ -233,16 +224,11 @@ async function storeDataInDatabase(data: DupeResponse) {
           throw relationError;
         }
 
-        // Process dupe ingredients
-        if (dupe.keyIngredients && dupe.keyIngredients.length > 0) {
-          await processDupeIngredients(dupeProduct.id, dupe.keyIngredients);
-        }
-
         return dupeProduct.id;
       })
     );
 
-    // 8. Store resources
+    // 5. Store resources
     if (data.resources && data.resources.length > 0) {
       const resourcesData = data.resources.map(resource => ({
         title: resource.title,
@@ -257,16 +243,42 @@ async function storeDataInDatabase(data: DupeResponse) {
 
       if (resourcesError) {
         logError('Error storing resources:', resourcesError);
-        // Non-critical error, continue without throwing
+        // Non-critical, log but don't throw
       }
     }
 
-    // Return data for the frontend
-    return {
+    // 6. Prepare response for frontend
+    const result = {
       slug: productSlug,
       name: originalProduct.name,
       brand: originalProduct.brand
     };
+
+    // 7. Trigger background task for image and ingredient processing
+    const backgroundTaskData = {
+      originalProductId: originalProduct.id,
+      dupeProductIds: dupeIds,
+      originalImageUrl: originalImageUrl, // Pass prioritized image URL
+      dupeImageUrls: data.dupes.map(dupe => 
+        dupe.images && dupe.images.length > 0 ? dupe.images[0] : dupe.imageUrl
+      ), // Pass prioritized dupe image URLs
+      originalKeyIngredients: data.original.keyIngredients,
+      dupeKeyIngredients: data.dupes.map(dupe => dupe.keyIngredients)
+    };
+
+    // Use your actual Supabase project URL
+    const supabaseUrl = "https://your-supabase-project.supabase.co"; // Replace with your Supabase project URL
+    fetch(`${supabaseUrl}/functions/v1/populate-product-data`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` // Optional: Add if authentication is required
+      },
+      body: JSON.stringify(backgroundTaskData)
+    }).catch(error => logError('Error triggering background task:', error));
+
+    logInfo('Main request completed, background task triggered');
+    return result;
   } catch (error) {
     logError('Error in storeDataInDatabase:', error);
     throw error;

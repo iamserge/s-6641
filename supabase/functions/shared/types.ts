@@ -41,6 +41,7 @@ export interface DupeResponse {
     category: ProductCategory; // Added product category
     attributes: string[];
     keyIngredients?: string[];
+    images?: string[];
     imageUrl?: string;
     countryOfOrigin?: string;
     freeOf?: string[];
@@ -69,6 +70,7 @@ export interface DupeResponse {
     longevityComparison?: string;
     notes: string;
     purchaseLink?: string;
+    images?: string[];
     imageUrl?: string;
     bestFor?: string[]; // Best conditions/skin types
     countryOfOrigin?: string;
