@@ -1,7 +1,9 @@
 /// <reference lib="es2015" />
 
-import { GETIMG_API_KEY, GETIMG_BASE_URL, HF_API_KEY, HF_API_ENDPOINT } from "../shared/constants.ts";
+import { GETIMG_API_KEY, GETIMG_BASE_URL } from "../shared/constants.ts";
 import { logInfo, logError, withRetry, blobToBase64, base64ToBlob } from "../shared/utils.ts";
+import * as tf from "https://deno.land/x/tfjs@3.21.0/mod.ts"; // TensorFlow.js for Deno
+import { BodyPix, load as loadBodyPix } from "https://deno.land/x/bodypix@2.0.7/mod.ts"; // BodyPix model
 
 interface GetImgResponse {
   model: string;
@@ -27,20 +29,17 @@ export async function upscaleImage(imageUrl: string, scale: number = 4): Promise
       return null;
     }
     
-    // First, fetch the image from the URL
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
       throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`);
     }
     
-    // Convert image to base64
     const imageBuffer = await imageResponse.arrayBuffer();
     const base64Image = btoa(
       new Uint8Array(imageBuffer)
         .reduce((data, byte) => data + String.fromCharCode(byte), '')
     );
     
-    // Call getimg.ai API with retry logic
     const result = await withRetry(async () => {
       const response = await fetch(`${GETIMG_BASE_URL}/upscale`, {
         method: "POST",
@@ -63,13 +62,10 @@ export async function upscaleImage(imageUrl: string, scale: number = 4): Promise
           const errorData = await response.json();
           errorDetails += ` - ${JSON.stringify(errorData)}`;
         } catch (e) {
-          // If we can't parse the error as JSON, try to get the raw text
           try {
             const errorText = await response.text();
             errorDetails += ` - ${errorText}`;
-          } catch (textError) {
-            // Ignore errors when trying to read the error body
-          }
+          } catch (textError) {}
         }
         throw new Error(`GetImg.ai API error: ${errorDetails}`);
       }
@@ -90,55 +86,70 @@ export async function upscaleImage(imageUrl: string, scale: number = 4): Promise
 }
 
 /**
- * Removes background from an image using Hugging Face Inference API
+ * Removes background from an image using BodyPix (TensorFlow.js)
  * @param base64Image Base64 encoded image to process
  * @returns Base64 encoded image with background removed or original if failed
  */
 export async function removeBackground(base64Image: string): Promise<string | null> {
   try {
-    logInfo(`Removing background from image using Hugging Face API`);
-    
-    if (!HF_API_KEY) {
-      logError("Hugging Face API key is not configured");
-      return base64Image; // Return original if API key not configured
+    logInfo(`Removing background locally using BodyPix`);
+
+    // Convert base64 to an Image object
+    const imgBlob = base64ToBlob(base64Image);
+    const imgUrl = URL.createObjectURL(imgBlob);
+    const img = new Image();
+    img.src = imgUrl;
+    await new Promise((resolve) => img.onload = resolve);
+
+    // Load BodyPix model
+    const net = await loadBodyPix({
+      architecture: 'MobileNetV1',
+      outputStride: 16,
+      multiplier: 0.75,
+      quantBytes: 2
+    });
+
+    // Segment the image (assuming product images have a distinct foreground)
+    const segmentation = await net.segmentPerson(img, {
+      segmentationThreshold: 0.7 // Adjust for stricter foreground detection
+    });
+
+    // Create a canvas to mask the background
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error("Failed to get canvas context");
     }
-    
-    // Convert base64 to blob for API call
-    const imageBlob = base64ToBlob(base64Image);
-    
-    // Convert blob to array buffer
-    const arrayBuffer = await imageBlob.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
-    
-    // Call Hugging Face API with retry logic
-    const result = await withRetry(async () => {
-      const response = await fetch(HF_API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${HF_API_KEY}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: buffer,
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Hugging Face API error: ${response.status} - ${await response.text()}`);
+
+    // Draw the original image
+    ctx.drawImage(img, 0, 0);
+
+    // Get image data
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // Apply segmentation mask (set background to transparent)
+    for (let i = 0; i < segmentation.data.length; i++) {
+      if (segmentation.data[i] === 0) { // Background
+        data[i * 4 + 3] = 0; // Set alpha to 0 (transparent)
       }
-      
-      const processedImageBlob = await response.blob();
-      // Convert processed blob back to base64
-      return await blobToBase64(processedImageBlob);
-    }, 3, 1000);
-    
-    if (result) {
-      logInfo(`Successfully removed background using Hugging Face`);
-      return result;
     }
-    
-    return base64Image; // Return original on failure
+
+    // Put the modified image data back
+    ctx.putImageData(imageData, 0, 0);
+
+    // Convert canvas to base64
+    const result = canvas.toDataURL('image/png').split(',')[1];
+    URL.revokeObjectURL(imgUrl); // Clean up
+
+    logInfo(`Successfully removed background locally`);
+    return result;
   } catch (error) {
-    logError(`Error removing background with Hugging Face:`, error);
-    return base64Image; // Return original on error
+    logError(`Error removing background locally:`, error);
+    return base64Image; // Return original on failure
   }
 }
 
@@ -167,15 +178,15 @@ export async function processProductImage(imageUrl: string): Promise<string | nu
       processedImage = await blobToBase64(imageBlob);
     }
     
-    // Step 2: Remove background if Hugging Face API key is available
-    if (HF_API_KEY && processedImage) {
+    // Step 2: Remove background locally
+    if (processedImage) {
       const noBackgroundImage = await removeBackground(processedImage);
       if (noBackgroundImage) {
         return noBackgroundImage;
       }
     }
     
-    // Return whatever processed image we have at this point
+    // Return whatever processed image we have
     return processedImage;
   } catch (error) {
     logError(`Error processing product image:`, error);
