@@ -256,7 +256,7 @@ export async function getDetailedDupeAnalysis(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "sonar-reasoning-pro", // Using the more powerful model for detailed analysis
+        model: "sonar-pro", // Using the more powerful model for detailed analysis
         messages: [
           {
             role: "system",
