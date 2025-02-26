@@ -34,20 +34,24 @@ const Hero = () => {
       setProgressMessage("Connecting to the beauty lab... 🔬");
   
       const { data: { session } } = await supabase.auth.getSession();
-      const functionUrl = session?.access_token 
-        ? `${window.location.origin}/functions/v1/search-dupes?searchText=${encodeURIComponent(searchText)}`
-        : `${window.location.origin}/functions/v1/search-dupes?searchText=${encodeURIComponent(searchText)}`;
-        
-      const eventSource = new EventSource(functionUrl);
+      const apikey = (supabase as any).supabaseKey;
+      
+      // Construct the URL for the Edge Function
+      const baseUrl = `${(supabase as any).supabaseUrl}/functions/v1/search-dupes`;
+      const url = new URL(baseUrl);
+      url.searchParams.append('searchText', searchText);
+
+      // Create EventSource with proper headers
+      const eventSource = new EventSource(url.toString(), {
+        withCredentials: true,
+      });
   
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === "progress") {
-          // Update progress message from backend
           setProgressMessage(data.message);
         } else if (data.type === "result") {
           if (data.data.success && data.data.data.slug) {
-            // Handle successful result
             setProgressMessage("Ta-da! Your dupes are ready to shine! 🌟");
             setTimeout(() => {
               navigate(`/dupes/for/${data.data.data.slug}`);

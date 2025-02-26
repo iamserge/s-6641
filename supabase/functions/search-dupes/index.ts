@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { searchAndProcessDupes } from "./handlers.ts";
 import { logInfo, logError } from "../shared/utils.ts";
@@ -5,8 +6,10 @@ import { logInfo, logError } from "../shared/utils.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Content-Type': 'text/event-stream',
+  'Cache-Control': 'no-cache',
+  'Connection': 'keep-alive',
 };
-
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -15,7 +18,8 @@ serve(async (req) => {
   }
 
   try {
-    const { searchText } = await req.json();
+    const url = new URL(req.url);
+    const searchText = url.searchParams.get("searchText");
 
     if (!searchText) {
       return new Response(
@@ -53,14 +57,7 @@ serve(async (req) => {
       },
     });
 
-    return new Response(stream, {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
-    });
+    return new Response(stream, { headers: corsHeaders });
   } catch (error) {
     logError("Error processing search request:", error);
     return new Response(
