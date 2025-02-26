@@ -119,7 +119,7 @@ export async function getPerplexityResponse(searchText: string): Promise<DupeRes
       logInfo(`Perplexity JSON parsed successfully: ${safeStringify(parsedData)}`);
       return parsedData;
     } catch (error) {
-      logError("Perplexity response is not valid JSON. Attempting repair with OpenAI structured format.");
+      logError("Perplexity response is not valid JSON. Attempting repair with OpenAI structured format.", error);
       return await repairPerplexityResponse(jsonContent, SCHEMA_DEFINITION);
     }
   } catch (error) {

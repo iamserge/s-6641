@@ -87,9 +87,9 @@ export async function getBrandInfo(brandName: string): Promise<BrandInfo> {
       price_range: "mid-range",
       cruelty_free: null,
       vegan: null,
-      country_of_origin: null,
-      sustainable_packaging: null,
-      parent_company: null
+      country_of_origin: undefined,
+      sustainable_packaging: undefined,
+      parent_company: undefined
     };
   }
 }
@@ -142,9 +142,9 @@ export async function getIngredientInfo(ingredientName: string): Promise<Ingredi
       skin_types: ["all"],
       comedogenic_rating: 0,
       vegan: true,
-      inci_name: null,
-      ethically_sourced: null,
-      is_controversial: null,
+      inci_name: undefined,
+      ethically_sourced: undefined,
+      is_controversial: undefined,
       restricted_in: []
     };
   }
