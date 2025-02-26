@@ -11,283 +11,273 @@ export type Database = {
     Tables: {
       brands: {
         Row: {
+          clean_beauty: boolean | null
           country_of_origin: string | null
           created_at: string
           cruelty_free: boolean | null
-          description: string
+          description: string | null
+          founded_year: number | null
+          headquarters: string | null
           id: string
+          key_values: string[] | null
           name: string
           parent_company: string | null
-          price_range: string
+          price_range: string | null
+          product_categories: string[] | null
           slug: string
           sustainable_packaging: boolean | null
           updated_at: string
           vegan: boolean | null
+          website_url: string | null
         }
         Insert: {
+          clean_beauty?: boolean | null
           country_of_origin?: string | null
           created_at?: string
           cruelty_free?: boolean | null
-          description: string
+          description?: string | null
+          founded_year?: number | null
+          headquarters?: string | null
           id?: string
+          key_values?: string[] | null
           name: string
           parent_company?: string | null
-          price_range: string
+          price_range?: string | null
+          product_categories?: string[] | null
           slug: string
           sustainable_packaging?: boolean | null
           updated_at?: string
           vegan?: boolean | null
+          website_url?: string | null
         }
         Update: {
+          clean_beauty?: boolean | null
           country_of_origin?: string | null
           created_at?: string
           cruelty_free?: boolean | null
-          description?: string
+          description?: string | null
+          founded_year?: number | null
+          headquarters?: string | null
           id?: string
+          key_values?: string[] | null
           name?: string
           parent_company?: string | null
-          price_range?: string
+          price_range?: string | null
+          product_categories?: string[] | null
           slug?: string
           sustainable_packaging?: boolean | null
           updated_at?: string
           vegan?: boolean | null
+          website_url?: string | null
         }
         Relationships: []
       }
-      dupe_ingredients: {
-        Row: {
-          created_at: string
-          dupe_id: string
-          id: string
-          ingredient_id: string
-          is_key_ingredient: boolean
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          dupe_id: string
-          id?: string
-          ingredient_id: string
-          is_key_ingredient?: boolean
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          dupe_id?: string
-          id?: string
-          ingredient_id?: string
-          is_key_ingredient?: boolean
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "dupe_ingredients_dupe_id_fkey"
-            columns: ["dupe_id"]
-            isOneToOne: false
-            referencedRelation: "dupes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "dupe_ingredients_ingredient_id_fkey"
-            columns: ["ingredient_id"]
-            isOneToOne: false
-            referencedRelation: "ingredients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      dupes: {
-        Row: {
-          best_for: string[] | null
-          brand: string
-          brand_id: string | null
-          category: Database["public"]["Enums"]["product_category"] | null
-          color_match_score: number | null
-          confidence_level: number | null
-          coverage: string | null
-          created_at: string
-          cruelty_free: boolean | null
-          dupe_type: string | null
-          finish: string
-          formula_match_score: number | null
-          free_of: string[] | null
-          id: string
-          image_url: string | null
-          longevity_comparison: string | null
-          match_score: number
-          name: string
-          notes: string | null
-          price: number
-          product_id: string
-          purchase_link: string | null
-          savings_percentage: number
-          skin_types: string[]
-          spf: number | null
-          texture: string
-          updated_at: string
-          validation_source: string | null
-          vegan: boolean | null
-          verified: boolean | null
-        }
-        Insert: {
-          best_for?: string[] | null
-          brand: string
-          brand_id?: string | null
-          category?: Database["public"]["Enums"]["product_category"] | null
-          color_match_score?: number | null
-          confidence_level?: number | null
-          coverage?: string | null
-          created_at?: string
-          cruelty_free?: boolean | null
-          dupe_type?: string | null
-          finish: string
-          formula_match_score?: number | null
-          free_of?: string[] | null
-          id?: string
-          image_url?: string | null
-          longevity_comparison?: string | null
-          match_score: number
-          name: string
-          notes?: string | null
-          price: number
-          product_id: string
-          purchase_link?: string | null
-          savings_percentage: number
-          skin_types: string[]
-          spf?: number | null
-          texture: string
-          updated_at?: string
-          validation_source?: string | null
-          vegan?: boolean | null
-          verified?: boolean | null
-        }
-        Update: {
-          best_for?: string[] | null
-          brand?: string
-          brand_id?: string | null
-          category?: Database["public"]["Enums"]["product_category"] | null
-          color_match_score?: number | null
-          confidence_level?: number | null
-          coverage?: string | null
-          created_at?: string
-          cruelty_free?: boolean | null
-          dupe_type?: string | null
-          finish?: string
-          formula_match_score?: number | null
-          free_of?: string[] | null
-          id?: string
-          image_url?: string | null
-          longevity_comparison?: string | null
-          match_score?: number
-          name?: string
-          notes?: string | null
-          price?: number
-          product_id?: string
-          purchase_link?: string | null
-          savings_percentage?: number
-          skin_types?: string[]
-          spf?: number | null
-          texture?: string
-          updated_at?: string
-          validation_source?: string | null
-          vegan?: boolean | null
-          verified?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "dupes_brand_id_fkey"
-            columns: ["brand_id"]
-            isOneToOne: false
-            referencedRelation: "brands"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "dupes_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       ingredients: {
         Row: {
-          benefits: string[]
+          benefits: string[] | null
           comedogenic_rating: number | null
-          concerns: string[]
+          concerns: string[] | null
           created_at: string
-          description: string
+          description: string | null
           ethically_sourced: boolean | null
           id: string
           inci_name: string | null
           is_controversial: boolean | null
           name: string
           restricted_in: string[] | null
-          skin_types: string[]
+          skin_types: string[] | null
           slug: string
           updated_at: string
           vegan: boolean | null
         }
         Insert: {
-          benefits: string[]
+          benefits?: string[] | null
           comedogenic_rating?: number | null
-          concerns: string[]
+          concerns?: string[] | null
           created_at?: string
-          description: string
+          description?: string | null
           ethically_sourced?: boolean | null
           id?: string
           inci_name?: string | null
           is_controversial?: boolean | null
           name: string
           restricted_in?: string[] | null
-          skin_types: string[]
+          skin_types?: string[] | null
           slug: string
           updated_at?: string
           vegan?: boolean | null
         }
         Update: {
-          benefits?: string[]
+          benefits?: string[] | null
           comedogenic_rating?: number | null
-          concerns?: string[]
+          concerns?: string[] | null
           created_at?: string
-          description?: string
+          description?: string | null
           ethically_sourced?: boolean | null
           id?: string
           inci_name?: string | null
           is_controversial?: boolean | null
           name?: string
           restricted_in?: string[] | null
-          skin_types?: string[]
+          skin_types?: string[] | null
           slug?: string
           updated_at?: string
           vegan?: boolean | null
         }
         Relationships: []
       }
+      merchants: {
+        Row: {
+          created_at: string
+          domain: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      offers: {
+        Row: {
+          availability: string | null
+          condition: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          link: string
+          list_price: number | null
+          merchant_id: string
+          price: number
+          shipping: string | null
+          title: string | null
+          updated_at: string
+          updated_t: number | null
+        }
+        Insert: {
+          availability?: string | null
+          condition?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          link: string
+          list_price?: number | null
+          merchant_id: string
+          price: number
+          shipping?: string | null
+          title?: string | null
+          updated_at?: string
+          updated_t?: number | null
+        }
+        Update: {
+          availability?: string | null
+          condition?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          link?: string
+          list_price?: number | null
+          merchant_id?: string
+          price?: number
+          shipping?: string | null
+          title?: string | null
+          updated_at?: string
+          updated_t?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_dupes: {
+        Row: {
+          created_at: string
+          dupe_product_id: string
+          id: string
+          match_score: number
+          original_product_id: string
+          savings_percentage: number
+          updated_at: string
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          dupe_product_id: string
+          id?: string
+          match_score: number
+          original_product_id: string
+          savings_percentage: number
+          updated_at?: string
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          dupe_product_id?: string
+          id?: string
+          match_score?: number
+          original_product_id?: string
+          savings_percentage?: number
+          updated_at?: string
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_dupes_dupe_product_id_fkey"
+            columns: ["dupe_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_dupes_original_product_id_fkey"
+            columns: ["original_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_ingredients: {
         Row: {
           created_at: string
           id: string
           ingredient_id: string
-          is_key_ingredient: boolean
+          is_key_ingredient: boolean | null
           product_id: string
-          updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
           ingredient_id: string
-          is_key_ingredient?: boolean
+          is_key_ingredient?: boolean | null
           product_id: string
-          updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
           ingredient_id?: string
-          is_key_ingredient?: boolean
+          is_key_ingredient?: boolean | null
           product_id?: string
-          updated_at?: string
         }
         Relationships: [
           {
@@ -306,63 +296,177 @@ export type Database = {
           },
         ]
       }
-      products: {
+      product_offers: {
         Row: {
-          attributes: string[]
-          best_for: string[] | null
-          brand: string | null
-          brand_id: string | null
-          category: Database["public"]["Enums"]["product_category"] | null
-          country_of_origin: string | null
           created_at: string
-          free_of: string[] | null
           id: string
-          image_url: string | null
-          longevity_rating: number | null
-          name: string
-          oxidation_tendency: string | null
-          price: number
-          slug: string
-          summary: string
+          is_best_price: boolean | null
+          offer_id: string
+          product_id: string
           updated_at: string
         }
         Insert: {
-          attributes: string[]
-          best_for?: string[] | null
-          brand?: string | null
-          brand_id?: string | null
-          category?: Database["public"]["Enums"]["product_category"] | null
-          country_of_origin?: string | null
           created_at?: string
-          free_of?: string[] | null
           id?: string
-          image_url?: string | null
-          longevity_rating?: number | null
-          name: string
-          oxidation_tendency?: string | null
-          price: number
-          slug: string
-          summary: string
+          is_best_price?: boolean | null
+          offer_id: string
+          product_id: string
           updated_at?: string
         }
         Update: {
-          attributes?: string[]
+          created_at?: string
+          id?: string
+          is_best_price?: boolean | null
+          offer_id?: string
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_offers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          asin: string | null
+          attributes: string[] | null
+          best_for: string[] | null
+          brand: string
+          brand_id: string | null
+          category: Database["public"]["Enums"]["product_category"] | null
+          color_match_score: number | null
+          confidence_level: string | null
+          country_of_origin: string | null
+          coverage: string | null
+          created_at: string
+          cruelty_free: boolean | null
+          description: string | null
+          dupe_type: string | null
+          ean: string | null
+          finish: string | null
+          formula_match_score: number | null
+          free_of: string[] | null
+          gtin: string | null
+          highest_recorded_price: number | null
+          id: string
+          image_url: string | null
+          images: string[] | null
+          longevity_comparison: string | null
+          longevity_rating: number | null
+          lowest_recorded_price: number | null
+          model: string | null
+          name: string
+          notes: string | null
+          oxidation_tendency: string | null
+          price: number
+          purchase_link: string | null
+          skin_types: string[] | null
+          slug: string
+          spf: number | null
+          summary: string | null
+          texture: string | null
+          upc: string | null
+          updated_at: string
+          validation_source: string | null
+          vegan: boolean | null
+        }
+        Insert: {
+          asin?: string | null
+          attributes?: string[] | null
           best_for?: string[] | null
-          brand?: string | null
+          brand: string
           brand_id?: string | null
           category?: Database["public"]["Enums"]["product_category"] | null
+          color_match_score?: number | null
+          confidence_level?: string | null
           country_of_origin?: string | null
+          coverage?: string | null
           created_at?: string
+          cruelty_free?: boolean | null
+          description?: string | null
+          dupe_type?: string | null
+          ean?: string | null
+          finish?: string | null
+          formula_match_score?: number | null
           free_of?: string[] | null
+          gtin?: string | null
+          highest_recorded_price?: number | null
           id?: string
           image_url?: string | null
+          images?: string[] | null
+          longevity_comparison?: string | null
           longevity_rating?: number | null
+          lowest_recorded_price?: number | null
+          model?: string | null
+          name: string
+          notes?: string | null
+          oxidation_tendency?: string | null
+          price: number
+          purchase_link?: string | null
+          skin_types?: string[] | null
+          slug: string
+          spf?: number | null
+          summary?: string | null
+          texture?: string | null
+          upc?: string | null
+          updated_at?: string
+          validation_source?: string | null
+          vegan?: boolean | null
+        }
+        Update: {
+          asin?: string | null
+          attributes?: string[] | null
+          best_for?: string[] | null
+          brand?: string
+          brand_id?: string | null
+          category?: Database["public"]["Enums"]["product_category"] | null
+          color_match_score?: number | null
+          confidence_level?: string | null
+          country_of_origin?: string | null
+          coverage?: string | null
+          created_at?: string
+          cruelty_free?: boolean | null
+          description?: string | null
+          dupe_type?: string | null
+          ean?: string | null
+          finish?: string | null
+          formula_match_score?: number | null
+          free_of?: string[] | null
+          gtin?: string | null
+          highest_recorded_price?: number | null
+          id?: string
+          image_url?: string | null
+          images?: string[] | null
+          longevity_comparison?: string | null
+          longevity_rating?: number | null
+          lowest_recorded_price?: number | null
+          model?: string | null
           name?: string
+          notes?: string | null
           oxidation_tendency?: string | null
           price?: number
+          purchase_link?: string | null
+          skin_types?: string[] | null
           slug?: string
-          summary?: string
+          spf?: number | null
+          summary?: string | null
+          texture?: string | null
+          upc?: string | null
           updated_at?: string
+          validation_source?: string | null
+          vegan?: boolean | null
         }
         Relationships: [
           {
