@@ -7,57 +7,41 @@ const UPCITEMDB_API_BASE_URL = "https://api.upcitemdb.com/prod/v1";
 const UPCDB_API_KEY = Deno.env.get("UPCDB_API_KEY") || "23bc948d2588e5ea98fb4e0c5b47e6b9";
 const MIN_REQUEST_INTERVAL_MS = 10500; // 10.5 seconds between requests
 
-// Cache configuration
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
-const THROTTLE_KEY = "upcitemdb_last_request";
-
-// Simple key-value store implementation using Supabase Function KV store
-// This ensures throttling works even in serverless environments
-class KVStore {
-  private namespace: string;
-
-  constructor(namespace: string) {
-    this.namespace = namespace;
+// Simple in-memory key value storage
+// This is the simplest approach but won't persist between function invocations
+const memoryStore = {
+  data: new Map<string, any>(),
+  lastRequests: new Map<string, number>(),
+  
+  // Get a value from the store
+  get(key: string): any {
+    return this.data.get(key);
+  },
+  
+  // Set a value in the store
+  set(key: string, value: any): void {
+    this.data.set(key, value);
+  },
+  
+  // Track the last request time for rate limiting
+  setLastRequest(key: string): void {
+    this.lastRequests.set(key, Date.now());
+  },
+  
+  // Get the last request time
+  getLastRequest(key: string): number {
+    return this.lastRequests.get(key) || 0;
   }
-
-  private getFullKey(key: string): string {
-    return `${this.namespace}:${key}`;
-  }
-
-  async get(key: string): Promise<any> {
-    try {
-      const fullKey = this.getFullKey(key);
-      const value = await Deno.kv.get([fullKey]);
-      return value?.value;
-    } catch (error) {
-      logError(`KV Store get error for ${key}:`, error);
-      return null;
-    }
-  }
-
-  async set(key: string, value: any, ttl?: number): Promise<void> {
-    try {
-      const fullKey = this.getFullKey(key);
-      const options = ttl ? { expireIn: ttl } : undefined;
-      await Deno.kv.set([fullKey], value, options);
-    } catch (error) {
-      logError(`KV Store set error for ${key}:`, error);
-    }
-  }
-}
-
-// Initialize KV store instances
-const throttleStore = new KVStore("throttle");
-const productCache = new KVStore("products");
+};
 
 /**
- * Throttles API requests to ensure they don't exceed the rate limit
- * Uses KV store to work properly in serverless environments
+ * Simple throttle implementation that uses in-memory state
+ * Works for sequential calls within same function invocation
  */
 async function throttleRequest(): Promise<void> {
   const now = Date.now();
-  const lastRequestTime = await throttleStore.get(THROTTLE_KEY) || 0;
-  const timeSinceLastRequest = now - lastRequestTime;
+  const lastTime = memoryStore.getLastRequest('UPCItemDB') || 0;
+  const timeSinceLastRequest = now - lastTime;
   
   if (timeSinceLastRequest < MIN_REQUEST_INTERVAL_MS) {
     const delay = MIN_REQUEST_INTERVAL_MS - timeSinceLastRequest;
@@ -65,48 +49,19 @@ async function throttleRequest(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, delay));
   }
   
-  // Set the new timestamp after any necessary delay
-  await throttleStore.set(THROTTLE_KEY, Date.now());
+  // Update last request time
+  memoryStore.setLastRequest('UPCItemDB');
 }
 
 /**
- * Generates a cache key for a product search
- */
-function generateCacheKey(brand: string, productName: string): string {
-  return `search:${brand.toLowerCase()}:${productName.toLowerCase()}`;
-}
-
-/**
- * Checks if we have a cached result for this search
- */
-async function getCachedProductData(brand: string, productName: string): Promise<any | null> {
-  const cacheKey = generateCacheKey(brand, productName);
-  return await productCache.get(cacheKey);
-}
-
-/**
- * Caches product data for future use
- */
-async function cacheProductData(brand: string, productName: string, data: any): Promise<void> {
-  const cacheKey = generateCacheKey(brand, productName);
-  await productCache.set(cacheKey, data, CACHE_TTL_MS);
-}
-
-/**
- * Fetches product data from external databases or cache
+ * Fetches product data from external databases
+ * Simple implementation with basic in-memory throttling
  */
 export async function fetchProductDataFromExternalDb(productName: string, brand: string): Promise<any> {
-  // Check cache first
-  const cachedData = await getCachedProductData(brand, productName);
-  if (cachedData) {
-    logInfo(`Using cached data for: ${brand} ${productName}`);
-    return cachedData;
-  }
-  
-  logInfo(`Fetching fresh data from external DB for: ${brand} ${productName}`);
+  logInfo(`Fetching data from external DB for: ${brand} ${productName}`);
   
   try {
-    // Respect rate limits
+    // Simple throttling
     await throttleRequest();
     
     const response = await fetch(
@@ -130,7 +85,7 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
       
       if (item) {
         logInfo(`Found external data for: ${brand} ${productName}`);
-        const result = {
+        return {
           name: item.title,
           upc: item.upc,
           ean: item.ean,
@@ -148,23 +103,15 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
           category: item.category,
           verified: true
         };
-        
-        // Cache the result for future use
-        await cacheProductData(brand, productName, result);
-        return result;
       }
     }
     
     logInfo(`No detailed external data found for: ${brand} ${productName}`);
-    const basicResult = {
+    return {
       name: productName,
       brand: brand,
       verified: false
     };
-    
-    // Also cache negative results to avoid repeated lookups
-    await cacheProductData(brand, productName, basicResult);
-    return basicResult;
   } catch (error) {
     logError(`Error fetching external data for ${brand} ${productName}:`, error);
     return {
@@ -177,41 +124,11 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
 }
 
 /**
- * Generates a cache key for a UPC lookup
- */
-function generateUpcCacheKey(upc: string): string {
-  return `upc:${upc}`;
-}
-
-/**
- * Checks if we have a cached result for this UPC
- */
-async function getCachedUpcData(upc: string): Promise<any | null> {
-  const cacheKey = generateUpcCacheKey(upc);
-  return await productCache.get(cacheKey);
-}
-
-/**
- * Caches UPC data for future use
- */
-async function cacheUpcData(upc: string, data: any): Promise<void> {
-  const cacheKey = generateUpcCacheKey(upc);
-  await productCache.set(cacheKey, data, CACHE_TTL_MS);
-}
-
-/**
  * Fetches product data from external databases by UPC number
- * This function uses the UPCitemdb API /v1/lookup endpoint for precise product matching
+ * Simple implementation with basic in-memory throttling
  */
 export async function fetchProductDataByUpc(upc: string): Promise<any> {
-  // Check cache first
-  const cachedData = await getCachedUpcData(upc);
-  if (cachedData) {
-    logInfo(`Using cached data for UPC: ${upc}`);
-    return cachedData;
-  }
-  
-  logInfo(`Fetching fresh data by UPC: ${upc}`);
+  logInfo(`Fetching data by UPC: ${upc}`);
 
   if (!UPCDB_API_KEY) {
     logError("UPCDB_API_KEY is not set");
@@ -219,7 +136,7 @@ export async function fetchProductDataByUpc(upc: string): Promise<any> {
   }
 
   try {
-    // Respect rate limits
+    // Simple throttling
     await throttleRequest();
     
     const response = await fetch(
@@ -262,7 +179,7 @@ export async function fetchProductDataByUpc(upc: string): Promise<any> {
     if (data.items && data.items.length > 0) {
       const item = data.items[0]; // Take the first match as UPC lookup is precise
       logInfo(`Found external data for UPC: ${upc}`);
-      const result = {
+      return {
         name: item.title,
         upc: item.upc,
         ean: item.ean,
@@ -280,18 +197,10 @@ export async function fetchProductDataByUpc(upc: string): Promise<any> {
         category: item.category,
         verified: true
       };
-      
-      // Cache the result for future use
-      await cacheUpcData(upc, result);
-      return result;
     }
 
     logInfo(`No data found for UPC: ${upc}`);
-    const basicResult = { upc, verified: false };
-    
-    // Also cache negative results to avoid repeated lookups
-    await cacheUpcData(upc, basicResult);
-    return basicResult;
+    return { upc, verified: false };
   } catch (error) {
     logError(`Error fetching data by UPC ${upc}:`, error);
     return { upc, verified: false, error: true };
