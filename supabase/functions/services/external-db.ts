@@ -10,9 +10,9 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
   logInfo(`Fetching data from external DB for: ${brand} ${productName}`);
   
   try {
-    // First try UPC Item DB API (https://www.upcitemdb.com/)
-    // Note: You'll need to register for an API key or replace with your preferred product database
-    const response = await fetch(`https://api.upcitemdb.com/prod/trial/search?s=${encodeURIComponent(brand + " " + productName)}&match_mode=0&type=product`);
+    const response = await fetch(
+      `https://api.upcitemdb.com/prod/trial/search?s=${encodeURIComponent(brand + " " + productName)}&match_mode=0&type=product`
+    );
     
     if (!response.ok) {
       throw new Error(`UPC Item DB API error: ${response.status}`);
@@ -20,15 +20,11 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
     
     const data = await response.json();
     
-    // Check if we have valid results
     if (data.items && data.items.length > 0) {
-      // Find the closest match
       const item = findClosestMatch(data.items, brand, productName);
       
       if (item) {
         logInfo(`Found external data for: ${brand} ${productName}`);
-        
-        // Transform into our format
         return {
           name: item.title,
           upc: item.upc,
@@ -44,10 +40,6 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
       }
     }
     
-    // If no match found, try a second source (Open Beauty Facts, for example)
-    // This is a placeholder for additional APIs
-    
-    // If all sources fail, return a basic object
     logInfo(`No detailed external data found for: ${brand} ${productName}`);
     return {
       name: productName,
@@ -56,8 +48,6 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
     };
   } catch (error) {
     logError(`Error fetching external data for ${brand} ${productName}:`, error);
-    
-    // Return basic data if API call fails
     return {
       name: productName,
       brand: brand,

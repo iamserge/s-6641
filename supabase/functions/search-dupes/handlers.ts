@@ -27,7 +27,6 @@ export async function searchAndProcessDupes(searchText: string) {
       throw searchError;
     }
 
-    // If we found an existing product, return its data
     if (existingProducts && existingProducts.length > 0) {
       logInfo(`Found existing product: ${existingProducts[0].name}`);
       return {
@@ -40,7 +39,7 @@ export async function searchAndProcessDupes(searchText: string) {
       };
     }
 
-    // Step 2: Initial product search with Perplexity - just get names and brands
+    // Step 2: Initial product search with Perplexity
     logInfo('No existing product found. Getting initial dupes from Perplexity...');
     const initialDupes = await getInitialDupes(searchText);
     
@@ -48,7 +47,7 @@ export async function searchAndProcessDupes(searchText: string) {
       throw new Error('Could not identify original product from search text');
     }
     
-    // Step 3: Enrich product data from external databases (UPC Item DB)
+    // Step 3: Enrich product data from external databases
     logInfo('Enriching product data from UPC Item DB...');
     const originalProductData = await fetchProductDataFromExternalDb(
       initialDupes.originalName, 
@@ -71,12 +70,18 @@ export async function searchAndProcessDupes(searchText: string) {
     const enrichedOriginal = { 
       name: initialDupes.originalName, 
       brand: initialDupes.originalBrand,
-      ...originalProductData 
+      ...(originalProductData.verified ? originalProductData : {}) // Only include verified data
     };
+    
+    const enrichedDupesForContext = enrichedDupes.map(dupe => ({
+      name: dupe.name,
+      brand: dupe.brand,
+      ...(dupe.verified ? dupe : {}) // Only include verified data
+    }));
     
     const detailedAnalysis = await getDetailedDupeAnalysis(
       enrichedOriginal, 
-      enrichedDupes
+      enrichedDupesForContext
     );
     
     // Step 5: Data cleanup and structuring with OpenAI
