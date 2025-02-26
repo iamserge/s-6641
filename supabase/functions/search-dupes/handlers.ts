@@ -4,8 +4,8 @@ import { logInfo, logError } from "../shared/utils.ts";
 import { getInitialDupes, getDetailedDupeAnalysis } from "../services/perplexity.ts";
 import { processBrand } from "../services/brands.ts";
 import { processProductIngredients, processDupeIngredients } from "../services/ingredients.ts";
-import { processProductImage } from "./image-enhancement.ts";
-import { uploadProcessedImageToSupabase } from "./images.ts";
+import { processProductImage } from "../services/image-enhancement.ts";
+import { uploadProcessedImageToSupabase } from "../services/images.ts"
 import { cleanupAndStructureData } from "../services/openai.ts";
 import { DupeResponse } from "../shared/types.ts";
 import { fetchProductDataFromExternalDb } from "../services/external-db.ts";
