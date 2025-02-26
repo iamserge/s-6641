@@ -100,6 +100,7 @@ export type Database = {
         Row: {
           brand: string
           brand_id: string | null
+          category: Database["public"]["Enums"]["product_category"] | null
           color_match_score: number | null
           confidence_level: number | null
           coverage: string | null
@@ -129,6 +130,7 @@ export type Database = {
         Insert: {
           brand: string
           brand_id?: string | null
+          category?: Database["public"]["Enums"]["product_category"] | null
           color_match_score?: number | null
           confidence_level?: number | null
           coverage?: string | null
@@ -158,6 +160,7 @@ export type Database = {
         Update: {
           brand?: string
           brand_id?: string | null
+          category?: Database["public"]["Enums"]["product_category"] | null
           color_match_score?: number | null
           confidence_level?: number | null
           coverage?: string | null
@@ -301,8 +304,9 @@ export type Database = {
         Row: {
           attributes: string[]
           best_for: string[] | null
-          brand: string
+          brand: string | null
           brand_id: string | null
+          category: Database["public"]["Enums"]["product_category"] | null
           country_of_origin: string | null
           created_at: string
           free_of: string[] | null
@@ -319,8 +323,9 @@ export type Database = {
         Insert: {
           attributes: string[]
           best_for?: string[] | null
-          brand: string
+          brand?: string | null
           brand_id?: string | null
+          category?: Database["public"]["Enums"]["product_category"] | null
           country_of_origin?: string | null
           created_at?: string
           free_of?: string[] | null
@@ -337,8 +342,9 @@ export type Database = {
         Update: {
           attributes?: string[]
           best_for?: string[] | null
-          brand?: string
+          brand?: string | null
           brand_id?: string | null
+          category?: Database["public"]["Enums"]["product_category"] | null
           country_of_origin?: string | null
           created_at?: string
           free_of?: string[] | null
@@ -428,6 +434,24 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      product_category:
+        | "Foundation"
+        | "Concealer"
+        | "Powder"
+        | "Blush"
+        | "Bronzer"
+        | "Highlighter"
+        | "Eyeshadow"
+        | "Eyeliner"
+        | "Mascara"
+        | "Lipstick"
+        | "Lip Gloss"
+        | "Lip Liner"
+        | "Setting Spray"
+        | "Primer"
+        | "Skincare"
+        | "Haircare"
+        | "Other"
       resource_type: "Video" | "YouTube" | "Instagram" | "TikTok" | "Article"
     }
     CompositeTypes: {
