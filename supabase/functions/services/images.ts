@@ -13,22 +13,78 @@ import {
 /**
  * Fetches a product image using Google Custom Search API
  */
+/**
+ * Fetches a product image using Google Custom Search API with rate limiting and retry logic
+ */
 export async function fetchProductImage(productName: string, brand: string): Promise<string | null> {
   const query = `"${productName}" "${brand}" product image -model -face -person -woman -man`;
   logInfo(`Fetching image for product: ${productName} by ${brand}, ${query}`);
   const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}&searchType=image&q=${encodeURIComponent(query)}`;
 
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Google API error: ${response.status}`);
-    const data = await response.json();
-    const imageUrl = data.items?.[0]?.link || null;
-    logInfo(`Image URL found: ${imageUrl ? "Yes" : "No"}`);
-    return imageUrl;
-  } catch (error) {
-    logError(`Failed to fetch image for ${productName} by ${brand}:`, error);
-    return null;
+  // Define retry parameters
+  const maxRetries = 3;
+  const initialDelay = 1000; // 1 second initial delay
+  let retryCount = 0;
+  
+  while (retryCount <= maxRetries) {
+    try {
+      // If this is a retry, add a delay with exponential backoff
+      if (retryCount > 0) {
+        const delay = initialDelay * Math.pow(2, retryCount - 1);
+        logInfo(`Retry attempt ${retryCount}/${maxRetries} for ${productName} after ${delay}ms delay`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      
+      const response = await fetch(url);
+      
+      // Handle rate limiting specifically
+      if (response.status === 429) {
+        retryCount++;
+        if (retryCount <= maxRetries) {
+          logInfo(`Rate limit hit (429) for ${productName}. Will retry in a moment...`);
+          continue; // Skip to next iteration with delay
+        } else {
+          throw new Error(`Google API rate limit exceeded after ${maxRetries} retries`);
+        }
+      }
+      
+      // Handle other errors
+      if (!response.ok) {
+        // Get detailed error information
+        let errorDetails = `${response.status} ${response.statusText}`;
+        try {
+          const errorBody = await response.text();
+          errorDetails += ` - ${errorBody}`;
+        } catch (e) {
+          // Ignore errors when trying to read the error body
+        }
+        throw new Error(`Google API error: ${errorDetails}`);
+      }
+      
+      const data = await response.json();
+      const imageUrl = data.items?.[0]?.link || null;
+      logInfo(`Image URL found for ${productName}: ${imageUrl ? "Yes" : "No"}`);
+      return imageUrl;
+      
+    } catch (error) {
+      if (error.message.includes('rate limit') && retryCount < maxRetries) {
+        retryCount++;
+        continue;
+      }
+      
+      logError(`Failed to fetch image for ${productName} by ${brand} (attempt ${retryCount + 1}/${maxRetries + 1}):`, error);
+      
+      // If we've exhausted all retries or hit a non-retriable error, give up
+      if (retryCount >= maxRetries) {
+        logInfo(`All retry attempts exhausted for ${productName}. Proceeding without image.`);
+        return null;
+      }
+      
+      retryCount++;
+    }
   }
+  
+  return null; // Fallback return if we somehow exit the loop without returning
 }
 
 /**
@@ -164,40 +220,65 @@ export async function processProductImages(
   originalImageUrl?: string;
   dupeImageUrls: Record<number, string | undefined>;
 }> {
-  // Fetch original product image
-  const originalImageUrl = await fetchProductImage(productName, brand);
-  let processedOriginalUrl: string | undefined;
+  // Initialize the result object
+  const result = {
+    originalImageUrl: undefined,
+    dupeImageUrls: {} as Record<number, string | undefined>
+  };
   
-  if (originalImageUrl) {
-    processedOriginalUrl = await uploadImageToSupabase(originalImageUrl, `${slug}-original`);
+  try {
+    // Fetch original product image
+    const originalImageUrl = await fetchProductImage(productName, brand);
+    
+    if (originalImageUrl) {
+      try {
+        result.originalImageUrl = await uploadImageToSupabase(originalImageUrl, `${slug}-original`);
+      } catch (uploadError) {
+        logError(`Error processing original image for ${productName}:`, uploadError);
+        // Continue with the flow even if image processing fails
+      }
+    }
+  } catch (error) {
+    logError(`Error fetching original image for ${productName}:`, error);
+    // Continue with dupes processing even if original image fails
   }
   
-  // Process dupe images in parallel
-  const dupeImagePromises = dupes.map(async (_, index) => {
-    const dupe = dupes[index];
-    const dupeImageUrl = await fetchProductImage(dupe.name, dupe.brand);
-    
-    if (dupeImageUrl) {
-      return {
-        index,
-        url: await uploadImageToSupabase(dupeImageUrl, `${slug}-dupe-${index + 1}`)
-      };
+  // Process dupe images with better error handling
+  const dupePromises = dupes.map(async (dupe, index) => {
+    try {
+      const dupeImageUrl = await fetchProductImage(dupe.name, dupe.brand);
+      
+      if (dupeImageUrl) {
+        try {
+          const processedUrl = await uploadImageToSupabase(dupeImageUrl, `${slug}-dupe-${index + 1}`);
+          return { index, url: processedUrl };
+        } catch (uploadError) {
+          logError(`Error processing dupe image for ${dupe.name}:`, uploadError);
+          return { index, url: undefined };
+        }
+      }
+      
+      return { index, url: undefined };
+    } catch (error) {
+      logError(`Error fetching dupe image for ${dupe.name}:`, error);
+      return { index, url: undefined };
     }
-    
-    return { index, url: undefined };
   });
   
-  // Wait for all image processing to complete
-  const dupeResults = await Promise.all(dupeImagePromises);
+  // Wait for all promises to settle (not just resolve)
+  const dupeResults = await Promise.allSettled(dupePromises);
   
-  // Convert results to a record object
-  const dupeImageUrls: Record<number, string | undefined> = {};
-  for (const result of dupeResults) {
-    dupeImageUrls[result.index] = result.url;
-  }
+  // Process results, including both fulfilled and rejected promises
+  dupeResults.forEach((dupeResult, index) => {
+    if (dupeResult.status === 'fulfilled') {
+      const { index: dupeIndex, url } = dupeResult.value;
+      result.dupeImageUrls[dupeIndex] = url;
+    } else {
+      // For rejected promises, log the error and set the URL to undefined
+      logError(`Promise rejected for dupe image at index ${index}:`, dupeResult.reason);
+      result.dupeImageUrls[index] = undefined;
+    }
+  });
   
-  return {
-    originalImageUrl: processedOriginalUrl,
-    dupeImageUrls
-  };
+  return result;
 }

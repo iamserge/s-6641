@@ -49,12 +49,20 @@ export async function handleDupeSearch(req: Request): Promise<Response> {
     // Generate unique slug with brand for better uniqueness
     const slug = slugify(`${original.brand}-${original.name}`, { lower: true });
 
-    // Process images for original product and dupes
-    const imageResults = await processProductImages(original.name, original.brand, slug, dupes);
-    original.imageUrl = imageResults.originalImageUrl;
-    
-    for (let i = 0; i < dupes.length; i++) {
-      dupes[i].imageUrl = imageResults.dupeImageUrls[i];
+    try {
+      const imageResults = await processProductImages(original.name, original.brand, slug, dupes);
+      original.imageUrl = imageResults.originalImageUrl;
+      
+      for (let i = 0; i < dupes.length; i++) {
+        dupes[i].imageUrl = imageResults.dupeImageUrls[i];
+      }
+    } catch (imageError) {
+      // Log the error but continue with the flow
+      logError("Error processing images, continuing without images:", imageError);
+      original.imageUrl = null;
+      for (let i = 0; i < dupes.length; i++) {
+        dupes[i].imageUrl = null;
+      }
     }
 
     // Check if product already exists
