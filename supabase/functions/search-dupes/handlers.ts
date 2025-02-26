@@ -123,38 +123,30 @@ async function processAndUploadImage(imageUrl: string | undefined, fileName: str
 /**
  * Store structured data in the database
  */
-/**
- * Store structured data in the database with optimized image handling
- */
+
 export async function storeDataInDatabase(data: DupeResponse) {
   try {
-    // 1. Process all unique brands in parallel
-    const allBrands = new Set([data.original.brand, ...data.dupes.map(dupe => dupe.brand)]);
-    const brandPromises = Array.from(allBrands).map(brand => processBrand(brand));
-    const brandIds = await Promise.all(brandPromises);
-    const brandMap = new Map(Array.from(allBrands).map((brand, index) => [brand, brandIds[index]]));
-    logInfo(`Processed ${allBrands.size} unique brands`);
-
-    // 2. Create slug for the original product
+    // 1. Create slug for the original product
     const productSlug = slugify(`${data.original.brand}-${data.original.name}`, { lower: true });
 
-    // 3. Determine image URL for the original product: prioritize external data
+    // 2. Process original product image in main call
     const originalImageUrl = data.original.images && data.original.images.length > 0
-      ? data.original.images[0] // Use first image from external data if verified
+      ? data.original.images[0] // Prioritize external data
       : data.original.imageUrl; // Fallback to Perplexity-provided URL
+    const processedOriginalImageUrl = await processAndUploadImage(originalImageUrl, `${productSlug}-original`);
 
-    // Store original product with raw image URL
+    // 3. Store original product with processed image
     const { data: originalProduct, error: productError } = await supabase
       .from('products')
       .insert({
         name: data.original.name,
         brand: data.original.brand,
-        brand_id: brandMap.get(data.original.brand),
+        // Brand ID will be populated in background
         slug: productSlug,
         price: data.original.price,
         category: data.original.category,
         attributes: data.original.attributes || [],
-        image_url: originalImageUrl, // Use prioritized raw image URL
+        image_url: processedOriginalImageUrl, // Use processed image URL
         summary: data.summary,
         country_of_origin: data.original.countryOfOrigin,
         longevity_rating: data.original.longevityRating,
@@ -170,22 +162,21 @@ export async function storeDataInDatabase(data: DupeResponse) {
       throw productError;
     }
 
-    // 4. Store dupes with prioritized image URLs
+    // 4. Process and store dupes with images in main call
     const dupeIds = await Promise.all(
       data.dupes.map(async (dupe, index) => {
         const dupeSlug = slugify(`${dupe.brand}-${dupe.name}`, { lower: true });
-
-        // Prioritize external data image for dupes
         const dupeImageUrl = dupe.images && dupe.images.length > 0
-          ? dupe.images[0] // Use first image from external data if verified
+          ? dupe.images[0] // Prioritize external data
           : dupe.imageUrl; // Fallback to Perplexity-provided URL
+        const processedDupeImageUrl = await processAndUploadImage(dupeImageUrl, `${productSlug}-dupe-${index + 1}`);
 
         const { data: dupeProduct, error: dupeError } = await supabase
           .from('products')
           .insert({
             name: dupe.name,
             brand: dupe.brand,
-            brand_id: brandMap.get(dupe.brand),
+            // Brand ID will be populated in background
             slug: dupeSlug,
             price: dupe.price,
             category: dupe.category || data.original.category,
@@ -196,7 +187,7 @@ export async function storeDataInDatabase(data: DupeResponse) {
             skin_types: dupe.skinTypes,
             notes: dupe.notes,
             purchase_link: dupe.purchaseLink,
-            image_url: dupeImageUrl, // Use prioritized raw image URL
+            image_url: processedDupeImageUrl, // Use processed image URL
             cruelty_free: dupe.crueltyFree,
             vegan: dupe.vegan,
             best_for: dupe.bestFor || []
@@ -247,37 +238,37 @@ export async function storeDataInDatabase(data: DupeResponse) {
       }
     }
 
-    // 6. Prepare response for frontend
+    // 6. Prepare result for frontend
     const result = {
       slug: productSlug,
       name: originalProduct.name,
-      brand: originalProduct.brand
+      brand: originalProduct.brand,
+      originalProductId: originalProduct.id,
+      dupeProductIds: dupeIds
     };
 
-    // 7. Trigger background task for image and ingredient processing
+    // 7. Trigger background task for brands and ingredients
     const backgroundTaskData = {
       originalProductId: originalProduct.id,
       dupeProductIds: dupeIds,
-      originalImageUrl: originalImageUrl, // Pass prioritized image URL
-      dupeImageUrls: data.dupes.map(dupe => 
-        dupe.images && dupe.images.length > 0 ? dupe.images[0] : dupe.imageUrl
-      ), // Pass prioritized dupe image URLs
+      originalBrand: data.original.brand,
+      dupeBrands: data.dupes.map(dupe => dupe.brand),
       originalKeyIngredients: data.original.keyIngredients,
       dupeKeyIngredients: data.dupes.map(dupe => dupe.keyIngredients)
     };
 
-    // Use your actual Supabase project URL
-    const supabaseUrl = "https://your-supabase-project.supabase.co"; // Replace with your Supabase project URL
-    fetch(`${supabaseUrl}/functions/v1/populate-product-data`, {
+    // Trigger Supabase Edge Function for background processing
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') // Replace with your actual Supabase URL
+    fetch(`${supabaseUrl}/functions/v1/populate-brands-and-ingredients`, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` // Optional: Add if authentication is required
+        "Authorization": `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` // Use service role key if required
       },
       body: JSON.stringify(backgroundTaskData)
     }).catch(error => logError('Error triggering background task:', error));
 
-    logInfo('Main request completed, background task triggered');
+    logInfo('Main request completed, background task triggered for brands and ingredients');
     return result;
   } catch (error) {
     logError('Error in storeDataInDatabase:', error);
