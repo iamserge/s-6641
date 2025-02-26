@@ -281,7 +281,8 @@ export async function cleanupInitialDupes(perplexityContent: string): Promise<{
   originalName: string;
   originalBrand: string;
   originalCategory: string;
-  dupes: Array<{ name: string; brand: string; matchScore: number }>;
+  originalUpc: string;
+  dupes: Array<{ name: string; brand: string; matchScore: number, upc: string }>;
 }> {
   logInfo("Cleaning up initial dupes response with OpenAI");
 
@@ -293,11 +294,13 @@ export async function cleanupInitialDupes(perplexityContent: string): Promise<{
     "originalName": "string",
     "originalBrand": "string",
     "originalCategory": "string",
+    "originalUpc": "string",
     "dupes": [
       {
         "name": "string",
         "brand": "string",
         "matchScore": "number"
+        "upc": "string"
       }
     ]
   }

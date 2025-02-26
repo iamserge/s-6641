@@ -1,7 +1,7 @@
 /// <reference lib="es2015" />
 
-import { logInfo, logError, safeStringify, cleanMarkdownCodeBlock } from "../shared/utils.ts";
-import { DupeResponse, PRODUCT_CATEGORIES  } from "../shared/types.ts";
+import { logInfo, logError, cleanMarkdownCodeBlock } from "../shared/utils.ts";
+import { DupeResponse, PRODUCT_CATEGORIES } from "../shared/types.ts";
 import { 
   PERPLEXITY_API_KEY, 
   PERPLEXITY_API_ENDPOINT,
@@ -20,15 +20,14 @@ Focus on finding verified dupes mentioned by credible sources like Temptalia, Du
 Use sources with side-by-side comparisons, ingredient analysis, and performance testing as well as social media.
 Return ONLY a JSON object in the exact format requested - no explanations or other text.
 
-
 {
   "originalName": "full product name",
   "originalBrand": "brand name", 
   "originalCategory": "product category",
+  "originalUpc": "product upc",
   "dupes": [
-    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100 },
-    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100 }
-    // include up to 5 dupes, ordered by match score (highest first)
+    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100, "upc": "products upc number" },
+    { "name": "dupe product name", "brand": "dupe brand name", "matchScore": number between 20-100, "upc": "products upc number" }
   ]
 }
 `;
@@ -42,13 +41,10 @@ Prioritize verified dupes from credible beauty sources (Temptalia's dupe list, D
 Always make an effort to return at least one dupe, even if it's not a perfect match.
 Assign a match score based on how closely the dupe matches the original in terms of color, texture, finish, and other relevant attributes.
 
-
 Each dupe should be from a different brand and not the original product.
 Be precise with product names and include the exact shade/color if relevant.
-
-
-
 `;
+
 /**
  * System prompt for detailed dupe analysis
  */
@@ -195,7 +191,8 @@ export async function getInitialDupes(searchText: string): Promise<{
   originalName: string;
   originalBrand: string;
   originalCategory: string;
-  dupes: Array<{ name: string; brand: string; matchScore: number }>;
+  originalUpc: string;
+  dupes: Array<{ name: string; brand: string; matchScore: number; upc: string }>;
 }> {
   logInfo(`Sending initial dupes request to Perplexity for: ${searchText}`);
 
@@ -229,9 +226,15 @@ export async function getInitialDupes(searchText: string): Promise<{
 
     const data = await response.json();
     const jsonContent = cleanMarkdownCodeBlock(data.choices[0].message.content);
-    logInfo(`Initial dupes recieved: ${jsonContent}`);
+    logInfo(`Initial dupes received: ${jsonContent}`);
 
-    return await cleanupInitialDupes(jsonContent);
+    try {
+      // Attempt to parse directly as JSON first
+      return JSON.parse(jsonContent);
+    } catch (parseError) {
+      logInfo(`Direct JSON parsing failed for initial dupes, attempting cleanup: ${parseError.message}`);
+      return await cleanupInitialDupes(jsonContent);
+    }
   } catch (error) {
     logError(`Error fetching initial dupes:`, error);
     throw error;
@@ -256,7 +259,7 @@ export async function getDetailedDupeAnalysis(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "sonar-pro", // Using the more powerful model for detailed analysis
+        model: "sonar-pro",
         messages: [
           {
             role: "system",
@@ -280,8 +283,13 @@ export async function getDetailedDupeAnalysis(
     const jsonContent = cleanMarkdownCodeBlock(data.choices[0].message.content);
     logInfo(`Detailed dupe analysis received: ${jsonContent}`);
 
-    return await repairPerplexityResponse(jsonContent, SCHEMA_DEFINITION);
-
+    try {
+      // Attempt to parse directly as JSON first
+      return JSON.parse(jsonContent);
+    } catch (parseError) {
+      logInfo(`Direct JSON parsing failed for detailed analysis, attempting repair: ${parseError.message}`);
+      return await repairPerplexityResponse(jsonContent, SCHEMA_DEFINITION);
+    }
   } catch (error) {
     logError(`Error fetching detailed dupe analysis:`, error);
     throw error;
@@ -322,13 +330,15 @@ export async function enrichProductData(productName: string, brand: string): Pro
     
     const data = await response.json();
     const jsonContent = cleanMarkdownCodeBlock(data.choices[0].message.content);
+    logInfo(`Product enrichment data received: ${jsonContent}`);
     
     try {
+      // Attempt to parse directly as JSON first
       return JSON.parse(jsonContent);
     } catch (error) {
       logError(`Failed to parse enrichment data for ${brand} ${productName}:`, error);
       
-      // Return default values if API call fails
+      // Return default values if parsing fails
       return {
         productDetails: {
           full_name: `${brand} ${productName}`,
@@ -382,3 +392,4 @@ export async function enrichProductData(productName: string, brand: string): Pro
     };
   }
 }
+

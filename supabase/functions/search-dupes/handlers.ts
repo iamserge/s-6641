@@ -2,13 +2,11 @@ import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
 import { supabase } from "../shared/db-client.ts";
 import { logInfo, logError } from "../shared/utils.ts";
 import { getInitialDupes, getDetailedDupeAnalysis } from "../services/perplexity.ts";
-import { processBrand } from "../services/brands.ts";
-import { processProductIngredients, processDupeIngredients } from "../services/ingredients.ts";
 import { processProductImage } from "../services/image-enhancement.ts";
 import { uploadProcessedImageToSupabase } from "../services/images.ts"
 import { cleanupAndStructureData } from "../services/openai.ts";
 import { DupeResponse } from "../shared/types.ts";
-import { fetchProductDataFromExternalDb } from "../services/external-db.ts";
+import { fetchProductDataByUpc, fetchProductDataFromExternalDb } from "../services/external-db.ts";
 
 /**
  * Main handler for searching and processing dupes
@@ -52,17 +50,21 @@ export async function searchAndProcessDupes(searchText: string, onProgress: (mes
 
     onProgress("Found some gems! Let's doll them up with more details... 💎");
     logInfo('Enriching product data from UPC Item DB...');
-    const originalProductData = await fetchProductDataFromExternalDb(
-      initialDupes.originalName,
-      initialDupes.originalBrand
-    );
+
+    // Prioritize UPC lookup if available, otherwise use keyword search
+    const originalProductData = initialDupes.originalUpc
+      ? await fetchProductDataByUpc(initialDupes.originalUpc)
+      : await fetchProductDataFromExternalDb(initialDupes.originalName, initialDupes.originalBrand);
 
     const enrichedDupes = await Promise.all(
       initialDupes.dupes.map(async (dupe) => {
-        const dupeData = await fetchProductDataFromExternalDb(dupe.name, dupe.brand);
+        const dupeData = dupe.upc
+          ? await fetchProductDataByUpc(dupe.upc)
+          : await fetchProductDataFromExternalDb(dupe.name, dupe.brand);
         return {
           name: dupe.name,
           brand: dupe.brand,
+          upc: dupe.upc,
           ...dupeData
         };
       })
