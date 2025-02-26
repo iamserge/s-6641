@@ -1,4 +1,6 @@
-import { logInfo, logError } from "../shared/utils";
+/// <reference lib="es2015" />
+
+import { logInfo, logError } from "../shared/utils.ts";
 import { OPENAI_API_KEY, OPENAI_API_ENDPOINT } from "../shared/constants.ts";
 import { BrandInfo, IngredientInfo, DupeResponse } from "../shared/types.ts";
 

@@ -1,3 +1,5 @@
+/// <reference lib="es2015" />
+
 import { logInfo, logError, blobToBase64, base64ToBlob } from "../shared/utils.ts";
 import { uploadImage, getPublicUrl } from "../shared/db-client.ts";
 import { 

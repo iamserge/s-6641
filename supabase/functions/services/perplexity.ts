@@ -1,3 +1,5 @@
+/// <reference lib="es2015" />
+
 import { logInfo, logError, safeStringify } from "../shared/utils.ts";
 import { DupeResponse } from "../shared/types.ts";
 import { 

@@ -1,3 +1,5 @@
+/// <reference lib="es2015" />
+
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
 import { logInfo, logError } from "../shared/utils.ts";
 import { corsHeaders } from "../shared/constants.ts";

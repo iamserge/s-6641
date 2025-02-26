@@ -1,3 +1,5 @@
+/// <reference lib="es2015" />
+
 /**
  * Logs an informational message with a timestamp 
  */

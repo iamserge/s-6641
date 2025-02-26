@@ -1,3 +1,5 @@
+/// <reference lib="es2015" />
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
 

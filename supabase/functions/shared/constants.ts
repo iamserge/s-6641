@@ -1,3 +1,5 @@
+/// <reference lib="es2015" />
+
 // CORS Headers for Cross-Origin Requests
 export const corsHeaders = {
     "Access-Control-Allow-Origin": "*",

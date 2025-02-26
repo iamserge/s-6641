@@ -1,3 +1,5 @@
+/// <reference lib="es2015" />
+
 // Common type definitions used across the application
 
 // Product Category Type
