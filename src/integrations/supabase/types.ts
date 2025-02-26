@@ -98,6 +98,7 @@ export type Database = {
       }
       dupes: {
         Row: {
+          best_for: string[] | null
           brand: string
           brand_id: string | null
           category: Database["public"]["Enums"]["product_category"] | null
@@ -128,6 +129,7 @@ export type Database = {
           verified: boolean | null
         }
         Insert: {
+          best_for?: string[] | null
           brand: string
           brand_id?: string | null
           category?: Database["public"]["Enums"]["product_category"] | null
@@ -158,6 +160,7 @@ export type Database = {
           verified?: boolean | null
         }
         Update: {
+          best_for?: string[] | null
           brand?: string
           brand_id?: string | null
           category?: Database["public"]["Enums"]["product_category"] | null
