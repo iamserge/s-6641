@@ -1,14 +1,13 @@
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logError, logInfo } from "./utils.ts";
-import { supabaseUrl, supabaseServiceKey } from "./constants.ts";
+import { logError, logInfo } from "./utils";
+import { supabaseUrl, supabaseServiceKey } from "./constants";
 import { 
   Brand, 
   Ingredient, 
   Product, 
   Dupe,
   Resource
-} from "./types.ts";
+} from "./types";
 
 // Initialize Supabase Client
 export const supabase = createClient(supabaseUrl, supabaseServiceKey);
