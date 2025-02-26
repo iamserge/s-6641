@@ -20,10 +20,10 @@ async function getStructuredData<T>(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "o3-mini",
+        model: "o3-mini", // Verify this is a valid model (e.g., "gpt-4o-mini" might be intended)
         messages: [
           { role: "system", content: systemRole },
-          { role: "user", content: prompt }
+          { role: "user", content: prompt + "\n\nPlease provide the response in JSON format." }
         ],
         response_format: { type: "json_object" },
       }),
@@ -32,12 +32,11 @@ async function getStructuredData<T>(
     if (!response.ok) {
       let errorBody;
       try {
-        errorBody = await response.json(); // Parse JSON
+        errorBody = await response.json();
         const errorMessage = `OpenAI API error: ${response.status} - ${errorBody.error?.message || JSON.stringify(errorBody)}`;
         console.error(errorMessage);
         throw new Error(errorMessage);
       } catch (parseError) {
-        // Fallback if response isn't valid JSON
         const rawBody = await response.text();
         const errorMessage = `OpenAI API error: ${response.status} - ${rawBody}`;
         console.error(errorMessage);
