@@ -113,6 +113,60 @@ async function processAndUploadImage(imageUrl: string | undefined, fileName: str
   }
 }
 
+
+/**
+ * Attempts to find the first valid image URL from an array of candidates
+ * Tests each URL sequentially until it finds one that successfully loads
+ * @param imageUrls Array of image URLs to try
+ * @param fallbackUrl Optional fallback URL to use if all others fail
+ * @returns The first valid image URL or fallback/undefined if all fail
+ */
+export async function findFirstValidImage(
+  imageUrls: string[] | undefined, 
+  fallbackUrl?: string
+): Promise<string | undefined> {
+  if (!imageUrls || imageUrls.length === 0) {
+    logInfo("No image URLs provided, returning fallback");
+    return fallbackUrl;
+  }
+
+  logInfo(`Testing ${imageUrls.length} image URLs for validity`);
+
+  // Try each image URL in sequence
+  for (const url of imageUrls) {
+    try {
+      // Skip empty URLs
+      if (!url || url.trim() === '') continue;
+      
+      logInfo(`Testing image URL: ${url}`);
+      
+      // Attempt to fetch the image with a HEAD request to check if it exists
+      const response = await fetch(url, { 
+        method: 'HEAD',
+        headers: {
+          // Some servers require a user agent
+          'User-Agent': 'Dupe.academy Image Validator (+https://dupe.academy)'
+        }
+      });
+      
+      // Check if the response is successful and is an image
+      if (response.ok && response.headers.get('content-type')?.startsWith('image/')) {
+        logInfo(`Found valid image URL: ${url}`);
+        return url;
+      }
+      
+      logInfo(`Image URL invalid or not an image: ${url}`);
+    } catch (error) {
+      logError(`Error checking image URL ${url}:`, error);
+      // Continue to the next URL on error
+    }
+  }
+
+  // If we get here, none of the URLs worked
+  logInfo("No valid image URLs found, using fallback");
+  return fallbackUrl;
+}
+
 /**
  * Store structured data in the database
  */
@@ -123,10 +177,14 @@ export async function storeDataInDatabase(data: DupeResponse) {
     const productSlug = slugify(`${data.original.brand}-${data.original.name}`, { lower: true });
 
     // 2. Process original product image in main call
-    const originalImageUrl = data.original.images && data.original.images.length > 0
-      ? data.original.images[0] // Prioritize external data
-      : data.original.imageUrl; // Fallback to Perplexity-provided URL
-    const processedOriginalImageUrl = await processAndUploadImage(originalImageUrl, `${productSlug}-original`);
+    // Find first valid image from the array or fall back to Perplexity-provided URL
+    const originalImageUrl = await findFirstValidImage(
+      data.original.images, 
+      data.original.imageUrl
+    );
+    const processedOriginalImageUrl = originalImageUrl 
+      ? await processAndUploadImage(originalImageUrl, `${productSlug}-original`)
+      : undefined;
 
     // 3. Store original product with processed image and identification data
     const { data: originalProduct, error: productError } = await supabase
@@ -182,10 +240,15 @@ export async function storeDataInDatabase(data: DupeResponse) {
     const dupeIds = await Promise.all(
       data.dupes.map(async (dupe, index) => {
         const dupeSlug = slugify(`${dupe.brand}-${dupe.name}`, { lower: true });
-        const dupeImageUrl = dupe.images && dupe.images.length > 0
-          ? dupe.images[0] // Prioritize external data
-          : dupe.imageUrl; // Fallback to Perplexity-provided URL
-        const processedDupeImageUrl = await processAndUploadImage(dupeImageUrl, `${productSlug}-dupe-${index + 1}`);
+        
+        // Find first valid image from the array or fall back to Perplexity-provided URL
+        const dupeImageUrl = await findFirstValidImage(
+          dupe.images, 
+          dupe.imageUrl
+        );
+        const processedDupeImageUrl = dupeImageUrl
+          ? await processAndUploadImage(dupeImageUrl, `${productSlug}-dupe-${index + 1}`)
+          : undefined;
 
         const { data: dupeProduct, error: dupeError } = await supabase
         .from('products')
