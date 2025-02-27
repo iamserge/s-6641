@@ -366,103 +366,116 @@ const DupePage = () => {
         )}
       </AnimatePresence>
 
-      {/* Fixed bottom bar that appears when scrolling through dupes */}
-      <AnimatePresence>
-        {showBottomBar && activeDupe && (
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200 px-4 py-3 z-50 shadow-lg"
-          >
-            <div className="container mx-auto">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div className="flex flex-col">
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 line-through mr-2">~${Math.round(product.price)}</span>
-                    <span className="text-lg font-bold text-[#0EA5E9]">~${Math.round(activeDupe.price)}</span>
-                    {activeDupe.savings_percentage && (
-                      <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200 rounded-full">
-                        Save {activeDupe.savings_percentage}%
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center mt-1">
-                    <Badge className="bg-[#0EA5E9] text-white rounded-full">
-                      {activeDupe.match_score}% Match
-                    </Badge>
-                    <p className="text-sm text-gray-600 ml-2 truncate max-w-[200px]">
-                      {activeDupe.brand} {activeDupe.name}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap gap-2 items-center">
-                  {problematicIngredients.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <AlertTriangle className="w-4 h-4 text-amber-500" />
-                      <span className="text-xs text-amber-700">
-                        Contains {problematicIngredients.length} flagged {problematicIngredients.length === 1 ? 'ingredient' : 'ingredients'}
-                      </span>
-                    </div>
-                  )}
-                
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button variant="default" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 rounded-full">
-                        Buy Now
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent side="bottom" className="px-4 sm:px-6 rounded-t-3xl">
-                      <SheetHeader>
-                        <SheetTitle>Shop {activeDupe.brand} {activeDupe.name}</SheetTitle>
-                        <SheetDescription>
-                          Choose where to purchase this dupe
-                        </SheetDescription>
-                      </SheetHeader>
-                      <div className="space-y-3 mt-6">
-                        {activeDupe.offers && activeDupe.offers.length > 0 ? (
-                          activeDupe.offers.map((offer, i) => (
-                            <a
-                              key={i}
-                              href={offer.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
-                            >
-                              <div>
-                                <p className="font-medium">{offer.merchant?.name || "Retailer"}</p>
-                                <p className="text-sm text-gray-500">~${Math.round(offer.price)} - {offer.condition || 'New'}</p>
-                              </div>
-                              <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
-                            </a>
-                          ))
-                        ) : activeDupe.purchase_link ? (
-                          <a
-                            href={activeDupe.purchase_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
-                          >
-                            <div>
-                              <p className="font-medium">Shop Now</p>
-                              <p className="text-sm text-gray-500">~${Math.round(activeDupe.price)}</p>
-                            </div>
-                            <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
-                          </a>
-                        ) : (
-                          <p className="text-center text-gray-500 py-6">No purchasing options available</p>
-                        )}
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-                </div>
-              </div>
+
+{/* Fixed bottom bar that appears when scrolling through dupes */}
+<AnimatePresence>
+  {showBottomBar && activeDupe && (
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 100, opacity: 0 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200 px-4 py-3 z-50 shadow-lg"
+    >
+      <div className="container mx-auto">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              <span className="text-sm text-gray-500 line-through mr-2">~${Math.round(product.price)}</span>
+              <span className="text-lg font-bold text-[#0EA5E9]">~${Math.round(activeDupe.price)}</span>
+              {activeDupe.savings_percentage && (
+                <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200 rounded-full">
+                  Save {activeDupe.savings_percentage}%
+                </Badge>
+              )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="flex items-center mt-1">
+              <Badge className="bg-[#0EA5E9] text-white rounded-full">
+                {activeDupe.match_score}% Match
+              </Badge>
+              <p className="text-sm text-gray-600 ml-2 truncate max-w-[200px]">
+                {activeDupe.brand} {activeDupe.name}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-2 items-center">
+            {problematicIngredients.length > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-1 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs">
+                      Contains {problematicIngredients.length} flagged {problematicIngredients.length === 1 ? 'ingredient' : 'ingredients'}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="p-2 max-w-xs">
+                  <p className="text-sm font-medium">Flagged Ingredients:</p>
+                  <ul className="text-xs mt-1 list-disc list-inside">
+                    {problematicIngredients.map((ing, i) => (
+                      <li key={i} className="text-gray-700">{ing.name}</li>
+                    ))}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="default" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 rounded-full">
+                  Buy Now
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="px-4 sm:px-6 rounded-t-3xl">
+                <SheetHeader>
+                  <SheetTitle>Shop {activeDupe.brand} {activeDupe.name}</SheetTitle>
+                  <SheetDescription>
+                    Choose where to purchase this dupe
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="space-y-3 mt-6">
+                  {activeDupe.offers && activeDupe.offers.length > 0 ? (
+                    activeDupe.offers.map((offer, i) => (
+                      <a
+                        key={i}
+                        href={offer.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                      >
+                        <div>
+                          <p className="font-medium">{offer.merchant?.name || "Retailer"}</p>
+                          <p className="text-sm text-gray-500">~${Math.round(offer.price)} - {offer.condition || 'New'}</p>
+                        </div>
+                        <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
+                      </a>
+                    ))
+                  ) : activeDupe.purchase_link ? (
+                    <a
+                      href={activeDupe.purchase_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                    >
+                      <div>
+                        <p className="font-medium">Shop Now</p>
+                        <p className="text-sm text-gray-500">~${Math.round(activeDupe.price)}</p>
+                      </div>
+                      <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
+                    </a>
+                  ) : (
+                    <p className="text-center text-gray-500 py-6">No purchasing options available</p>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
     </div>
   );
 };

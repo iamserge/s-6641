@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Heart, Leaf, Check, DollarSign, Droplet, Star, MessageSquare, ChevronDown } from 'lucide-react';
+import { ExternalLink, Heart, Leaf, Check, DollarSign, Droplet, Star, MessageSquare, ChevronDown, AlertTriangle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -191,6 +191,18 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
     [dupe.ingredients]
   );
   
+  // Notable ingredients (with benefits or safety concerns)
+  const notableIngredients = useMemo(() => 
+    dupe.ingredients?.filter(i => i.is_controversial || i.benefits?.length > 0) || [], 
+    [dupe.ingredients]
+  );
+  
+  // Beneficial ingredients (with benefits but not controversial)
+  const beneficialIngredients = useMemo(() => 
+    dupe.ingredients?.filter(i => i.benefits?.length > 0 && !i.is_controversial) || [], 
+    [dupe.ingredients]
+  );
+  
   // Filter featured resources
   const featuredResources = useMemo(() => 
     dupe.resources?.filter(r => r.is_featured && r.resource) || [], 
@@ -208,7 +220,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
         {/* Top badges row - Aligned side by side */}
         <div className="flex justify-between items-center p-3 bg-gradient-to-r from-slate-50 to-zinc-50 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <Badge className="bg-[#0EA5E9] text-white px-4 py-1.5 text-sm rounded-full">
+          <Badge className="bg-[#0EA5E9] text-white px-4 py-1.5 text-sm rounded-full">
               {dupe.match_score}% Match
             </Badge>
             
@@ -313,16 +325,26 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                 )}
               </div>
               
-              {/* Sensitive Ingredients as Pills */}
-              {problematicIngredients.length > 0 && (
+              {/* Notable/Sensitive Ingredients as Pills */}
+              {notableIngredients.length > 0 && (
                 <div className="mb-3">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Sensitive Ingredients:</p>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Key Ingredients:</p>
                   <div className="flex flex-wrap gap-2">
+                    {/* Problematic ingredients */}
                     {problematicIngredients.map((ingredient, index) => (
                       <IngredientPill
-                        key={index}
+                        key={`problem-${index}`}
                         ingredient={ingredient}
                         className="bg-rose-50/50 text-rose-700 border-rose-200"
+                      />
+                    ))}
+                    
+                    {/* Beneficial ingredients */}
+                    {beneficialIngredients.map((ingredient, index) => (
+                      <IngredientPill
+                        key={`benefit-${index}`}
+                        ingredient={ingredient}
+                        className="bg-emerald-50/50 text-emerald-700 border-emerald-200"
                       />
                     ))}
                   </div>
@@ -557,5 +579,3 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
     </motion.div>
   );
 };
-
-export default DupeCard;

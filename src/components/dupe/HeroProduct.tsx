@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/dupe";
@@ -44,6 +44,11 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
   
   // Filter featured resources
   const featuredResources = product.resources?.filter(r => r.is_featured && r.resource) || [];
+  
+  // Group ingredients by importance and sensitivity
+  const notableIngredients = useMemo(() => product.ingredients?.filter(i => i.is_controversial || i.benefits?.length > 0) || [], [product.ingredients]);
+  const problematicIngredients = useMemo(() => product.ingredients?.filter(i => i.is_controversial) || [], [product.ingredients]);
+  const beneficialIngredients = useMemo(() => product.ingredients?.filter(i => i.benefits?.length > 0 && !i.is_controversial) || [], [product.ingredients]);
   
   return (
     <div className="container mx-auto px-4 pt-24 pb-8 md:pt-32 md:pb-16">
@@ -99,7 +104,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             transition={{ delay: 0.6 }}
             className="mb-8 relative"
           >
-            <div className="w-56 h-56 md:w-72 md:h-72 rounded-full overflow-hidden bg-white shadow-lg p-1 mx-auto">
+            <div className="w-56 h-56 md:w-72 md:h-72 rounded-full overflow-hidden bg-white shadow-lg p-1 mx-auto md:mx-0">
               <div className="w-full h-full rounded-full bg-gray-50 flex items-center justify-center overflow-hidden">
                 <CategoryImage 
                   category={product.category}
@@ -180,6 +185,39 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             )}
           </motion.div>
 
+          {/* Notable Ingredients Section */}
+          {notableIngredients.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.85 }}
+              className="mb-6 max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl"
+            >
+              <h3 className="text-lg font-medium mb-3">Key Ingredients</h3>
+              <div className="flex flex-wrap justify-center gap-2">
+                <TooltipProvider>
+                  {/* Problematic Ingredients */}
+                  {problematicIngredients.map((ingredient, index) => (
+                    <IngredientPill 
+                      key={`problem-${index}`}
+                      ingredient={ingredient}
+                      className="bg-rose-50/50 text-rose-700 border-rose-200 px-3 py-1 text-sm"
+                    />
+                  ))}
+                  
+                  {/* Beneficial Ingredients */}
+                  {beneficialIngredients.map((ingredient, index) => (
+                    <IngredientPill 
+                      key={`benefit-${index}`}
+                      ingredient={ingredient}
+                      className="bg-emerald-50/50 text-emerald-700 border-emerald-200 px-3 py-1 text-sm"
+                    />
+                  ))}
+                </TooltipProvider>
+              </div>
+            </motion.div>
+          )}
+
           {/* Description Section */}
           {product.description && (
             <motion.div
@@ -210,10 +248,10 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               
               <TabsContent value="details" className="mt-2">
                 <div className="grid gap-4">
-                  {/* Ingredients Section - Now with Tooltips */}
+                  {/* All Ingredients Section - Now with Tooltips */}
                   {product.ingredients && product.ingredients.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-medium mb-3">Key Ingredients</h3>
+                      <h3 className="text-lg font-medium mb-3">All Ingredients</h3>
                       <div className="flex flex-wrap justify-center gap-2">
                         <TooltipProvider>
                           {product.ingredients.map((ingredient, index) => (
