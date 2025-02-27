@@ -17,6 +17,11 @@ serve(async (req) => {
       throw new Error('No image provided')
     }
 
+    // Ensure the image is in the correct base64 format if it's not already a URL
+    const imageUrl = image.startsWith('data:image') 
+      ? image 
+      : `data:image/jpeg;base64,${image}`
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -28,30 +33,31 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant that analyzes images of makeup products. Extract the product name, brand if visible and if it is barcode output product number',
+            content: 'You are a helpful assistant that analyzes images of makeup products. Extract the product name, brand if visible, and if it is a barcode, output the product number.',
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Please analyze this image and extract string: {product name} by {brand} OR {product code} (if barcode), output just that, nothing else',
+                text: 'Please analyze this image and extract string: "{product name} by {brand}" OR "{product code}" (if barcode), output just that, nothing else',
               },
               {
                 type: 'image_url',
                 image_url: {
-                  url: image
+                  url: imageUrl,
+                  detail: 'auto' // Using 'auto' as per OpenAI recommendation
                 },
               },
             ],
           },
         ],
+        max_tokens: 100, // Limiting tokens for a concise response
       }),
     })
 
     const data = await response.json()
 
-    // Check if the response is successful and has the expected structure
     if (!response.ok) {
       throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`)
     }
@@ -60,7 +66,7 @@ serve(async (req) => {
       throw new Error('Invalid response from OpenAI: No choices returned')
     }
 
-    const productText = data.choices[0].message.content
+    const productText = data.choices[0].message.content.trim()
 
     console.log('OpenAI response:', productText)
 
