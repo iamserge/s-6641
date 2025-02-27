@@ -36,7 +36,7 @@ export async function getProductReviewsAndResources(productName: string, brand: 
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "sonar-online",
+        model: "sonar-pro",
         messages: [
           {
             role: "system",
