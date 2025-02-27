@@ -32,28 +32,24 @@ const Hero = () => {
       "Your wallet's about to thank us so hard 💸",
       "On a mission to serve looks on a budget 👀",
     ],
-    
     "Oh, we already know this one! Let's show you the dupes... 🌟": [
       "This one's giving main character energy—dupes loading 💅",
       "Bestie we already know this vibe—check these out ☕",
       "Living for this pick—here's the tea on alternatives 💯",
       "Core product alert—matches incoming ⚡",
     ],
-    
     "Scouring the beauty universe for your perfect match... 💄": [
       "First one to ask for this—we're on a whole journey rn 🏄‍♀️",
       "New to our algorithm—breaking the internet for you 🔥",
       "Giving our AI rizz to find this for you 💯",
       "No cap, hunting every corner of beauty TikTok for this 🫶",
     ],
-    
     "Found some gems! Let's doll them up with more details... 💎": [
       "Caught some serious dupes—they ate 🔥",
       "These matches are so valid—just perfecting the vibe 💫",
       "The girlies came through—adding the juicy details 💅",
       "It's a slay—making sure it's giving everything 💯",
     ],
-    
     "Putting together your beauty dossier... 📋": [
       "Manifest your new go-to's in 3, 2, 1... ✨",
       "Dropping your beauty rotation upgrade 💁‍♀️",
@@ -123,30 +119,36 @@ const Hero = () => {
 
   // **Timers for Tips and Recent Products**
   useEffect(() => {
+    let tipTimer;
+    let productsTimer;
+
     if (isProcessing) {
-      const tipTimer = setTimeout(() => {
+      tipTimer = setTimeout(() => {
         setShowTip(true);
-        setTip(getRandomTip());
-        setOriginalProgressMessage(progressMessage);
-        setProgressMessage(`While you wait, here's a tip: ${getRandomTip()}`);
+        const newTip = getRandomTip();
+        setTip(newTip);
+        setOriginalProgressMessage(progressMessage); // Save current progress message
+        setProgressMessage(`While you wait, here's a tip: ${newTip}`);
       }, 5000);
 
-      const productsTimer = setTimeout(() => {
+      productsTimer = setTimeout(() => {
         setShowRecentProducts(true);
-        setOriginalProgressMessage(progressMessage);
+        setOriginalProgressMessage(progressMessage); // Save current progress message
         setProgressMessage("Still searching... Check out these recent dupes!");
       }, 20000);
+    }
 
-      return () => {
-        clearTimeout(tipTimer);
-        clearTimeout(productsTimer);
-        if (showTip) setProgressMessage(originalProgressMessage);
-        if (showRecentProducts) setProgressMessage(originalProgressMessage);
+    return () => {
+      clearTimeout(tipTimer);
+      clearTimeout(productsTimer);
+      // Only revert progress message when processing ends, not on every state change
+      if (!isProcessing) {
         setShowTip(false);
         setShowRecentProducts(false);
-      };
-    }
-  }, [isProcessing, showTip, showRecentProducts, progressMessage]);
+        setProgressMessage(originalProgressMessage);
+      }
+    };
+  }, [isProcessing]); // Depend only on isProcessing
 
   // **Handle Search**
   const handleSearch = async (e?: React.FormEvent) => {
@@ -187,11 +189,9 @@ const Hero = () => {
             setTimeout(() => {
               setProgressMessage("Almost ready... 🚀");
               setTimeout(() => {
-                // Important: Navigate but DON'T close the modal or reset processing state yet
-                // This allows the user to see the success message while redirecting
                 navigate(`/dupes/for/${data.data.data.slug}`);
-                // Don't set isProcessing to false here
                 eventSource.close();
+                setIsProcessing(false);
               }, 1000);
             }, 1500);
           } else {
@@ -301,20 +301,13 @@ const Hero = () => {
       if (error) throw error;
       if (!data?.product) throw new Error("No product detected in image");
 
-      // Clean and set the search text - remove any quotes
-      const cleanedProduct = data.product.replace(/["']/g, '').trim();
+      const cleanedProduct = data.product.replace(/["']/g, "").trim();
       setSearchText(cleanedProduct);
-      
       toast({
         title: "Product Detected!",
         description: `Found: "${cleanedProduct}"`,
       });
-      
-      // Slight delay to ensure the search text is set
-      setTimeout(() => {
-        handleSearch();
-      }, 100);
-      
+      setTimeout(() => handleSearch(), 100);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -345,19 +338,13 @@ const Hero = () => {
         if (error) throw error;
         if (!data?.product) throw new Error("No product detected in image");
 
-        // Clean and set the search text - remove any quotes
-        const cleanedProduct = data.product.replace(/["']/g, '').trim();
+        const cleanedProduct = data.product.replace(/["']/g, "").trim();
         setSearchText(cleanedProduct);
-        
         toast({
           title: "Product Detected!",
           description: `Found: "${cleanedProduct}"`,
         });
-        
-        // Slight delay to ensure the search text is set
-        setTimeout(() => {
-          handleSearch();
-        }, 100);
+        setTimeout(() => handleSearch(), 100);
       };
 
       reader.onerror = (error) => {
