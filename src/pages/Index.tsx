@@ -39,15 +39,6 @@ interface RecentDupe {
   dupeInfo: DupeInfo | null;
 }
 
-const TrendingPill = ({ product }: { product: { name: string; brand: string } }) => (
-  <div className="bg-[#F1F0FB] hover:bg-[#E5DEFF] px-8 py-2 rounded-full inline-flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-sm min-w-[200px]">
-    <div className="flex flex-col items-start">
-      <span className="text-gray-800 text-sm font-medium">{product.name}</span>
-      <span className="text-gray-500 text-[10px]">by {product.brand}</span>
-    </div>
-  </div>
-);
-
 const RecentDupes = () => {
   const navigate = useNavigate();
 
@@ -92,18 +83,25 @@ const RecentDupes = () => {
       return data.map(product => {
         const dupeInfo = product.dupes && product.dupes.length > 0 ? {
           coverage: product.coverage,
-          confidence_level: product.confidence_level,
+          confidence_level: product.confidence_level ? parseFloat(product.confidence_level) : null,
           longevity_comparison: product.longevity_comparison,
           cruelty_free: product.cruelty_free,
           vegan: product.vegan
         } : null;
         
-        return {
-          ...product,
+        const recentDupe: RecentDupe = {
+          name: product.name,
           brand: product.brands?.name || product.brand,
-          brandInfo: product.brands as unknown as BrandInfo || null,
+          slug: product.slug,
+          country_of_origin: product.country_of_origin,
+          longevity_rating: product.longevity_rating,
+          free_of: product.free_of,
+          best_for: product.best_for,
+          brandInfo: product.brands as BrandInfo || null,
           dupeInfo: dupeInfo
-        } as RecentDupe;
+        };
+
+        return recentDupe;
       });
     },
   });
@@ -158,7 +156,7 @@ const RecentDupes = () => {
           >
             <h3 className="text-lg font-semibold text-primary">{dupe.name}</h3>
             <p className="text-sm text-secondary mb-2">by {dupe.brand}</p>
-
+            
             <div className="flex flex-wrap gap-2 mb-3">
               {dupe.dupeInfo?.coverage && (
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800">
@@ -312,16 +310,18 @@ const AnimatedBackground = () => {
 
 const Index = () => {
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen">
       <AnimatedBackground />
-      <div className="relative z-10">
-        <Navbar />
+      <Navbar />
+      
+      <div className="relative">
         <Hero />
         <section className="container mx-auto px-4 py-12">
           <RecentDupes />
         </section>
-        <Footer />
       </div>
+
+      <Footer />
     </div>
   );
 };
