@@ -128,7 +128,7 @@ const Hero = () => {
         setShowTip(true);
         setTip(getRandomTip());
         setOriginalProgressMessage(progressMessage);
-        setProgressMessage(`While you wait, here’s a tip: ${getRandomTip()}`);
+        setProgressMessage(`While you wait, here's a tip: ${getRandomTip()}`);
       }, 5000);
 
       const productsTimer = setTimeout(() => {
@@ -152,7 +152,7 @@ const Hero = () => {
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    if (!searchText) {
+    if (!searchText.trim()) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -187,10 +187,12 @@ const Hero = () => {
             setTimeout(() => {
               setProgressMessage("Almost ready... 🚀");
               setTimeout(() => {
-                eventSource.close();
+                // Important: Navigate but DON'T close the modal or reset processing state yet
+                // This allows the user to see the success message while redirecting
                 navigate(`/dupes/for/${data.data.data.slug}`);
-                setIsProcessing(false);
-              }, 3000);
+                // Don't set isProcessing to false here
+                eventSource.close();
+              }, 1000);
             }, 1500);
           } else {
             throw new Error("No product data returned");
@@ -299,20 +301,27 @@ const Hero = () => {
       if (error) throw error;
       if (!data?.product) throw new Error("No product detected in image");
 
-      setSearchText(data.product);
+      // Clean and set the search text - remove any quotes
+      const cleanedProduct = data.product.replace(/["']/g, '').trim();
+      setSearchText(cleanedProduct);
+      
       toast({
         title: "Product Detected!",
-        description: `Found: "${data.product}"`,
+        description: `Found: "${cleanedProduct}"`,
       });
-      await handleSearch();
+      
+      // Slight delay to ensure the search text is set
+      setTimeout(() => {
+        handleSearch();
+      }, 100);
+      
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
         description: error instanceof Error ? error.message : "Could not process the image.",
       });
-    } finally {
-      setTimeout(() => setIsProcessing(false), 1000);
+      setIsProcessing(false);
     }
   };
 
@@ -336,8 +345,19 @@ const Hero = () => {
         if (error) throw error;
         if (!data?.product) throw new Error("No product detected in image");
 
-        setSearchText(data.product);
-        await handleSearch();
+        // Clean and set the search text - remove any quotes
+        const cleanedProduct = data.product.replace(/["']/g, '').trim();
+        setSearchText(cleanedProduct);
+        
+        toast({
+          title: "Product Detected!",
+          description: `Found: "${cleanedProduct}"`,
+        });
+        
+        // Slight delay to ensure the search text is set
+        setTimeout(() => {
+          handleSearch();
+        }, 100);
       };
 
       reader.onerror = (error) => {
@@ -350,8 +370,7 @@ const Hero = () => {
         title: "Error",
         description: error instanceof Error ? error.message : "Could not process the image.",
       });
-    } finally {
-      setTimeout(() => setIsProcessing(false), 1000);
+      setIsProcessing(false);
     }
   };
 
@@ -498,8 +517,39 @@ const Hero = () => {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white p-8 rounded-lg shadow-xl text-center max-h-[90vh] overflow-y-auto"
+            className="bg-white p-8 rounded-lg shadow-xl text-center max-h-[90vh] overflow-y-auto relative"
           >
+            {/* Photo search result header with X button */}
+            {previewImage && (
+              <div className="mb-4 pb-4 border-b border-gray-100 relative">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-pink-100">
+                    <img 
+                      src={previewImage} 
+                      alt="Detected product" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm text-gray-500">We detected:</p>
+                    <p className="font-medium text-gray-800">{searchText}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsProcessing(false);
+                    setPreviewImage(null);
+                    setSearchText("");
+                  }}
+                  className="absolute right-0 top-0 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                  aria-label="Cancel search"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+                <p className="text-xs text-gray-500 mt-2">Not what you're looking for? Click the X to try again.</p>
+              </div>
+            )}
+            
             <p className="text-2xl font-light text-gray-800 mb-4">{progressMessage}</p>
 
             {showTip && <p className="mt-4 text-sm text-gray-600 italic">{tip}</p>}
