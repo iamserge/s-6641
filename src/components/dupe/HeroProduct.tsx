@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -5,6 +6,7 @@ import { Product } from "@/types/dupe";
 import { Heart, Leaf, MapPin, Clock, ChevronDown, Info, Star, ExternalLink } from 'lucide-react';
 import { getFlagEmoji } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CategoryImage } from "@/components/dupe/CategoryImage";
 
 interface HeroProductProps {
   product: Product;
@@ -103,15 +105,12 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
           >
             <div className="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden bg-white shadow-lg p-3 mx-auto">
               <div className="w-full h-full rounded-full bg-gray-50 flex items-center justify-center overflow-hidden">
-                {product.image_url ? (
-                  <img 
-                    src={product.image_url} 
-                    alt={product.name}
-                    className="object-contain w-full h-full p-4"
-                  />
-                ) : (
-                  <div className="text-gray-300 text-lg">No image</div>
-                )}
+                <CategoryImage 
+                  category={product.category}
+                  imageUrl={product.image_url}
+                  name={product.name}
+                  className="object-contain w-full h-full p-4"
+                />
               </div>
             </div>
           </motion.div>

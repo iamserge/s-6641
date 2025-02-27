@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, Heart, Leaf, Info, Check, DollarSign, Droplet, Shield, AlertTriangle, Star, MessageSquare } from 'lucide-react';
@@ -6,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dupe, Review, ProductResource, EnhancedResource } from "@/types/dupe";
+import { CategoryImage } from "@/components/dupe/CategoryImage";
 
 interface DupeCardProps {
   dupe: Dupe;
@@ -222,15 +224,12 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
             <div className="w-full md:w-1/4 lg:w-1/5">
               <div className="w-32 h-32 rounded-full overflow-hidden bg-white shadow-sm p-2 mx-auto md:mx-0">
                 <div className="w-full h-full rounded-full bg-gray-50 flex items-center justify-center overflow-hidden">
-                  {dupe.image_url ? (
-                    <img 
-                      src={dupe.image_url} 
-                      alt={dupe.name}
-                      className="object-contain w-full h-full p-2"
-                    />
-                  ) : (
-                    <div className="text-gray-300 text-sm">No image</div>
-                  )}
+                  <CategoryImage 
+                    category={dupe.category}
+                    imageUrl={dupe.image_url}
+                    name={dupe.name}
+                    className="object-contain w-full h-full p-2"
+                  />
                 </div>
               </div>
               

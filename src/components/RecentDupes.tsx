@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { CategoryImage } from "@/components/dupe/CategoryImage";
 
 interface DupeInfo {
   coverage?: string | null;
@@ -39,6 +40,7 @@ interface RecentDupe {
   brand: string;
   slug: string;
   image_url?: string | null;
+  category?: string | null;
   country_of_origin?: string | null;
   longevity_rating?: number | null;
   free_of?: string[] | null;
@@ -81,6 +83,7 @@ const RecentDupes = () => {
             brand,
             slug,
             image_url,
+            category,
             country_of_origin,
             longevity_rating,
             free_of,
@@ -116,7 +119,8 @@ const RecentDupes = () => {
                 id,
                 name,
                 brand,
-                image_url
+                image_url,
+                category
               )
             `)
             .eq('original_product_id', product.id)
@@ -143,6 +147,7 @@ const RecentDupes = () => {
               name: relation.dupe.name,
               brand: relation.dupe.brand, 
               image_url: relation.dupe.image_url,
+              category: relation.dupe.category,
               match_score: relation.match_score,
               savings_percentage: relation.savings_percentage
             };
@@ -171,6 +176,7 @@ const RecentDupes = () => {
             brand: product.brands?.name || product.brand,
             slug: product.slug,
             image_url: product.image_url,
+            category: product.category,
             country_of_origin: product.country_of_origin,
             longevity_rating: product.longevity_rating,
             free_of: product.free_of,
@@ -246,15 +252,12 @@ const RecentDupes = () => {
             <div className="flex justify-between items-start mb-3">
               <div className="relative">
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-white shadow-sm bg-white flex items-center justify-center">
-                  {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name}
-                      className="object-contain w-full h-full p-1" 
-                    />
-                  ) : (
-                    <div className="text-gray-300 text-center text-xs">No image</div>
-                  )}
+                  <CategoryImage
+                    category={product.category}
+                    imageUrl={product.image_url}
+                    name={product.name}
+                    className="object-contain w-full h-full p-1"
+                  />
                 </div>
                 
                 {/* Dupes count indicator */}
@@ -288,15 +291,12 @@ const RecentDupes = () => {
                       className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white flex items-center justify-center"
                       style={{ zIndex: 10 - index }}
                     >
-                      {dupe.image_url ? (
-                        <img 
-                          src={dupe.image_url} 
-                          alt={dupe.name} 
-                          className="object-contain w-full h-full p-1"
-                        />
-                      ) : (
-                        <div className="text-gray-300 text-xs">Dupe</div>
-                      )}
+                      <CategoryImage
+                        category={dupe.category}
+                        imageUrl={dupe.image_url}
+                        name={dupe.name}
+                        className="object-contain w-full h-full p-1"
+                      />
                     </div>
                   ))}
                   {product.dupes.length > 5 && (
