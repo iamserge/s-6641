@@ -43,6 +43,77 @@ export const INITIAL_DUPES_SCHEMA = {
   ]
 };
 
+// Schema for reviews and resources request
+export const REVIEWS_RESOURCES_SCHEMA = `{
+  "productRating": {
+    "averageRating": number,       // Overall average rating out of 5 stars
+    "totalReviews": number,        // Total number of reviews found
+    "ratingDistribution": {        // Distribution of ratings (optional)
+      "5star": number,
+      "4star": number,
+      "3star": number,
+      "2star": number,
+      "1star": number
+    },
+    "source": string              // Where this aggregated rating was found
+  },
+  "userReviews": [                // Array of 3-5 user reviews
+    {
+      "author": string,           // Username or name of reviewer
+      "avatar": string,           // URL to author avatar (if available, else null)
+      "rating": number,           // Individual rating out of 5
+      "text": string,             // Full review text (trim to reasonable length)
+      "source": string,           // Platform/website the review is from
+      "sourceUrl": string,        // Direct URL to the review (if available)
+      "verifiedPurchase": boolean // Whether it's a verified purchase
+    }
+  ],
+  "socialMedia": {
+    "instagram": [                // Array of Instagram posts/reels
+      {
+        "url": string,            // Direct URL to the post/reel
+        "author": string,         // Username of the creator
+        "authorHandle": string,   // @-handle 
+        "thumbnail": string,      // URL to thumbnail image
+        "views": number,          // View count if available (null if not)
+        "likes": number,          // Like count if available (null if not)
+        "type": string            // "post", "reel", "story"
+      }
+    ],
+    "tiktok": [                  // Array of TikTok videos
+      {
+        "url": string,           // Direct URL to the TikTok
+        "author": string,        // Username of the creator
+        "authorHandle": string,  // @-handle
+        "thumbnail": string,     // URL to thumbnail image
+        "views": number,         // View count if available
+        "likes": number,         // Like count if available
+        "embed": string          // Embed code if available (null if not)
+      }
+    ],
+    "youtube": [                 // Array of YouTube videos
+      {
+        "url": string,           // Direct URL to the video
+        "title": string,         // Video title
+        "author": string,        // Channel name
+        "thumbnail": string,     // URL to thumbnail
+        "duration": string,      // Duration string (e.g. "10:30")
+        "views": number,         // View count if available
+        "embed": string          // Embed code if available
+      }
+    ]
+  },
+  "articles": [                 // Array of blog articles/reviews
+    {
+      "url": string,            // Direct URL to the article
+      "title": string,          // Article title
+      "source": string,         // Website/blog name
+      "excerpt": string,        // Short excerpt from the article
+      "thumbnail": string       // URL to thumbnail/featured image (if available)
+    }
+  ]
+}`;
+
 // Schema Definition for API Responses
 export const SCHEMA_DEFINITION = `{
   "original": {
@@ -105,4 +176,4 @@ export const SCHEMA_DEFINITION = `{
     "url": string,                   // Link to resource
     "type": "Video" | "YouTube" | "Instagram" | "TikTok" | "Article" | "Reddit" // Resource type
   }]
-}`
+}`;

@@ -349,3 +349,238 @@ export async function storeProductOffers(productId: string, offers: any[]): Prom
     // Don't throw to avoid interrupting the main process
   }
 }
+
+/**
+ * Review-related database operations
+ */
+export async function insertReview(reviewData: {
+  product_id: string;
+  rating: number;
+  author_name?: string;
+  author_avatar?: string;
+  review_text: string;
+  source?: string;
+  source_url?: string;
+  verified_purchase?: boolean;
+}) {
+  return await supabase
+    .from("reviews")
+    .insert(reviewData)
+    .select()
+    .single();
+}
+
+export async function getReviewsByProductId(productId: string) {
+  return await supabase
+    .from("reviews")
+    .select("*")
+    .eq("product_id", productId)
+    .order("created_at", { ascending: false });
+}
+
+/**
+ * Enhanced resource handling operations
+ */
+export async function insertEnhancedResource(resourceData: {
+  title: string;
+  url: string;
+  type: "Video" | "YouTube" | "Instagram" | "TikTok" | "Article" | "Reddit";
+  video_thumbnail?: string;
+  video_duration?: string;
+  author_name?: string;
+  author_handle?: string;
+  views_count?: number;
+  likes_count?: number;
+  embed_code?: string;
+}):Promise<any> {
+  return await supabase
+    .from("resources")
+    .insert(resourceData)
+    .select()
+    .single();
+}
+
+export async function linkResourceToProduct(productId: string, resourceId: string, isFeatured: boolean = false) {
+  try {
+    const { error } = await supabase
+      .from("product_resources")
+      .insert({
+        product_id: productId,
+        resource_id: resourceId,
+        is_featured: isFeatured
+      });
+    
+    if (error && error.code !== "23505") { // Ignore unique constraint violations
+      throw error;
+    }
+    
+    return { success: true };
+  } catch (error) {
+    logError(`Failed to link resource to product:`, error);
+    throw error;
+  }
+}
+
+export async function getResourcesByProductId(productId: string) {
+  return await supabase
+    .from("product_resources")
+    .select(`
+      is_featured,
+      resources:resource_id (*)
+    `)
+    .eq("product_id", productId);
+}
+
+/**
+ * Store reviews and resources for a product
+ */
+export async function storeProductReviewsAndResources(
+  productId: string, 
+  reviews: any[], 
+  rating: { averageRating: number, totalReviews: number, source: string },
+  socialMedia: { instagram: any[], tiktok: any[], youtube: any[] },
+  articles: any[]
+): Promise<void> {
+  try {
+    logInfo(`Storing reviews and resources for product ${productId}`);
+    
+    // Store the aggregate product rating if available
+    if (rating && rating.averageRating) {
+      await supabase
+        .from("products")
+        .update({
+          rating: rating.averageRating,
+          rating_count: rating.totalReviews,
+          rating_source: rating.source
+        })
+        .eq("id", productId);
+    }
+    
+    // Store individual reviews
+    if (reviews && reviews.length > 0) {
+      for (const review of reviews) {
+        try {
+          await insertReview({
+            product_id: productId,
+            rating: review.rating,
+            author_name: review.author,
+            author_avatar: review.avatar,
+            review_text: review.text,
+            source: review.source,
+            source_url: review.sourceUrl,
+            verified_purchase: review.verifiedPurchase
+          });
+        } catch (error) {
+          logError(`Failed to insert review for ${productId}:`, error);
+          // Continue with next review even if one fails
+        }
+      }
+    }
+    
+    // Store social media resources
+    const allResources: any[] = [];
+    
+    // Instagram
+    if (socialMedia?.instagram && socialMedia.instagram.length > 0) {
+      for (const post of socialMedia.instagram) {
+        try {
+          const { data: resource } = await insertEnhancedResource({
+            title: `Instagram post by ${post.author}`,
+            url: post.url,
+            type: "Instagram",
+            video_thumbnail: post.thumbnail,
+            author_name: post.author,
+            author_handle: post.authorHandle,
+            views_count: post.views,
+            likes_count: post.likes
+          });
+          
+          if (resource) {
+            await linkResourceToProduct(productId, resource.id, true);
+            allResources.push(resource);
+          }
+        } catch (error) {
+          logError(`Failed to insert Instagram resource:`, error);
+        }
+      }
+    }
+    
+    // TikTok
+    if (socialMedia?.tiktok && socialMedia.tiktok.length > 0) {
+      for (const video of socialMedia.tiktok) {
+        try {
+          const { data: resource } = await insertEnhancedResource({
+            title: `TikTok by ${video.author}`,
+            url: video.url,
+            type: "TikTok",
+            video_thumbnail: video.thumbnail,
+            author_name: video.author,
+            author_handle: video.authorHandle,
+            views_count: video.views,
+            likes_count: video.likes,
+            embed_code: video.embed
+          });
+          
+          if (resource) {
+            await linkResourceToProduct(productId, resource.id, true);
+            allResources.push(resource);
+          }
+        } catch (error) {
+          logError(`Failed to insert TikTok resource:`, error);
+        }
+      }
+    }
+    
+    // YouTube
+    if (socialMedia?.youtube && socialMedia.youtube.length > 0) {
+      for (const video of socialMedia.youtube) {
+        try {
+          const { data: resource } = await insertEnhancedResource({
+            title: video.title,
+            url: video.url,
+            type: "YouTube",
+            video_thumbnail: video.thumbnail,
+            video_duration: video.duration,
+            author_name: video.author,
+            views_count: video.views,
+            embed_code: video.embed
+          });
+          
+          if (resource) {
+            await linkResourceToProduct(productId, resource.id, true);
+            allResources.push(resource);
+          }
+        } catch (error) {
+          logError(`Failed to insert YouTube resource:`, error);
+        }
+      }
+    }
+    
+    // Articles
+    if (articles && articles.length > 0) {
+      for (const article of articles) {
+        try {
+          const { data: resource } = await insertEnhancedResource({
+            title: article.title,
+            url: article.url,
+            type: "Article",
+            video_thumbnail: article.thumbnail,
+            author_name: article.source
+          });
+          
+          if (resource) {
+            await linkResourceToProduct(productId, resource.id);
+            allResources.push(resource);
+          }
+        } catch (error) {
+          logError(`Failed to insert article resource:`, error);
+        }
+      }
+    }
+    
+    logInfo(`Successfully processed ${allResources.length} resources for product ${productId}`);
+  } catch (error) {
+    logError(`Error in storeProductReviewsAndResources:`, error);
+    // Don't throw to avoid interrupting the main process
+  }
+}

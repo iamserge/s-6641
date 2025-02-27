@@ -31,95 +31,129 @@ const DupePage = () => {
   // Refs for scroll to top functionality
   const heroRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const fetchDupeData = async () => {
-      if (!slug) {
-        setError('No product slug provided');
-        setIsLoading(false);
-        return;
-      }
+  // Add this to your DupePage component's useEffect where you fetch data:
 
-      try {
-        // Fetch the original product with all fields
-        const { data: product, error: productError } = await supabase
-          .from('products')
-          .select(`
+useEffect(() => {
+  const fetchDupeData = async () => {
+    if (!slug) {
+      setError('No product slug provided');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Fetch the original product with all fields including reviews and resources
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .select(`
+          *,
+          brand_info:brands(*),
+          product_ingredients(ingredients(*)),
+          reviews(*),
+          product_resources(
+            is_featured,
+            resources:resource_id(*)
+          )
+        `)
+        .eq('slug', slug)
+        .single();
+
+      if (productError) throw productError;
+      if (!product) throw new Error('Product not found');
+
+      // Fetch dupes with expanded fields through product_offers junction table
+      const { data: dupeRelations, error: dupesError } = await supabase
+        .from('product_dupes')
+        .select(`
+          match_score,
+          savings_percentage,
+          dupe:products!product_dupes_dupe_product_id_fkey(
             *,
-            brand_info:brands(*),
-            product_ingredients(ingredients(*))
-          `)
-          .eq('slug', slug)
-          .single();
-
-        if (productError) throw productError;
-        if (!product) throw new Error('Product not found');
-
-        // Fetch dupes with expanded fields through product_offers junction table
-        const { data: dupeRelations, error: dupesError } = await supabase
-          .from('product_dupes')
-          .select(`
-            match_score,
-            savings_percentage,
-            dupe:products!product_dupes_dupe_product_id_fkey(
-              *,
-              product_offers(
-                offers(
-                  *,
-                  merchant:merchants(*)
-                )
+            product_offers(
+              offers(
+                *,
+                merchant:merchants(*)
               )
+            ),
+            reviews(*),
+            product_resources(
+              is_featured,
+              resources:resource_id(*)
             )
-          `)
-          .eq('original_product_id', product.id);
+          )
+        `)
+        .eq('original_product_id', product.id);
 
-        if (dupesError) throw dupesError;
+      if (dupesError) throw dupesError;
 
-        // Fetch ingredients for each dupe
-        const dupes = await Promise.all(
-          dupeRelations.map(async (relation) => {
-            const { data: ingredientsData, error: ingredientsError } = await supabase
-              .from('product_ingredients')
-              .select(`ingredients(*)`)
-              .eq('product_id', relation.dupe.id);
+      // Fetch ingredients for each dupe
+      const dupes = await Promise.all(
+        dupeRelations.map(async (relation) => {
+          const { data: ingredientsData, error: ingredientsError } = await supabase
+            .from('product_ingredients')
+            .select(`ingredients(*)`)
+            .eq('product_id', relation.dupe.id);
 
-            if (ingredientsError) console.error('Error fetching ingredients:', ingredientsError);
+          if (ingredientsError) console.error('Error fetching ingredients:', ingredientsError);
 
-            const ingredients = ingredientsData ? ingredientsData.map(item => item.ingredients) : [];
-            
-            // Process offers to flatten the nested structure
-            const offers = relation.dupe.product_offers?.map(po => ({
-              ...po.offers,
-              merchant: po.offers.merchant
-            })) || [];
+          const ingredients = ingredientsData ? ingredientsData.map(item => item.ingredients) : [];
+          
+          // Process offers to flatten the nested structure
+          const offers = relation.dupe.product_offers?.map(po => ({
+            ...po.offers,
+            merchant: po.offers.merchant
+          })) || [];
 
-            return {
-              ...relation.dupe,
-              match_score: relation.match_score,
-              savings_percentage: relation.savings_percentage,
-              ingredients,
-              offers
-            };
-          })
-        );
+          // Format reviews
+          const reviews = relation.dupe.reviews || [];
 
-        // Create the final product data object that matches the Product type
-        const productData: Product = {
-          ...product,
-          ingredients: product.product_ingredients?.map(item => item.ingredients) || [],
-          dupes
-        };
+          // Format resources
+          const resources = relation.dupe.product_resources?.map(pr => ({
+            ...pr,
+            resource: pr.resources
+          })) || [];
 
-        setData(productData);
-      } catch (error) {
-        console.error('Error fetching dupe data:', error);
-        setError('Failed to load product data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+          return {
+            ...relation.dupe,
+            match_score: relation.match_score,
+            savings_percentage: relation.savings_percentage,
+            ingredients,
+            offers,
+            reviews,
+            resources
+          };
+        })
+      );
 
-    fetchDupeData();
-  }, [slug]);
+      // Format the reviews array for the original product
+      const reviews = product.reviews || [];
+
+      // Format the resources array for the original product
+      const resources = product.product_resources?.map(pr => ({
+        ...pr,
+        resource: pr.resources
+      })) || [];
+
+      // Create the final product data object that matches the Product type
+      const productData = {
+        ...product,
+        ingredients: product.product_ingredients?.map(item => item.ingredients) || [],
+        dupes,
+        reviews,
+        resources
+      };
+
+      setData(productData);
+    } catch (error) {
+      console.error('Error fetching dupe data:', error);
+      setError('Failed to load product data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchDupeData();
+}, [slug]);
 
   useEffect(() => {
     // Setup intersection observer to detect when dupes are in view

@@ -176,52 +176,50 @@ export interface Ingredient {
   restricted_in?: string[];
 }
 
-export interface Dupe {
-  id?: string;
-  name: string;
-  brand: string;
-  brand_id?: string;
-  slug: string;
-  ean?: string;
-  upc?: string;
-  gtin?: string;
-  asin?: string;
-  model?: string;
-  category?: ProductCategory;
-  price: number;
-  attributes: string[];
-  description?: string;
-  image_url?: string;
-  images?: string[];
-  summary?: string;
-  country_of_origin?: string;
-  longevity_rating?: number;
-  oxidation_tendency?: string;
-  free_of?: string[];
-  best_for?: string[];
-  texture?: string;
-  finish?: string;
-  coverage?: string;
-  spf?: number;
-  skin_types?: string[];
-  color_match_score?: number;
-  formula_match_score?: number;
-  dupe_type?: string;
-  validation_source?: string;
-  confidence_level?: string;
-  longevity_comparison?: string;
-  notes?: string;
-  purchase_link?: string;
-  cruelty_free?: boolean;
-  vegan?: boolean;
-  lowest_recorded_price?: number;
-  highest_recorded_price?: number;
-  offers?: Offer[];
-  match_score?: number;
-  savings_percentage?: number;
-  ingredients: Ingredient[];
 
+// Review types
+export interface Review {
+  id?: string;
+  product_id: string;
+  rating: number;
+  author_name?: string;
+  author_avatar?: string;
+  review_text: string;
+  source?: string;
+  source_url?: string;
+  verified_purchase?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
+
+// Enhanced Resource types
+export interface EnhancedResource {
+  id?: string;
+  title: string;
+  url: string;
+  type: "Video" | "YouTube" | "Instagram" | "TikTok" | "Article" | "Reddit";
+  video_thumbnail?: string;
+  video_duration?: string;
+  author_name?: string;
+  author_handle?: string;
+  views_count?: number;
+  likes_count?: number;
+  embed_code?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Product Resource junction
+export interface ProductResource {
+  id?: string;
+  product_id: string;
+  resource_id: string;
+  is_featured: boolean;
+  created_at?: string;
+  resource?: EnhancedResource;
+}
+
+// Update Product type to include reviews and resources
 export interface Product {
   id?: string;
   name: string;
@@ -262,9 +260,76 @@ export interface Product {
   vegan?: boolean;
   lowest_recorded_price?: number;
   highest_recorded_price?: number;
+  
+  // NEW: Rating fields
+  rating?: number;
+  rating_count?: number;
+  rating_source?: string;
+  
+  // Relationships
   offers?: Offer[];
   dupes: Dupe[];
   ingredients: Ingredient[];
+  reviews?: Review[];
+  resources?: ProductResource[];
+}
+
+// Update Dupe type to include reviews and resources (same structure as Product)
+export interface Dupe {
+  id?: string;
+  name: string;
+  brand: string;
+  brand_id?: string;
+  slug: string;
+  ean?: string;
+  upc?: string;
+  gtin?: string;
+  asin?: string;
+  model?: string;
+  category?: ProductCategory;
+  price: number;
+  attributes?: string[];
+  description?: string;
+  image_url?: string;
+  images?: string[];
+  summary?: string;
+  country_of_origin?: string;
+  longevity_rating?: number;
+  oxidation_tendency?: string;
+  free_of?: string[];
+  best_for?: string[];
+  texture?: string;
+  finish?: string;
+  coverage?: string;
+  spf?: number;
+  skin_types?: string[];
+  color_match_score?: number;
+  formula_match_score?: number;
+  dupe_type?: string;
+  validation_source?: string;
+  confidence_level?: string;
+  longevity_comparison?: string;
+  notes?: string;
+  purchase_link?: string;
+  cruelty_free?: boolean;
+  vegan?: boolean;
+  lowest_recorded_price?: number;
+  highest_recorded_price?: number;
+  
+  // Match-specific fields
+  match_score: number;
+  savings_percentage: number;
+  
+  // NEW: Rating fields
+  rating?: number;
+  rating_count?: number;
+  rating_source?: string;
+  
+  // Relationships
+  offers?: Offer[];
+  ingredients?: Ingredient[];
+  reviews?: Review[];
+  resources?: ProductResource[];
 }
 
 export interface Merchant {
@@ -459,3 +524,4 @@ export interface ImageProcessingResult {
   url?: string;
   error?: string;
 }
+
