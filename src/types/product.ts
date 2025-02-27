@@ -1,7 +1,6 @@
-
 export interface DupeInfo {
   coverage?: string | null;
-  confidence_level?: number | null;
+  confidence_level?: string | null; // Changed from number to string
   longevity_comparison?: string | null;
   cruelty_free?: boolean | null;
   vegan?: boolean | null;

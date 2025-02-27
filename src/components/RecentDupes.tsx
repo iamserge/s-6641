@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { Shield, Droplet, Check, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface DupeInfo {
   coverage?: string | null;
-  confidence_level?: number | null;
+  confidence_level?: string | null; // Changed from number to string
   longevity_comparison?: string | null;
   cruelty_free?: boolean | null;
   vegan?: boolean | null;
@@ -42,64 +41,75 @@ const RecentDupes = () => {
   const { data: recentDupes, isLoading, isError } = useQuery({
     queryKey: ["recentDupes"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select(`
-          name,
-          brand,
-          slug,
-          country_of_origin,
-          longevity_rating,
-          free_of,
-          best_for,
-          coverage,
-          confidence_level,
-          longevity_comparison,
-          cruelty_free,
-          vegan,
-          dupes:product_dupes!product_dupes_original_product_id_fkey(
-            match_score,
-            savings_percentage
-          ),
-          brands!products_brand_id_fkey (
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select(`
             name,
+            brand,
+            slug,
             country_of_origin,
-            sustainable_packaging,
+            longevity_rating,
+            free_of,
+            best_for,
+            coverage,
+            confidence_level,
+            longevity_comparison,
             cruelty_free,
-            vegan
-          )
-        `)
-        .order("created_at", { ascending: false })
-        .limit(6);
+            vegan,
+            dupes:product_dupes!product_dupes_original_product_id_fkey(
+              match_score,
+              savings_percentage
+            ),
+            brands!products_brand_id_fkey (
+              name,
+              country_of_origin,
+              sustainable_packaging,
+              cruelty_free,
+              vegan
+            )
+          `)
+          .order("created_at", { ascending: false })
+          .limit(6);
 
-      if (error) {
-        console.error("Error fetching recent dupes:", error);
-        throw error;
-      }
-      
-      return data.map(product => {
-        const dupeInfo = product.dupes && product.dupes.length > 0 ? {
-          coverage: product.coverage,
-          confidence_level: product.confidence_level ? parseFloat(product.confidence_level) : null,
-          longevity_comparison: product.longevity_comparison,
-          cruelty_free: product.cruelty_free,
-          vegan: product.vegan
-        } : null;
+        if (error) {
+          console.error("Error fetching recent dupes:", error);
+          throw error;
+        }
         
-        const recentDupe: RecentDupe = {
-          name: product.name,
-          brand: product.brands?.name || product.brand,
-          slug: product.slug,
-          country_of_origin: product.country_of_origin,
-          longevity_rating: product.longevity_rating,
-          free_of: product.free_of,
-          best_for: product.best_for,
-          brandInfo: product.brands as BrandInfo || null,
-          dupeInfo: dupeInfo
-        };
+        // Ensure data is valid before proceeding
+        if (!data || !Array.isArray(data)) {
+          console.error("Invalid data format received:", data);
+          return [];
+        }
+        
+        return data.map(product => {
+          const dupeInfo = product.dupes && product.dupes.length > 0 ? {
+            coverage: product.coverage,
+            confidence_level: product.confidence_level, // Store as string directly
+            longevity_comparison: product.longevity_comparison,
+            cruelty_free: product.cruelty_free,
+            vegan: product.vegan
+          } : null;
+          
+          const recentDupe: RecentDupe = {
+            name: product.name,
+            brand: product.brands?.name || product.brand,
+            slug: product.slug,
+            country_of_origin: product.country_of_origin,
+            longevity_rating: product.longevity_rating,
+            free_of: product.free_of,
+            best_for: product.best_for,
+            brandInfo: product.brands as BrandInfo || null,
+            dupeInfo: dupeInfo
+          };
 
-        return recentDupe;
-      });
+          return recentDupe;
+        });
+      } catch (err) {
+        console.error("Error in queryFn:", err);
+        return [];
+      }
     },
   });
 
@@ -164,7 +174,7 @@ const RecentDupes = () => {
               {dupe.dupeInfo?.confidence_level && (
                 <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
                   <Check className="w-3 h-3 mr-1" />
-                  {dupe.dupeInfo.confidence_level}% Match
+                  {dupe.dupeInfo.confidence_level} Match
                 </Badge>
               )}
               {dupe.dupeInfo?.longevity_comparison && (
