@@ -85,17 +85,16 @@ const RecentDupes = () => {
         console.error("Error fetching recent dupes:", error);
         throw error;
       }
-      
-      return data.map(product => {
-        const dupeInfo = product.dupes && product.dupes.length > 0 ? 
-          product.dupes[0] as unknown as DupeInfo : 
-          null;
-        
+
+      return data.map((product) => {
+        const dupeInfo =
+          product.dupes && product.dupes.length > 0 ? product.dupes[0] as unknown as DupeInfo : null;
+
         return {
           ...product,
           brand: product.brands?.name || product.brand,
           brandInfo: product.brands as unknown as BrandInfo || null,
-          dupeInfo: dupeInfo
+          dupeInfo: dupeInfo,
         } as RecentDupe;
       });
     },
@@ -151,7 +150,7 @@ const RecentDupes = () => {
           >
             <h3 className="text-lg font-semibold text-primary">{dupe.name}</h3>
             <p className="text-sm text-secondary mb-2">by {dupe.brand}</p>
-            
+
             <div className="flex flex-wrap gap-2 mb-3">
               {dupe.dupeInfo?.coverage && (
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800">
@@ -198,79 +197,123 @@ const RecentDupes = () => {
   );
 };
 
-const AnimatedBackground = () => (
-  <div className="fixed inset-0 -z-10">
-    <div className="absolute inset-0 bg-gradient-to-b from-pink-50 to-white">
+const AnimatedBackground = () => {
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      {/* Base gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-pink-100 via-rose-50 to-white" />
+
+      {/* Slick layered radial gradients */}
       <motion.div
         className="absolute inset-0"
         style={{
-          background: "radial-gradient(circle at center, rgba(252, 231, 243, 0.8) 0%, transparent 70%)",
-          filter: "blur(80px)",
+          background: "radial-gradient(circle at 20% 20%, rgba(255, 182, 193, 0.7) 0%, transparent 60%)",
+          filter: "blur(90px)",
+          mixBlendMode: "overlay",
         }}
         animate={{
-          scale: [1, 1.1, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        className="absolute inset-0"
-        style={{
-          background: "radial-gradient(circle at 70% 30%, rgba(252, 231, 243, 0.8) 0%, transparent 70%)",
-          filter: "blur(80px)",
-        }}
-        animate={{
-          scale: [1.1, 1, 1.1],
-          opacity: [0.5, 0.3, 0.5],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        className="absolute inset-0"
-        style={{
-          background: "radial-gradient(circle at 30% 70%, rgba(252, 231, 243, 0.8) 0%, transparent 70%)",
-          filter: "blur(80px)",
-        }}
-        animate={{
-          scale: [1, 1.2, 1],
+          scale: [1, 1.05, 1],
+          x: [-20, 20, -20],
+          y: [-10, 10, -10],
           opacity: [0.4, 0.6, 0.4],
         }}
         transition={{
-          duration: 12,
+          duration: 7,
+          repeat: Infinity,
+          repeatType: "loop",
+          ease: "easeInOut",
+        }}
+      />
+
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(circle at 80% 40%, rgba(255, 105, 180, 0.6) 0%, transparent 50%)",
+          filter: "blur(70px)",
+          mixBlendMode: "soft-light",
+        }}
+        animate={{
+          scale: [1.05, 1.1, 1.05],
+          x: [30, -30, 30],
+          y: [20, -20, 20],
+          opacity: [0.5, 0.7, 0.5],
+        }}
+        transition={{
+          duration: 9,
+          repeat: Infinity,
+          repeatType: "loop",
+          ease: "easeInOut",
+        }}
+      />
+
+      {/* Subtle studio spotlight effect */}
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(circle at 50% 70%, rgba(255, 228, 225, 0.9) 0%, transparent 70%)",
+          filter: "blur(100px)",
+          mixBlendMode: "screen",
+        }}
+        animate={{
+          scale: [1, 1.15, 1],
+          rotate: [0, 5, -5, 0],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{
+          duration: 11,
           repeat: Infinity,
           repeatType: "reverse",
           ease: "easeInOut",
         }}
       />
+
+      {/* Dynamic glowing orb */}
+      <motion.div
+        className="absolute w-64 h-64 rounded-full"
+        style={{
+          background: "radial-gradient(circle, rgba(255, 182, 193, 0.8) 10%, transparent 80%)",
+          filter: "blur(50px)",
+          top: "10%",
+          left: "10%",
+        }}
+        animate={{
+          x: [0, 100, -50, 0],
+          y: [0, 50, 100, 0],
+          scale: [1, 1.2, 0.9, 1],
+          opacity: [0.6, 0.8, 0.5, 0.6],
+        }}
+        transition={{
+          duration: 15,
+          repeat: Infinity,
+          repeatType: "loop",
+          ease: "easeInOut",
+        }}
+      />
+
+      {/* Faint noise texture for studio vibe */}
+      <div
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: "url('https://www.transparenttextures.com/patterns/noise.png')",
+          mixBlendMode: "overlay",
+        }}
+      />
     </div>
-  </div>
-);
+  );
+};
 
 const Index = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
       <AnimatedBackground />
-      <Navbar />
-      
-      <div className="relative">
+      <div className="relative z-10">
+        <Navbar />
         <Hero />
-        
         <section className="container mx-auto px-4 py-12">
           <RecentDupes />
         </section>
+        <Footer />
       </div>
-
-      <Footer />
     </div>
   );
 };
