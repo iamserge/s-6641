@@ -384,7 +384,7 @@ export type Database = {
           best_for: string[] | null
           brand: string
           brand_id: string | null
-          category: Database["public"]["Enums"]["product_category"] | null
+          category: string | null
           color_match_score: number | null
           confidence_level: string | null
           country_of_origin: string | null
@@ -427,7 +427,7 @@ export type Database = {
           best_for?: string[] | null
           brand: string
           brand_id?: string | null
-          category?: Database["public"]["Enums"]["product_category"] | null
+          category?: string | null
           color_match_score?: number | null
           confidence_level?: string | null
           country_of_origin?: string | null
@@ -470,7 +470,7 @@ export type Database = {
           best_for?: string[] | null
           brand?: string
           brand_id?: string | null
-          category?: Database["public"]["Enums"]["product_category"] | null
+          category?: string | null
           color_match_score?: number | null
           confidence_level?: string | null
           country_of_origin?: string | null
