@@ -65,7 +65,7 @@ const RecentDupes = () => {
           .from('product_dupes')
           .select('original_product_id, savings_percentage')
           .order('savings_percentage', { ascending: false })
-          .limit(6);
+          .limit(10); // Increased to 10 from 6
 
         if (dupeError) throw dupeError;
         
@@ -241,7 +241,7 @@ const RecentDupes = () => {
       <CardHeader>
         <CardTitle>Recent Discoveries</CardTitle>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {recentDupes?.map((product) => (
           <motion.div
             key={product.slug}
