@@ -271,52 +271,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                 )}
               </div>
               
-              {/* Preview of social media content if available - Moved above the "Show More" button */}
-              {dupe.loading_resources ? (
-                <div className="mb-5 bg-gray-50/30 rounded-lg">
-                  <p className="text-sm font-medium text-gray-700 px-3 pt-3 mb-2">Related content:</p>
-                  <div className="flex items-center gap-2 p-3">
-                    <Loader2 className="w-5 h-5 animate-spin text-[#9b87f5]" />
-                    <span className="text-sm text-gray-500">Loading content...</span>
-                  </div>
-                </div>
-              ) : featuredResources.length > 0 && !isExpanded ? (
-                <div className="mb-5 bg-gray-50/30 rounded-lg">
-                  <p className="text-sm font-medium text-gray-700 px-3 pt-3 mb-2">Related content:</p>
-                  <div className="flex flex-wrap gap-2.5 p-3">
-                    {featuredResources.slice(0, 2).map((resourceItem, i) => (
-                      <a
-                        key={i}
-                        href={resourceItem.resource.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center bg-white text-gray-700 border-gray-200 border px-4 py-1.5 rounded-full hover:bg-gray-50 transition-colors gap-1.5"
-                      >
-                        {resourceItem.resource.type}
-                        <ExternalLink className="w-3.5 h-3.5 ml-1" />
-                      </a>
-                    ))}
-                    {featuredResources.length > 2 && (
-                      <Badge
-                        variant="outline"
-                        className="bg-white text-blue-600 border-blue-200 cursor-pointer rounded-full px-4 py-1.5"
-                        onClick={() => {
-                          setIsExpanded(true);
-                          setActiveTab('resources');
-                        }}
-                      >
-                        +{featuredResources.length - 2} more
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ) : !isExpanded && (
-                <div className="mb-5 bg-gray-50/30 rounded-lg">
-                  <p className="text-sm font-medium text-gray-700 px-3 pt-3 mb-2">Related content:</p>
-                  <p className="text-sm text-gray-500 p-3">No content available</p>
-                </div>
-              )}
-              
+
               {/* Description Snippet */}
               {dupe.description && !isExpanded && (
                 <p className="text-sm text-gray-600 mb-5 line-clamp-2 bg-gray-50/30 p-3 rounded-lg">
@@ -324,17 +279,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                 </p>
               )}
 
-              {/* Collapsed/Expanded toggle - centered */}
-              <div className="flex justify-center mt-5">
-                <button
-                  className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors bg-gray-50 px-5 py-2 rounded-full"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  aria-expanded={isExpanded}
-                >
-                  {isExpanded ? "Show Less" : "Show More"}
-                  <ChevronDown className={`w-4 h-4 transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
-                </button>
-              </div>
+              
 
               {/* Buy Now button is removed */}
 
@@ -541,6 +486,18 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                   </Tabs>
                 </div>
               )}
+
+              {/* Collapsed/Expanded toggle - centered */}
+              <div className="flex justify-center mt-5">
+                <button
+                  className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors bg-gray-50 px-5 py-2 rounded-full"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  aria-expanded={isExpanded}
+                >
+                  {isExpanded ? "Show Less" : "Show More"}
+                  <ChevronDown className={`w-4 h-4 transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
+                </button>
+              </div>
             </div>
           </div>
         </CardContent>
