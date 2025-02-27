@@ -18,6 +18,7 @@ const Hero = () => {
   const [showTip, setShowTip] = useState(false);
   const [showRecentProducts, setShowRecentProducts] = useState(false);
   const [tip, setTip] = useState("");
+  const [searchTriggered, setSearchTriggered] = useState(false); // Tracks if search has started after detection
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -127,28 +128,24 @@ const Hero = () => {
         setShowTip(true);
         const newTip = getRandomTip();
         setTip(newTip);
-        setOriginalProgressMessage(progressMessage); // Save current progress message
-        setProgressMessage(`While you wait, here's a tip: ${newTip}`);
+        setProgressMessage(`Hey, here’s a tip while we work: ${newTip}`);
       }, 5000);
 
       productsTimer = setTimeout(() => {
         setShowRecentProducts(true);
-        setOriginalProgressMessage(progressMessage); // Save current progress message
-        setProgressMessage("Still searching... Check out these recent dupes!");
-      }, 20000);
+        setProgressMessage("Here are some dupes to vibe with...");
+      }, 10000); // Changed to 10 seconds as per request
     }
 
     return () => {
       clearTimeout(tipTimer);
       clearTimeout(productsTimer);
-      // Only revert progress message when processing ends, not on every state change
       if (!isProcessing) {
         setShowTip(false);
         setShowRecentProducts(false);
-        setProgressMessage(originalProgressMessage);
       }
     };
-  }, [isProcessing]); // Depend only on isProcessing
+  }, [isProcessing]);
 
   // **Handle Search**
   const handleSearch = async (e?: React.FormEvent) => {
@@ -165,6 +162,7 @@ const Hero = () => {
 
     try {
       setIsProcessing(true);
+      setSearchTriggered(true); // Indicate search has started
       setProgressMessage(getRandomVariation("Heyyy! We're on the hunt for the perfect dupes for you! 🎨"));
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -189,9 +187,10 @@ const Hero = () => {
             setTimeout(() => {
               setProgressMessage("Almost ready... 🚀");
               setTimeout(() => {
-                navigate(`/dupes/for/${data.data.data.slug}`);
                 eventSource.close();
-                setIsProcessing(false);
+                navigate(`/dupes/for/${data.data.data.slug}`);
+                setIsProcessing(false); // Close modal on redirect
+                setSearchTriggered(false); // Reset search trigger
               }, 1000);
             }, 1500);
           } else {
@@ -205,7 +204,12 @@ const Hero = () => {
       eventSource.onerror = () => {
         eventSource.close();
         setIsProcessing(false);
-        throw new Error("Failed to receive updates from the server");
+        setSearchTriggered(false);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Something went wrong. Please try again.",
+        });
       };
 
       return () => eventSource.close();
@@ -216,6 +220,7 @@ const Hero = () => {
         description: "Failed to search for products. Please try again.",
       });
       setIsProcessing(false);
+      setSearchTriggered(false);
     }
   };
 
@@ -267,7 +272,6 @@ const Hero = () => {
         description: "Camera not fully loaded. Please try again.",
       });
       stopCamera();
-      setIsProcessing(false);
       return;
     }
 
@@ -307,7 +311,7 @@ const Hero = () => {
         title: "Product Detected!",
         description: `Found: "${cleanedProduct}"`,
       });
-      setTimeout(() => handleSearch(), 100);
+      setTimeout(() => handleSearch(), 100); // Trigger search after setting text
     } catch (error) {
       toast({
         variant: "destructive",
@@ -347,8 +351,8 @@ const Hero = () => {
         setTimeout(() => handleSearch(), 100);
       };
 
-      reader.onerror = (error) => {
-        throw error;
+      reader.onerror = () => {
+        throw new Error("Failed to read image file");
       };
       reader.readAsDataURL(file);
     } catch (error) {
@@ -506,14 +510,14 @@ const Hero = () => {
             animate={{ scale: 1, opacity: 1 }}
             className="bg-white p-8 rounded-lg shadow-xl text-center max-h-[90vh] overflow-y-auto relative"
           >
-            {/* Photo search result header with X button */}
-            {previewImage && (
+            {/* Header: Show only after product detection and search triggered */}
+            {previewImage && searchTriggered && searchText && (
               <div className="mb-4 pb-4 border-b border-gray-100 relative">
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-12 h-12 rounded-full overflow-hidden border border-pink-100">
-                    <img 
-                      src={previewImage} 
-                      alt="Detected product" 
+                    <img
+                      src={previewImage}
+                      alt="Detected product"
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -522,56 +526,65 @@ const Hero = () => {
                     <p className="font-medium text-gray-800">{searchText}</p>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     setIsProcessing(false);
                     setPreviewImage(null);
                     setSearchText("");
+                    setSearchTriggered(false);
                   }}
                   className="absolute right-0 top-0 p-1 rounded-full hover:bg-gray-100 transition-colors"
                   aria-label="Cancel search"
                 >
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
-                <p className="text-xs text-gray-500 mt-2">Not what you're looking for? Click the X to try again.</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Not what you're looking for? Click the X to try again.
+                </p>
               </div>
             )}
-            
+
+            {/* Progress Text */}
             <p className="text-2xl font-light text-gray-800 mb-4">{progressMessage}</p>
 
-            {showTip && <p className="mt-4 text-sm text-gray-600 italic">{tip}</p>}
-
-            {showRecentProducts && recentProducts && recentProducts.length > 0 && (
-              <div className="mt-6">
-                <p className="text-lg font-light text-gray-800 mb-2">
-                  Hey, still waiting for "{searchText}"? Meanwhile, check out these other products with dupes we found:
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {recentProducts.map((product) => (
-                    <div key={product.id} className="border rounded-lg p-2 bg-gray-50">
-                      <img
-                        src={product.image_url || "/placeholder-image.png"}
-                        alt={product.name}
-                        className="w-full h-24 object-cover rounded mb-2"
-                      />
-                      <p className="text-sm font-medium">
-                        <a
-                          href={`/dupes/for/${product.slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-pink-500 hover:underline"
-                        >
-                          {product.name}
-                        </a>
-                      </p>
-                      <p className="text-xs text-gray-600">{product.brand}</p>
-                      <p className="text-xs text-gray-600">{product.dupesCount} dupes</p>
-                      <p className="text-xs text-gray-600">Max saving: {product.maxSavings}%</p>
-                    </div>
-                  ))}
+            {/* Extra Content: Tips and Products */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, ease: "easeIn" }}
+            >
+              {showTip && (
+                <p className="mt-4 text-sm text-gray-600 italic">{tip}</p>
+              )}
+              {showRecentProducts && recentProducts && recentProducts.length > 0 && (
+                <div className="mt-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {recentProducts.map((product) => (
+                      <div key={product.id} className="border rounded-lg p-2 bg-gray-50">
+                        <img
+                          src={product.image_url || "/placeholder-image.png"}
+                          alt={product.name}
+                          className="w-full h-24 object-cover rounded mb-2"
+                        />
+                        <p className="text-sm font-medium">
+                          <a
+                            href={`/dupes/for/${product.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-pink-500 hover:underline"
+                          >
+                            {product.name}
+                          </a>
+                        </p>
+                        <p className="text-xs text-gray-600">{product.brand}</p>
+                        <p className="text-xs text-gray-600">{product.dupesCount} dupes</p>
+                        <p className="text-xs text-gray-600">Max saving: {product.maxSavings}%</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </motion.div>
 
             <Loader2 className="w-12 h-12 text-pink-500 animate-spin mx-auto mt-6" />
           </motion.div>
