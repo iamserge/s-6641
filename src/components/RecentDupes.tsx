@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
 import { getFlagEmoji } from "@/lib/utils";
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface DupeInfo {
   coverage?: string | null;
@@ -31,7 +32,7 @@ interface DupeSummary {
   name: string;
   brand: string;
   image_url?: string | null;
-  category?: string | null; // Changed type to string | null
+  category?: string | null; 
   match_score: number;
   savings_percentage: number;
 }
@@ -42,7 +43,7 @@ interface RecentDupe {
   brand: string;
   slug: string;
   image_url?: string | null;
-  category?: string | null; // Changed type to string | null
+  category?: string | null;
   country_of_origin?: string | null;
   longevity_rating?: number | null;
   free_of?: string[] | null;
@@ -51,6 +52,7 @@ interface RecentDupe {
   dupeInfo: DupeInfo | null;
   dupes: DupeSummary[];
   highest_savings?: number | null;
+  highest_match?: number | null;
 }
 
 const RecentDupes = () => {
@@ -65,7 +67,7 @@ const RecentDupes = () => {
           .from('product_dupes')
           .select('original_product_id, savings_percentage')
           .order('savings_percentage', { ascending: false })
-          .limit(10); // Increased to 10 from 6
+          .limit(10);
 
         if (dupeError) throw dupeError;
         
@@ -133,15 +135,21 @@ const RecentDupes = () => {
             return {
               ...product,
               dupes: [],
-              highest_savings: 0
+              highest_savings: 0,
+              highest_match: 0
             };
           }
 
-          // Transform and get highest savings
+          // Transform and get highest savings and match score
           let highest_savings = 0;
+          let highest_match = 0;
           const dupes = dupeRelations.map(relation => {
             if (relation.savings_percentage > highest_savings) {
               highest_savings = relation.savings_percentage;
+            }
+            
+            if (relation.match_score > highest_match) {
+              highest_match = relation.match_score;
             }
             
             return {
@@ -158,7 +166,8 @@ const RecentDupes = () => {
           return {
             ...product,
             dupes,
-            highest_savings
+            highest_savings,
+            highest_match
           };
         }));
         
@@ -186,7 +195,8 @@ const RecentDupes = () => {
             brandInfo: product.brands as BrandInfo || null,
             dupeInfo: dupeInfo,
             dupes: product.dupes,
-            highest_savings: product.highest_savings
+            highest_savings: product.highest_savings,
+            highest_match: product.highest_match
           };
 
           return recentDupe;
@@ -245,116 +255,145 @@ const RecentDupes = () => {
         {recentDupes?.map((product) => (
           <motion.div
             key={product.slug}
-            className="relative p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer bg-white/70 backdrop-blur-sm border border-slate-100/50"
+            className="relative rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer bg-white/70 backdrop-blur-sm border border-slate-100/50 overflow-hidden flex flex-col"
             onClick={() => navigate(`/dupes/for/${product.slug}`)}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
           >
-            {/* Main product image and dupe indicator */}
-            <div className="flex justify-between items-start mb-3">
-              <div className="relative">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border border-slate-100 shadow-sm bg-white flex items-center justify-center">
-                  <CategoryImage
-                    category={product.category}
-                    imageUrl={product.image_url}
-                    name={product.name}
-                    className="object-contain w-full h-full"
-                  />
-                </div>
+            {/* Top badges row */}
+            <div className="flex justify-between items-center p-3 bg-gradient-to-r from-slate-50 to-zinc-50 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                {product.highest_match && (
+                  <Badge variant="pastelPurple" className="rounded-full text-xs font-medium px-2 py-0.5">
+                    {Math.round(product.highest_match)}% Match
+                  </Badge>
+                )}
                 
-                {/* Dupes count indicator */}
-                <div className="absolute -bottom-1 -right-1 bg-[#5840c0] text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-sm border border-white">
-                  {product.dupes.length}
-                </div>
+                {product.highest_savings && product.highest_savings > 0 && (
+                  <Badge variant="pastelGreen" className="rounded-full text-xs font-medium px-2 py-0.5 flex items-center gap-1">
+                    <DollarSign className="w-3 h-3" />
+                    Save {Math.round(product.highest_savings)}%
+                  </Badge>
+                )}
               </div>
               
-              {/* Highest savings if available */}
-              {product.highest_savings && product.highest_savings > 0 && (
-                <Badge className="bg-green-50 text-green-700 flex items-center gap-1 px-2 py-1 rounded-lg shadow-sm">
-                  <DollarSign className="w-3 h-3" />
-                  Save up to {Math.round(product.highest_savings)}%
-                </Badge>
+              <Badge className="bg-[#5840c0] text-white text-xs rounded-full px-2 py-0.5">
+                {product.dupes.length} Dupes
+              </Badge>
+            </div>
+            
+            {/* Main content */}
+            <div className="p-4 flex flex-col items-center">
+              {/* Product image */}
+              <div className="w-28 h-28 rounded-full overflow-hidden border border-slate-100 shadow-sm bg-white flex items-center justify-center mb-4">
+                <CategoryImage
+                  category={product.category}
+                  imageUrl={product.image_url}
+                  name={product.name}
+                  className="object-contain w-full h-full p-1"
+                />
+              </div>
+              
+              {/* Product name and brand */}
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">{product.name}</h3>
+                <p className="text-sm text-gray-600">by {product.brand}</p>
+                
+                {/* Country badge if available */}
+                {product.country_of_origin && (
+                  <div className="flex items-center gap-1 mt-1 justify-center">
+                    <span className="text-sm text-gray-500">
+                      {getFlagEmoji(product.country_of_origin)} {product.country_of_origin}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Dupe image stack with tooltips */}
+              {product.dupes.length > 0 && (
+                <div className="mb-4">
+                  <TooltipProvider>
+                    <div className="flex -space-x-3 justify-center">
+                      {product.dupes.slice(0, 5).map((dupe, index) => (
+                        <Tooltip key={dupe.id}>
+                          <TooltipTrigger asChild>
+                            <div 
+                              className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white flex items-center justify-center"
+                              style={{ zIndex: 10 - index }}
+                            >
+                              <CategoryImage
+                                category={dupe.category}
+                                imageUrl={dupe.image_url}
+                                name={dupe.name}
+                                className="object-contain w-full h-full p-1"
+                              />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="p-3 max-w-[200px] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-lg">
+                            <p className="font-medium text-sm">{dupe.name}</p>
+                            <p className="text-xs text-gray-500">by {dupe.brand}</p>
+                            <div className="flex gap-1 mt-2">
+                              <Badge variant="pastelBlue" className="text-xs px-1.5 py-0.5">
+                                {Math.round(dupe.match_score)}% Match
+                              </Badge>
+                              {dupe.savings_percentage > 0 && (
+                                <Badge variant="pastelGreen" className="text-xs px-1.5 py-0.5">
+                                  Save {Math.round(dupe.savings_percentage)}%
+                                </Badge>
+                              )}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                      {product.dupes.length > 5 && (
+                        <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm flex items-center justify-center bg-gray-50 text-xs font-medium text-gray-600">
+                          +{product.dupes.length - 5}
+                        </div>
+                      )}
+                    </div>
+                  </TooltipProvider>
+                </div>
               )}
             </div>
             
-            {/* Product info */}
-            <div className="mb-3">
-              <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">{product.name}</h3>
-              <p className="text-sm text-gray-600">by {product.brand}</p>
-              
-              {/* Country badge if available */}
-              {product.country_of_origin && (
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-sm text-gray-500">
-                    {getFlagEmoji(product.country_of_origin)} {product.country_of_origin}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            {/* Dupe image stack */}
-            {product.dupes.length > 0 && (
-              <div className="mb-4">
-                <div className="flex -space-x-3">
-                  {product.dupes.slice(0, 5).map((dupe, index) => (
-                    <div 
-                      key={dupe.id} 
-                      className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white flex items-center justify-center"
-                      style={{ zIndex: 10 - index }}
-                    >
-                      <CategoryImage
-                        category={dupe.category}
-                        imageUrl={dupe.image_url}
-                        name={dupe.name}
-                        className="object-contain w-full h-full p-1"
-                      />
-                    </div>
-                  ))}
-                  {product.dupes.length > 5 && (
-                    <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm flex items-center justify-center bg-gray-50 text-xs font-medium text-gray-600">
-                      +{product.dupes.length - 5}
-                    </div>
-                  )}
-                </div>
+            {/* Feature badges at bottom */}
+            <div className="bg-gray-50/50 p-3 mt-auto">
+              <div className="flex flex-wrap gap-2 justify-center">
+                {product.dupeInfo?.coverage && (
+                  <Badge variant="secondary" className="bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 text-xs hover:bg-blue-100 transition-all">
+                    <Droplet className="w-3 h-3 mr-1" />
+                    {product.dupeInfo.coverage}
+                  </Badge>
+                )}
+                
+                {product.dupeInfo?.confidence_level && (
+                  <Badge variant="secondary" className="bg-yellow-50 text-yellow-700 rounded-full px-2 py-0.5 text-xs hover:bg-yellow-100 transition-all">
+                    <Check className="w-3 h-3 mr-1" />
+                    {product.dupeInfo.confidence_level}
+                  </Badge>
+                )}
+                
+                {(product.dupeInfo?.cruelty_free || product.brandInfo?.cruelty_free) && (
+                  <Badge variant="secondary" className="bg-purple-50 text-purple-700 rounded-full px-2 py-0.5 text-xs hover:bg-purple-100 transition-all">
+                    <Heart className="w-3 h-3 mr-1" />
+                    Cruelty-Free
+                  </Badge>
+                )}
+                
+                {(product.dupeInfo?.vegan || product.brandInfo?.vegan) && (
+                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5 text-xs hover:bg-emerald-100 transition-all">
+                    <Leaf className="w-3 h-3 mr-1" />
+                    Vegan
+                  </Badge>
+                )}
+                
+                {product.brandInfo?.sustainable_packaging && (
+                  <Badge variant="secondary" className="bg-green-50 text-green-700 rounded-full px-2 py-0.5 text-xs hover:bg-green-100 transition-all">
+                    <Shield className="w-3 h-3 mr-1" />
+                    Sustainable
+                  </Badge>
+                )}
               </div>
-            )}
-            
-            {/* Feature badges */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              {product.dupeInfo?.coverage && (
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 text-xs hover:bg-blue-100 transition-all">
-                  <Droplet className="w-3 h-3 mr-1" />
-                  {product.dupeInfo.coverage}
-                </Badge>
-              )}
-              
-              {product.dupeInfo?.confidence_level && (
-                <Badge variant="secondary" className="bg-yellow-50 text-yellow-700 rounded-full px-2 py-0.5 text-xs hover:bg-yellow-100 transition-all">
-                  <Check className="w-3 h-3 mr-1" />
-                  {product.dupeInfo.confidence_level}
-                </Badge>
-              )}
-              
-              {(product.dupeInfo?.cruelty_free || product.brandInfo?.cruelty_free) && (
-                <Badge variant="secondary" className="bg-purple-50 text-purple-700 rounded-full px-2 py-0.5 text-xs hover:bg-purple-100 transition-all">
-                  <Heart className="w-3 h-3 mr-1" />
-                  Cruelty-Free
-                </Badge>
-              )}
-              
-              {(product.dupeInfo?.vegan || product.brandInfo?.vegan) && (
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5 text-xs hover:bg-emerald-100 transition-all">
-                  <Leaf className="w-3 h-3 mr-1" />
-                  Vegan
-                </Badge>
-              )}
-              
-              {product.brandInfo?.sustainable_packaging && (
-                <Badge variant="secondary" className="bg-green-50 text-green-700 rounded-full px-2 py-0.5 text-xs hover:bg-green-100 transition-all">
-                  <Shield className="w-3 h-3 mr-1" />
-                  Sustainable
-                </Badge>
-              )}
             </div>
           </motion.div>
         ))}
