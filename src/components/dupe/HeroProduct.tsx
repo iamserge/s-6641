@@ -108,7 +108,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 <CategoryImage 
                   category={product.category}
                   imageUrl={product.image_url}
-                  name={product.name}
+                  alt={product.name}
                   className="object-contain w-full h-full p-4"
                 />
               </div>

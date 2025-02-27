@@ -1,3 +1,4 @@
+
 import { ProductCategory } from "@/types/dupe";
 import { useState, useEffect } from "react";
 import * as backgroundRemoval from "@imgly/background-removal";
@@ -11,9 +12,9 @@ const getPlaceholderForProduct = (category: string): string => {
   return `/placeholders/${placeholderNum}.png`;
 };
 
-interface CategoryImageProps {
-  category?: ProductCategory;
-  imageUrl?: string;
+export interface CategoryImageProps {
+  category?: ProductCategory | null;
+  imageUrl?: string | null;
   images?: string[];
   alt: string;
   className?: string;

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
+import { ProductCategory } from "@/types/dupe";
 
 interface DupeInfo {
   coverage?: string | null;
@@ -30,6 +31,7 @@ interface DupeSummary {
   name: string;
   brand: string;
   image_url?: string | null;
+  category?: ProductCategory | null;
   match_score: number;
   savings_percentage: number;
 }
@@ -40,7 +42,7 @@ interface RecentDupe {
   brand: string;
   slug: string;
   image_url?: string | null;
-  category?: string | null;
+  category?: ProductCategory | null;
   country_of_origin?: string | null;
   longevity_rating?: number | null;
   free_of?: string[] | null;
@@ -147,7 +149,7 @@ const RecentDupes = () => {
               name: relation.dupe.name,
               brand: relation.dupe.brand, 
               image_url: relation.dupe.image_url,
-              category: relation.dupe.category,
+              category: relation.dupe.category as ProductCategory | null,
               match_score: relation.match_score,
               savings_percentage: relation.savings_percentage
             };
@@ -176,7 +178,7 @@ const RecentDupes = () => {
             brand: product.brands?.name || product.brand,
             slug: product.slug,
             image_url: product.image_url,
-            category: product.category,
+            category: product.category as ProductCategory | null,
             country_of_origin: product.country_of_origin,
             longevity_rating: product.longevity_rating,
             free_of: product.free_of,
@@ -255,7 +257,7 @@ const RecentDupes = () => {
                   <CategoryImage
                     category={product.category}
                     imageUrl={product.image_url}
-                    name={product.name}
+                    alt={product.name}
                     className="object-contain w-full h-full p-1"
                   />
                 </div>
@@ -294,7 +296,7 @@ const RecentDupes = () => {
                       <CategoryImage
                         category={dupe.category}
                         imageUrl={dupe.image_url}
-                        name={dupe.name}
+                        alt={dupe.name}
                         className="object-contain w-full h-full p-1"
                       />
                     </div>

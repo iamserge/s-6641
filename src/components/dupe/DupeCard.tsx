@@ -227,7 +227,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                   <CategoryImage 
                     category={dupe.category}
                     imageUrl={dupe.image_url}
-                    name={dupe.name}
+                    alt={dupe.name}
                     className="object-contain w-full h-full p-2"
                   />
                 </div>
