@@ -140,19 +140,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
             )}
           </div>
           
-          {/* Buy Now button - desktop only */}
-          <div className="hidden md:block">
-            {dupe.purchase_link && (
-              <a 
-                href={dupe.purchase_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-[#0EA5E9] rounded-full hover:bg-[#0EA5E9]/90 transition-colors"
-              >
-                Buy Now <ExternalLink className="ml-2 h-4 w-4" />
-              </a>
-            )}
-          </div>
+          {/* Buy Now button is removed as requested */}
         </div>
         
         <CardContent className="p-6 md:p-8 lg:p-10 relative">
@@ -283,7 +271,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                 )}
               </div>
               
-              {/* Preview of social media content if available */}
+              {/* Preview of social media content if available - Moved above the "Show More" button */}
               {dupe.loading_resources ? (
                 <div className="mb-5 bg-gray-50/30 rounded-lg">
                   <p className="text-sm font-medium text-gray-700 px-3 pt-3 mb-2">Related content:</p>
@@ -348,19 +336,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                 </button>
               </div>
 
-              {/* Mobile Buy Now - only shown on mobile */}
-              <div className="flex md:hidden justify-center mt-5">
-                {dupe.purchase_link && (
-                  <a 
-                    href={dupe.purchase_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-[#0EA5E9] rounded-full hover:bg-[#0EA5E9]/90 transition-colors w-full"
-                  >
-                    Buy Now <ExternalLink className="ml-2 h-4 w-4" />
-                  </a>
-                )}
-              </div>
+              {/* Buy Now button is removed */}
 
               {/* Expanded content with tabs */}
               {isExpanded && (
