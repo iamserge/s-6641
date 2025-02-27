@@ -337,25 +337,6 @@ export async function storeDataInDatabase(data: DupeResponse) {
       })
     );
 
-    // 5. Store resources
-    if (data.resources && data.resources.length > 0) {
-      const resourcesData = data.resources.map(resource => ({
-        title: resource.title,
-        url: resource.url,
-        type: resource.type,
-        product_id: originalProduct.id
-      }));
-
-      const { error: resourcesError } = await supabase
-        .from('resources')
-        .insert(resourcesData);
-
-      if (resourcesError) {
-        logError('Error storing resources:', resourcesError);
-        // Non-critical, log but don't throw
-      }
-    }
-
     // 6. Prepare result for frontend
     const result = {
       slug: productSlug,

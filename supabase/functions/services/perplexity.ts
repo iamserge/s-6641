@@ -122,11 +122,6 @@ In the summary field, highlight:
 2. Notable differences in performance, ingredients, or ethical considerations
 3. Best value proposition among the dupes
 
-For the resources section, include at least 5 credible references:
-1. Resource title/description
-2. Direct URL to the source
-3. Resource type (Video, YouTube, Instagram, TikTok, Article, Reddit)
-4. Focus on sources with direct comparisons or ingredient analysis
 
 Base your analysis on the verified data provided, plus your knowledge of these products.
 IMPORTANT: Be honest about differences - do not claim products are identical if they have notable differences.

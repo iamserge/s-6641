@@ -171,9 +171,5 @@ export const SCHEMA_DEFINITION = `{
     "purchaseLink": string           // Where to buy the dupe
   }],
   "summary": string,                 // Concise overview comparing original and dupes
-  "resources": [{
-    "title": string,                 // Resource title or description 
-    "url": string,                   // Link to resource
-    "type": "Video" | "YouTube" | "Instagram" | "TikTok" | "Article" | "Reddit" // Resource type
-  }]
+  
 }`;
