@@ -1,4 +1,3 @@
-
 export const PRODUCT_CATEGORIES = [
   'Foundation',
   'Concealer',
@@ -266,6 +265,11 @@ export interface Product {
   rating_count?: number;
   rating_source?: string;
   
+  // Loading state fields
+  loading_ingredients?: boolean;
+  loading_reviews?: boolean;
+  loading_resources?: boolean;
+  
   // Relationships
   offers?: Offer[];
   dupes: Dupe[];
@@ -315,6 +319,11 @@ export interface Dupe {
   vegan?: boolean;
   lowest_recorded_price?: number;
   highest_recorded_price?: number;
+  
+  // Loading state fields
+  loading_ingredients?: boolean;
+  loading_reviews?: boolean;
+  loading_resources?: boolean;
   
   // Match-specific fields
   match_score: number;
@@ -524,4 +533,3 @@ export interface ImageProcessingResult {
   url?: string;
   error?: string;
 }
-

@@ -402,6 +402,9 @@ export type Database = {
           id: string
           image_url: string | null
           images: string[] | null
+          loading_ingredients: boolean
+          loading_resources: boolean
+          loading_reviews: boolean
           longevity_comparison: string | null
           longevity_rating: number | null
           lowest_recorded_price: number | null
@@ -445,6 +448,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           images?: string[] | null
+          loading_ingredients?: boolean
+          loading_resources?: boolean
+          loading_reviews?: boolean
           longevity_comparison?: string | null
           longevity_rating?: number | null
           lowest_recorded_price?: number | null
@@ -488,6 +494,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           images?: string[] | null
+          loading_ingredients?: boolean
+          loading_resources?: boolean
+          loading_reviews?: boolean
           longevity_comparison?: string | null
           longevity_rating?: number | null
           lowest_recorded_price?: number | null

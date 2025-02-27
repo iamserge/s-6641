@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -84,10 +85,14 @@ const DupePage = () => {
         // Create the final product data object that matches the Product type
         const productData: Product = {
           ...product,
+          category: product.category,
           ingredients: product.product_ingredients?.map(item => item.ingredients) || [],
           dupes: [], // Initialize empty dupes array to be filled in the next fetch
           reviews,
-          resources
+          resources,
+          loading_ingredients: product.loading_ingredients !== undefined ? product.loading_ingredients : false,
+          loading_reviews: product.loading_reviews !== undefined ? product.loading_reviews : false,
+          loading_resources: product.loading_resources !== undefined ? product.loading_resources : false
         };
 
         setProduct(productData);
@@ -168,12 +173,16 @@ const DupePage = () => {
 
             return {
               ...relation.dupe,
+              category: relation.dupe.category,
               match_score: relation.match_score,
               savings_percentage: relation.savings_percentage,
               ingredients,
               offers,
               reviews,
-              resources
+              resources,
+              loading_ingredients: relation.dupe.loading_ingredients !== undefined ? relation.dupe.loading_ingredients : false,
+              loading_reviews: relation.dupe.loading_reviews !== undefined ? relation.dupe.loading_reviews : false,
+              loading_resources: relation.dupe.loading_resources !== undefined ? relation.dupe.loading_resources : false
             };
           })
         );

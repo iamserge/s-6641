@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+
+import { useState, useMemo } from 'react';
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/dupe";
-import { Heart, Leaf, MapPin, Clock, Info, Star, ExternalLink } from 'lucide-react';
+import { Heart, Leaf, MapPin, Clock, Info, Star, ExternalLink, Loader2 } from 'lucide-react';
 import { getFlagEmoji } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
@@ -159,7 +160,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 <CategoryImage 
                   category={product.category}
                   imageUrl={product.image_url}
-                  name={product.name}
+                  alt={product.name}
                   className="object-contain w-full h-full p-1"
                 />
               </div>
@@ -236,14 +237,20 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
           </motion.div>
 
           {/* Notable Ingredients Section */}
-          {notableIngredients.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.85 }}
-              className="mb-6 max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl shadow-sm"
-            >
-              <h3 className="text-lg font-medium mb-3">Key Ingredients</h3>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.85 }}
+            className="mb-6 max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl shadow-sm"
+          >
+            <h3 className="text-lg font-medium mb-3">Key Ingredients</h3>
+            
+            {product.loading_ingredients ? (
+              <div className="flex flex-col items-center justify-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin text-[#9b87f5] mb-2" />
+                <p className="text-sm text-gray-500">Loading ingredients...</p>
+              </div>
+            ) : notableIngredients.length > 0 ? (
               <div className="flex flex-wrap justify-center gap-2">
                 <TooltipProvider>
                   {/* Problematic Ingredients */}
@@ -265,8 +272,10 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                   ))}
                 </TooltipProvider>
               </div>
-            </motion.div>
-          )}
+            ) : (
+              <p className="text-sm text-gray-500 py-2">No key ingredients information available</p>
+            )}
+          </motion.div>
 
           {/* Description Section */}
           {product.description && (
@@ -292,20 +301,61 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             <Tabs defaultValue="details" className="w-full" onValueChange={(val) => setActiveTab(val as any)}>
               <TabsList className="grid grid-cols-3 mb-4 rounded-lg bg-gray-50/80">
                 <TabsTrigger value="details" className="rounded-md">Details</TabsTrigger>
-                <TabsTrigger value="reviews" className="rounded-md">
-                  Reviews {product.reviews?.length ? `(${product.reviews.length})` : ''}
+                <TabsTrigger 
+                  value="reviews" 
+                  className="rounded-md"
+                  disabled={product.loading_reviews}
+                >
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1">
+                          Reviews {product.reviews?.length ? `(${product.reviews.length})` : ''}
+                          {product.loading_reviews && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
+                        </div>
+                      </TooltipTrigger>
+                      {product.loading_reviews && (
+                        <TooltipContent>
+                          <p className="text-xs">Loading reviews...</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </TabsTrigger>
-                <TabsTrigger value="resources" className="rounded-md">
-                  Content {featuredResources.length ? `(${featuredResources.length})` : ''}
+                <TabsTrigger 
+                  value="resources" 
+                  className="rounded-md"
+                  disabled={product.loading_resources}
+                >
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1">
+                          Content {featuredResources.length ? `(${featuredResources.length})` : ''}
+                          {product.loading_resources && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
+                        </div>
+                      </TooltipTrigger>
+                      {product.loading_resources && (
+                        <TooltipContent>
+                          <p className="text-xs">Loading content...</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </TabsTrigger>
               </TabsList>
               
               <TabsContent value="details" className="mt-2">
                 <div className="grid gap-4">
                   {/* All Ingredients Section - Now with Tooltips */}
-                  {product.ingredients && product.ingredients.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">All Ingredients</h3>
+                  <div>
+                    <h3 className="text-lg font-medium mb-3">All Ingredients</h3>
+                    {product.loading_ingredients ? (
+                      <div className="flex flex-col items-center justify-center py-4">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#9b87f5] mb-2" />
+                        <p className="text-sm text-gray-500">Loading ingredients...</p>
+                      </div>
+                    ) : product.ingredients && product.ingredients.length > 0 ? (
                       <div className="flex flex-wrap justify-center gap-2">
                         <TooltipProvider>
                           {product.ingredients.map((ingredient, index) => (
@@ -317,8 +367,10 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                           ))}
                         </TooltipProvider>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <p className="text-sm text-gray-500 py-2">No ingredients information available</p>
+                    )}
+                  </div>
                   
                   {/* Product Details Section */}
                   {(product.texture || product.finish || product.coverage || product.spf) && (
@@ -385,7 +437,12 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               </TabsContent>
               
               <TabsContent value="reviews" className="mt-2">
-                {product.reviews && product.reviews.length > 0 ? (
+                {product.loading_reviews ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#9b87f5] mb-4" />
+                    <p className="text-gray-500">Loading reviews...</p>
+                  </div>
+                ) : product.reviews && product.reviews.length > 0 ? (
                   <div className="space-y-4">
                     {product.reviews.slice(0, 3).map((review, index) => (
                       <ReviewCard key={index} review={review} index={index} />
@@ -397,12 +454,17 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                     )}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No reviews available yet.</p>
+                  <p className="text-center text-gray-500 py-4">No reviews available yet.</p>
                 )}
               </TabsContent>
               
               <TabsContent value="resources" className="mt-2">
-                {featuredResources.length > 0 ? (
+                {product.loading_resources ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#9b87f5] mb-4" />
+                    <p className="text-gray-500">Loading content...</p>
+                  </div>
+                ) : featuredResources.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {featuredResources.map((resourceItem, index) => (
                       <SocialMediaResource 

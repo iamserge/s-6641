@@ -1,6 +1,7 @@
+
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Heart, Leaf, Check, DollarSign, Droplet, Star, MessageSquare, ChevronDown, AlertTriangle } from 'lucide-react';
+import { ExternalLink, Heart, Leaf, Check, DollarSign, Droplet, Star, MessageSquare, ChevronDown, AlertTriangle, Loader2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -177,7 +178,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                   <CategoryImage 
                     category={dupe.category}
                     imageUrl={dupe.image_url}
-                    name={dupe.name}
+                    alt={dupe.name}
                     className="object-contain w-full h-full p-1"
                   />
                 </div>
@@ -247,9 +248,15 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
               </div>
               
               {/* Notable/Sensitive Ingredients as Pills */}
-              {notableIngredients.length > 0 && (
-                <div className="mb-3">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Key Ingredients:</p>
+              <div className="mb-3">
+                <p className="text-sm font-medium text-gray-700 mb-2">Key Ingredients:</p>
+                
+                {dupe.loading_ingredients ? (
+                  <div className="flex items-center gap-2 p-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#9b87f5]" />
+                    <span className="text-xs text-gray-500">Loading ingredients...</span>
+                  </div>
+                ) : notableIngredients.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     <TooltipProvider>
                       {/* Problematic ingredients */}
@@ -271,11 +278,21 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                       ))}
                     </TooltipProvider>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-xs text-gray-500 py-1">No ingredient information available</p>
+                )}
+              </div>
               
               {/* Preview of social media content if available */}
-              {featuredResources.length > 0 && !isExpanded && (
+              {dupe.loading_resources ? (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Related content:</p>
+                  <div className="flex items-center gap-2 p-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#9b87f5]" />
+                    <span className="text-xs text-gray-500">Loading content...</span>
+                  </div>
+                </div>
+              ) : featuredResources.length > 0 && !isExpanded ? (
                 <div className="mb-4">
                   <p className="text-sm font-medium text-gray-700 mb-2">Related content:</p>
                   <div className="flex flex-wrap gap-2">
@@ -304,6 +321,11 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                       </Badge>
                     )}
                   </div>
+                </div>
+              ) : !isExpanded && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Related content:</p>
+                  <p className="text-xs text-gray-500 py-1">No content available</p>
                 </div>
               )}
               
@@ -346,28 +368,61 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                   <Tabs defaultValue={activeTab} onValueChange={(val) => setActiveTab(val as any)}>
                     <TabsList className="bg-gray-50/70 rounded-lg">
                       <TabsTrigger value="details" className="rounded-md">Details</TabsTrigger>
-                      <TabsTrigger value="reviews" className="rounded-md">
-                        Reviews {dupe.reviews?.length ? `(${dupe.reviews.length})` : ''}
+                      <TabsTrigger 
+                        value="reviews" 
+                        className="rounded-md"
+                        disabled={dupe.loading_reviews}
+                      >
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1">
+                                Reviews {dupe.reviews?.length ? `(${dupe.reviews.length})` : ''}
+                                {dupe.loading_reviews && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
+                              </div>
+                            </TooltipTrigger>
+                            {dupe.loading_reviews && (
+                              <TooltipContent>
+                                <p className="text-xs">Loading reviews...</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                       </TabsTrigger>
-                      <TabsTrigger value="resources" className="rounded-md">
-                        Content {dupe.resources?.length ? `(${dupe.resources.length})` : ''}
+                      <TabsTrigger 
+                        value="resources" 
+                        className="rounded-md"
+                        disabled={dupe.loading_resources}
+                      >
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1">
+                                Content {featuredResources.length ? `(${featuredResources.length})` : ''}
+                                {dupe.loading_resources && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
+                              </div>
+                            </TooltipTrigger>
+                            {dupe.loading_resources && (
+                              <TooltipContent>
+                                <p className="text-xs">Loading content...</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                       </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="details" className="mt-4">
                       <div className="grid gap-y-4">
-                        {/* Description in full */}
-                        {dupe.description && (
-                          <div>
-                            <h5 className="text-sm font-medium text-gray-700 mb-2">Description:</h5>
-                            <p className="text-sm text-gray-700">{dupe.description}</p>
-                          </div>
-                        )}
-                        
                         {/* All Ingredients */}
-                        {dupe.ingredients && dupe.ingredients.length > 0 && (
-                          <div>
-                            <h5 className="text-sm font-medium text-gray-700 mb-2">All Ingredients:</h5>
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-700 mb-2">All Ingredients:</h5>
+                          {dupe.loading_ingredients ? (
+                            <div className="flex items-center justify-center gap-2 py-4">
+                              <Loader2 className="w-5 h-5 animate-spin text-[#9b87f5]" />
+                              <span className="text-sm text-gray-500">Loading ingredients...</span>
+                            </div>
+                          ) : dupe.ingredients && dupe.ingredients.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
                               <TooltipProvider>
                                 {dupe.ingredients.map((ingredient, index) => (
@@ -378,8 +433,10 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                                 ))}
                               </TooltipProvider>
                             </div>
-                          </div>
-                        )}
+                          ) : (
+                            <p className="text-sm text-gray-500 py-2">No ingredients information available</p>
+                          )}
+                        </div>
                         
                         {/* Common Ingredients */}
                         {commonIngredients.length > 0 && (
@@ -460,7 +517,12 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                     </TabsContent>
 
                     <TabsContent value="reviews" className="mt-4">
-                      {dupe.reviews && dupe.reviews.length > 0 ? (
+                      {dupe.loading_reviews ? (
+                        <div className="flex flex-col items-center justify-center py-8">
+                          <Loader2 className="w-8 h-8 animate-spin text-[#9b87f5] mb-4" />
+                          <p className="text-gray-500">Loading reviews...</p>
+                        </div>
+                      ) : dupe.reviews && dupe.reviews.length > 0 ? (
                         <div className="space-y-4">
                           {dupe.reviews.slice(0, 3).map((review, index) => (
                             <ReviewCard key={index} review={review} index={index} />
@@ -479,7 +541,12 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                     </TabsContent>
 
                     <TabsContent value="resources" className="mt-4">
-                      {dupe.resources && dupe.resources.length > 0 ? (
+                      {dupe.loading_resources ? (
+                        <div className="flex flex-col items-center justify-center py-8">
+                          <Loader2 className="w-8 h-8 animate-spin text-[#9b87f5] mb-4" />
+                          <p className="text-gray-500">Loading content...</p>
+                        </div>
+                      ) : dupe.resources && dupe.resources.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {dupe.resources.map((resourceItem, index) => (
                             <SocialMediaResource 
@@ -505,3 +572,5 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
     </motion.div>
   );
 };
+
+export default DupeCard;
