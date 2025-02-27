@@ -30,6 +30,7 @@ interface DupeSummary {
   name: string;
   brand: string;
   image_url?: string | null;
+  category?: string | null; // Changed type to string | null
   match_score: number;
   savings_percentage: number;
 }
@@ -40,7 +41,7 @@ interface RecentDupe {
   brand: string;
   slug: string;
   image_url?: string | null;
-  category?: string | null;
+  category?: string | null; // Changed type to string | null
   country_of_origin?: string | null;
   longevity_rating?: number | null;
   free_of?: string[] | null;

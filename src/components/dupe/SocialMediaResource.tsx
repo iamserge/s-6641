@@ -1,15 +1,7 @@
 import React from 'react';
-import { 
-  FacebookEmbed, 
-  InstagramEmbed, 
-  TikTokEmbed, 
-  XEmbed, 
-  YouTubeEmbed, 
-  PlaceholderEmbed 
-} from 'react-social-media-embed';
 import { motion } from 'framer-motion';
 import { EnhancedResource } from '@/types/dupe';
-import { ExternalLink, Play, Youtube, Instagram, Twitter, Facebook, Link } from 'lucide-react';
+import { ExternalLink, Play, Youtube, Instagram, Link } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface SocialMediaResourceProps {
@@ -21,18 +13,6 @@ export const SocialMediaResource = ({ resource, index = 0 }: SocialMediaResource
   const getResourceEmbed = () => {
     // Determine which embed to use based on URL or type
     const url = resource.url;
-    
-    const commonProps = {
-      url,
-      width: 328,
-      placeholderProps: {
-        style: {
-          backgroundImage: resource.video_thumbnail ? `url(${resource.video_thumbnail})` : undefined,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        },
-      },
-    };
     
     if (url.includes('youtube.com') || url.includes('youtu.be') || resource.type === 'YouTube') {
       return (
@@ -50,20 +30,51 @@ export const SocialMediaResource = ({ resource, index = 0 }: SocialMediaResource
               </div>
             </div>
           </div>
-          <YouTubeEmbed
-            {...commonProps}
-            height={180}
-          />
+          <div className="w-full h-44 bg-black rounded-xl"></div>
         </div>
       );
     } else if (url.includes('instagram.com') || resource.type === 'Instagram') {
-      return <InstagramEmbed {...commonProps} captioned />;
+      return (
+        <div className="relative rounded-xl overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"/>
+          {resource.video_thumbnail ? (
+            <img 
+              src={resource.video_thumbnail} 
+              alt={resource.title} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-60 bg-gray-100 flex items-center justify-center">
+              <Instagram className="w-12 h-12 text-gray-400" />
+            </div>
+          )}
+          <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-20">
+            <h3 className="font-medium line-clamp-2">{resource.title}</h3>
+            <p className="text-xs text-white/80 mt-1">{resource.author_name || 'Instagram'}</p>
+          </div>
+        </div>
+      );
     } else if (url.includes('tiktok.com') || resource.type === 'TikTok') {
-      return <TikTokEmbed {...commonProps} />;
-    } else if (url.includes('twitter.com') || url.includes('x.com') || resource.type === 'Twitter') {
-      return <XEmbed {...commonProps} />;
-    } else if (url.includes('facebook.com') || resource.type === 'Facebook') {
-      return <FacebookEmbed {...commonProps} />;
+      return (
+        <div className="relative rounded-xl overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"/>
+          {resource.video_thumbnail ? (
+            <img 
+              src={resource.video_thumbnail} 
+              alt={resource.title} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-60 bg-gray-100 flex items-center justify-center">
+              <Play className="w-12 h-12 text-gray-400" />
+            </div>
+          )}
+          <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-20">
+            <h3 className="font-medium line-clamp-2">{resource.title}</h3>
+            <p className="text-xs text-white/80 mt-1">{resource.author_name || 'TikTok'}</p>
+          </div>
+        </div>
+      );
     } else {
       // Generic or article embed with image if available
       return (
@@ -108,11 +119,9 @@ export const SocialMediaResource = ({ resource, index = 0 }: SocialMediaResource
         return <Instagram className={className} />;
       case 'TikTok':
         return <Play className={className} />;
-      case 'Twitter':
-      case 'X':
-        return <Twitter className={className} />;
-      case 'Facebook':
-        return <Facebook className={className} />;
+      case 'Article':
+      case 'Reddit':
+      case 'Video':
       default:
         return <Link className={className} />;
     }

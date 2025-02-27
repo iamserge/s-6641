@@ -11,14 +11,14 @@ const getPlaceholderForProduct = (category: string): string => {
 };
 
 export interface CategoryImageProps {
-  category?: ProductCategory | null;
+  category?: ProductCategory | string | null;
   imageUrl?: string | null;
   images?: string[];
-  alt: string;
+  name: string; // Add this prop
   className?: string;
 }
 
-export const CategoryImage = ({ category, imageUrl, images, alt, className }: CategoryImageProps) => {
+export const CategoryImage = ({ category, imageUrl, images, name, className }: CategoryImageProps) => {
   const [processedImage, setProcessedImage] = useState<string | null>(null);
   const fallbackSrc = category ? getPlaceholderForProduct(category) : "/placeholders/1.png";
 
@@ -32,8 +32,8 @@ export const CategoryImage = ({ category, imageUrl, images, alt, className }: Ca
 
   return (
     <img
-      src={processedImage || fallbackSrc}
-      alt={alt}
+      src={imageUrl || processedImage || fallbackSrc}
+      alt={name}
       className={`transition-transform duration-300 hover:scale-105 ${className}`}
       onError={(e) => {
         (e.target as HTMLImageElement).src = fallbackSrc;
