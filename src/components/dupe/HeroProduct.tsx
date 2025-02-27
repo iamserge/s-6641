@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/dupe";
-import { Heart, Leaf, MapPin, Clock, Info, Star, ExternalLink, Loader2 } from 'lucide-react';
+import { Heart, Leaf, MapPin, Clock, Info, Star, ExternalLink, Loader2, ChevronDown } from 'lucide-react';
 import { getFlagEmoji } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
@@ -44,6 +44,7 @@ const StarRating = ({ rating }: { rating: number }) => {
 
 export const HeroProduct = ({ product }: HeroProductProps) => {
   const [activeTab, setActiveTab] = useState<'details' | 'reviews' | 'resources'>('details');
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // Get featured resources
   const featuredResources = useMemo(() => 
@@ -236,12 +237,12 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             )}
           </motion.div>
 
-          {/* Notable Ingredients Section */}
+          {/* Notable Ingredients Section - No Background */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.85 }}
-            className="mb-6 max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl shadow-sm"
+            className="mb-6 max-w-2xl mx-auto"
           >
             <h3 className="text-lg font-medium mb-3">Key Ingredients</h3>
             
@@ -258,7 +259,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                     <IngredientPill 
                       key={`problem-${index}`}
                       ingredient={ingredient}
-                      className="bg-rose-50/50 text-rose-700 border-rose-200 px-3 py-1 text-sm"
+                      className="text-sm"
                     />
                   ))}
                   
@@ -267,7 +268,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                     <IngredientPill 
                       key={`benefit-${index}`}
                       ingredient={ingredient}
-                      className="bg-emerald-50/50 text-emerald-700 border-emerald-200 px-3 py-1 text-sm"
+                      className="text-sm"
                     />
                   ))}
                 </TooltipProvider>
@@ -283,7 +284,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
-              className="mb-6 max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl shadow-sm"
+              className="mb-6 max-w-2xl mx-auto"
             >
               <p className="text-base text-gray-700">
                 {product.description}
@@ -291,195 +292,213 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             </motion.div>
           )}
 
-          {/* Always Displayed Tabs */}
+          {/* Show More / Show Less Button */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
-            className="w-full max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl mt-6 shadow-sm"
+            className="w-full flex justify-center my-8"
           >
-            <Tabs defaultValue="details" className="w-full" onValueChange={(val) => setActiveTab(val as any)}>
-              <TabsList className="grid grid-cols-3 mb-4 rounded-lg bg-gray-50/80">
-                <TabsTrigger value="details" className="rounded-md">Details</TabsTrigger>
-                <TabsTrigger 
-                  value="reviews" 
-                  className="rounded-md"
-                  disabled={product.loading_reviews}
-                >
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center gap-1">
-                          Reviews {product.reviews?.length ? `(${product.reviews.length})` : ''}
-                          {product.loading_reviews && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
-                        </div>
-                      </TooltipTrigger>
-                      {product.loading_reviews && (
-                        <TooltipContent>
-                          <p className="text-xs">Loading reviews...</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="resources" 
-                  className="rounded-md"
-                  disabled={product.loading_resources}
-                >
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center gap-1">
-                          Content {featuredResources.length ? `(${featuredResources.length})` : ''}
-                          {product.loading_resources && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
-                        </div>
-                      </TooltipTrigger>
-                      {product.loading_resources && (
-                        <TooltipContent>
-                          <p className="text-xs">Loading content...</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="details" className="mt-2">
-                <div className="grid gap-4">
-                  {/* All Ingredients Section - Now with Tooltips */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">All Ingredients</h3>
-                    {product.loading_ingredients ? (
-                      <div className="flex flex-col items-center justify-center py-4">
-                        <Loader2 className="w-6 h-6 animate-spin text-[#9b87f5] mb-2" />
-                        <p className="text-sm text-gray-500">Loading ingredients...</p>
-                      </div>
-                    ) : product.ingredients && product.ingredients.length > 0 ? (
-                      <div className="flex flex-wrap justify-center gap-2">
-                        <TooltipProvider>
-                          {product.ingredients.map((ingredient, index) => (
-                            <IngredientPill 
-                              key={index}
-                              ingredient={ingredient}
-                              className="px-3 py-1 text-sm"
-                            />
-                          ))}
-                        </TooltipProvider>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 py-2">No ingredients information available</p>
-                    )}
-                  </div>
-                  
-                  {/* Product Details Section */}
-                  {(product.texture || product.finish || product.coverage || product.spf) && (
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">Product Details</h3>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {product.texture && (
-                          <Badge variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
-                            Texture: {product.texture}
-                          </Badge>
-                        )}
-                        {product.finish && (
-                          <Badge variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
-                            Finish: {product.finish}
-                          </Badge>
-                        )}
-                        {product.coverage && (
-                          <Badge variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
-                            Coverage: {product.coverage}
-                          </Badge>
-                        )}
-                        {product.spf && (
-                          <Badge variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
-                            SPF: {product.spf}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Suitability Section */}
-                  {(product.skin_types?.length > 0 || product.best_for?.length > 0) && (
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">Suitability</h3>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {product.skin_types?.map((type, index) => (
-                          <Badge key={`skin-${index}`} variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
-                            {type}
-                          </Badge>
-                        ))}
-                        {product.best_for?.map((item, index) => (
-                          <Badge key={`best-${index}`} variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
-                            Best for: {item}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Free Of Section */}
-                  {product.free_of && product.free_of.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">Free Of</h3>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {product.free_of.map((item, index) => (
-                          <Badge key={index} variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
-                            {item}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="reviews" className="mt-2">
-                {product.loading_reviews ? (
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#9b87f5] mb-4" />
-                    <p className="text-gray-500">Loading reviews...</p>
-                  </div>
-                ) : product.reviews && product.reviews.length > 0 ? (
-                  <div className="space-y-4">
-                    {product.reviews.slice(0, 3).map((review, index) => (
-                      <ReviewCard key={index} review={review} index={index} />
-                    ))}
-                    {product.reviews.length > 3 && (
-                      <button className="text-sm text-[#5840c0] hover:text-[#4330a0] mt-1 hover:underline">
-                        See all {product.reviews.length} reviews
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-center text-gray-500 py-4">No reviews available yet.</p>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="resources" className="mt-2">
-                {product.loading_resources ? (
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#9b87f5] mb-4" />
-                    <p className="text-gray-500">Loading content...</p>
-                  </div>
-                ) : featuredResources.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {featuredResources.map((resourceItem, index) => (
-                      <SocialMediaResource 
-                        key={index} 
-                        resource={resourceItem.resource}
-                        index={index}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-4">No content available yet.</p>
-                )}
-              </TabsContent>
-            </Tabs>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors bg-gray-50 hover:bg-gray-100 px-6 py-2 rounded-full"
+            >
+              {isExpanded ? "Show Less" : "Show More Details"}
+              <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            </button>
           </motion.div>
+
+          {/* Tabs Section - Hidden until Show More is clicked */}
+          {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-2xl mx-auto mt-4"
+            >
+              <Tabs defaultValue="details" className="w-full" onValueChange={(val) => setActiveTab(val as any)}>
+                <TabsList className="grid grid-cols-3 mb-4 rounded-lg">
+                  <TabsTrigger value="details" className="rounded-md">Details</TabsTrigger>
+                  <TabsTrigger 
+                    value="reviews" 
+                    className="rounded-md"
+                    disabled={product.loading_reviews}
+                  >
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-1">
+                            Reviews {product.reviews?.length ? `(${product.reviews.length})` : ''}
+                            {product.loading_reviews && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
+                          </div>
+                        </TooltipTrigger>
+                        {product.loading_reviews && (
+                          <TooltipContent>
+                            <p className="text-xs">Loading reviews...</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="resources" 
+                    className="rounded-md"
+                    disabled={product.loading_resources}
+                  >
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-1">
+                            Content {featuredResources.length ? `(${featuredResources.length})` : ''}
+                            {product.loading_resources && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
+                          </div>
+                        </TooltipTrigger>
+                        {product.loading_resources && (
+                          <TooltipContent>
+                            <p className="text-xs">Loading content...</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="details" className="mt-2">
+                  <div className="grid gap-4">
+                    {/* All Ingredients Section - Now with Tooltips */}
+                    <div>
+                      <h3 className="text-lg font-medium mb-3">All Ingredients</h3>
+                      {product.loading_ingredients ? (
+                        <div className="flex flex-col items-center justify-center py-4">
+                          <Loader2 className="w-6 h-6 animate-spin text-[#9b87f5] mb-2" />
+                          <p className="text-sm text-gray-500">Loading ingredients...</p>
+                        </div>
+                      ) : product.ingredients && product.ingredients.length > 0 ? (
+                        <div className="flex flex-wrap justify-center gap-2">
+                          <TooltipProvider>
+                            {product.ingredients.map((ingredient, index) => (
+                              <IngredientPill 
+                                key={index}
+                                ingredient={ingredient}
+                                className="px-3 py-1 text-sm"
+                              />
+                            ))}
+                          </TooltipProvider>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 py-2">No ingredients information available</p>
+                      )}
+                    </div>
+                    
+                    {/* Product Details Section */}
+                    {(product.texture || product.finish || product.coverage || product.spf) && (
+                      <div>
+                        <h3 className="text-lg font-medium mb-3">Product Details</h3>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {product.texture && (
+                            <Badge variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
+                              Texture: {product.texture}
+                            </Badge>
+                          )}
+                          {product.finish && (
+                            <Badge variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
+                              Finish: {product.finish}
+                            </Badge>
+                          )}
+                          {product.coverage && (
+                            <Badge variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
+                              Coverage: {product.coverage}
+                            </Badge>
+                          )}
+                          {product.spf && (
+                            <Badge variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
+                              SPF: {product.spf}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Suitability Section */}
+                    {(product.skin_types?.length > 0 || product.best_for?.length > 0) && (
+                      <div>
+                        <h3 className="text-lg font-medium mb-3">Suitability</h3>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {product.skin_types?.map((type, index) => (
+                            <Badge key={`skin-${index}`} variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
+                              {type}
+                            </Badge>
+                          ))}
+                          {product.best_for?.map((item, index) => (
+                            <Badge key={`best-${index}`} variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
+                              Best for: {item}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Free Of Section */}
+                    {product.free_of && product.free_of.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-medium mb-3">Free Of</h3>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {product.free_of.map((item, index) => (
+                            <Badge key={index} variant="outline" className="rounded-full bg-white/50 text-gray-700 px-3 py-1 text-sm hover:bg-white transition-all">
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="reviews" className="mt-2">
+                  {product.loading_reviews ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <Loader2 className="w-8 h-8 animate-spin text-[#9b87f5] mb-4" />
+                      <p className="text-gray-500">Loading reviews...</p>
+                    </div>
+                  ) : product.reviews && product.reviews.length > 0 ? (
+                    <div className="space-y-4">
+                      {product.reviews.slice(0, 3).map((review, index) => (
+                        <ReviewCard key={index} review={review} index={index} />
+                      ))}
+                      {product.reviews.length > 3 && (
+                        <button className="text-sm text-[#5840c0] hover:text-[#4330a0] mt-1 hover:underline">
+                          See all {product.reviews.length} reviews
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500 py-4">No reviews available yet.</p>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="resources" className="mt-2">
+                  {product.loading_resources ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <Loader2 className="w-8 h-8 animate-spin text-[#9b87f5] mb-4" />
+                      <p className="text-gray-500">Loading content...</p>
+                    </div>
+                  ) : featuredResources.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {featuredResources.map((resourceItem, index) => (
+                        <SocialMediaResource 
+                          key={index} 
+                          resource={resourceItem.resource}
+                          index={index}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No content available yet.</p>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </div>
