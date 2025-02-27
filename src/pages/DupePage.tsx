@@ -332,6 +332,7 @@ const DupePage = () => {
                     dupe={dupe}
                     index={index}
                     originalIngredients={product.ingredients?.map(i => i.name) || []}
+                    showBottomBar={showBottomBar && activeDupeIndex === index}
                   />
                 </div>
               ))
@@ -370,94 +371,73 @@ const DupePage = () => {
           >
             <div className="container mx-auto">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 overflow-hidden">
-                  <Badge className="shrink-0 bg-[#0EA5E9] text-white rounded-full px-3 py-1">
-                    {Math.round(activeDupe.match_score)}% Match
-                  </Badge>
-                  
-                  {activeDupe.savings_percentage && (
-                    <Badge variant="outline" className="shrink-0 bg-green-50 text-green-700 border-green-200 rounded-full">
-                      Save {Math.round(activeDupe.savings_percentage)}%
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-[#0EA5E9] text-white rounded-full px-3 py-1">
+                      {Math.round(activeDupe.match_score)}% Match
                     </Badge>
-                  )}
+                    
+                    {activeDupe.savings_percentage && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 rounded-full">
+                        Save {Math.round(activeDupe.savings_percentage)}%
+                      </Badge>
+                    )}
+                  </div>
                   
-                  <p className="text-sm text-gray-700 font-medium truncate">
+                  <p className="text-sm text-gray-700 font-medium">
                     {activeDupe.brand} <span className="font-semibold">{activeDupe.name}</span>
                   </p>
                 </div>
                 
-                <div className="flex gap-2 items-center">
-                  {problematicIngredients.length > 0 && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="hidden md:flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-1 rounded-lg">
-                          <AlertTriangle className="w-4 h-4 text-amber-500" />
-                          <span className="text-xs">
-                            {problematicIngredients.length} flagged
-                          </span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent className="p-2 max-w-xs">
-                        <p className="text-sm font-medium">Flagged Ingredients:</p>
-                        <ul className="text-xs mt-1 list-disc list-inside">
-                          {problematicIngredients.map((ing, i) => (
-                            <li key={i} className="text-gray-700">{ing.name}</li>
-                          ))}
-                        </ul>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button variant="default" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 rounded-full">
-                        Buy Now
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent side="bottom" className="px-4 sm:px-6 rounded-t-3xl">
-                      <SheetHeader>
-                        <SheetTitle>Shop {activeDupe.brand} {activeDupe.name}</SheetTitle>
-                        <SheetDescription>
-                          Choose where to purchase this dupe
-                        </SheetDescription>
-                      </SheetHeader>
-                      <div className="space-y-3 mt-6">
-                        {activeDupe.offers && activeDupe.offers.length > 0 ? (
-                          activeDupe.offers.map((offer, i) => (
-                            <a
-                              key={i}
-                              href={offer.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
-                            >
-                              <div>
-                                <p className="font-medium">{offer.merchant?.name || "Retailer"}</p>
-                                <p className="text-sm text-gray-500">~${Math.round(offer.price)} - {offer.condition || 'New'}</p>
-                              </div>
-                              <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
-                            </a>
-                          ))
-                        ) : activeDupe.purchase_link ? (
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="default" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 rounded-full">
+                      Buy Now
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="px-4 sm:px-6 rounded-t-3xl">
+                    <SheetHeader>
+                      <SheetTitle>Shop {activeDupe.brand} {activeDupe.name}</SheetTitle>
+                      <SheetDescription>
+                        Choose where to purchase this dupe
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="space-y-3 mt-6">
+                      {activeDupe.offers && activeDupe.offers.length > 0 ? (
+                        activeDupe.offers.map((offer, i) => (
                           <a
-                            href={activeDupe.purchase_link}
+                            key={i}
+                            href={offer.link}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
                           >
                             <div>
-                              <p className="font-medium">Shop Now</p>
-                              <p className="text-sm text-gray-500">~${Math.round(activeDupe.price)}</p>
+                              <p className="font-medium">{offer.merchant?.name || "Retailer"}</p>
+                              <p className="text-sm text-gray-500">~${Math.round(offer.price)} - {offer.condition || 'New'}</p>
                             </div>
                             <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
                           </a>
-                        ) : (
-                          <p className="text-center text-gray-500 py-6">No purchasing options available</p>
-                        )}
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-                </div>
+                        ))
+                      ) : activeDupe.purchase_link ? (
+                        <a
+                          href={activeDupe.purchase_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                        >
+                          <div>
+                            <p className="font-medium">Shop Now</p>
+                            <p className="text-sm text-gray-500">~${Math.round(activeDupe.price)}</p>
+                          </div>
+                          <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
+                        </a>
+                      ) : (
+                        <p className="text-center text-gray-500 py-6">No purchasing options available</p>
+                      )}
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
           </motion.div>
