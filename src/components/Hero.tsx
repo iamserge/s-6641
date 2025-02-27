@@ -160,7 +160,8 @@ const Hero = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play(); // Ensure video is playing before snapping
+        console.log('Camera started, video dimensions:', videoRef.current.videoWidth, videoRef.current.videoHeight);
       }
     } catch (error) {
       console.error("Error accessing camera:", error);
@@ -180,49 +181,88 @@ const Hero = () => {
       videoRef.current.srcObject = null;
     }
     setIsCameraOpen(false);
+    console.log('Camera stopped');
   }, []);
 
   const handleCameraSnap = async () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    setIsProcessing(true);
-    setProgressMessage("Analyzing your snapshot... 📸");
-    stopCamera();
+    if (!videoRef.current || !canvasRef.current) {
+      console.error('Video or canvas ref is null');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Camera not ready. Please try again.",
+      });
+      return;
+    }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
+
+    // Ensure video has loaded metadata and has dimensions
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.error('Video dimensions not available:', video.videoWidth, video.videoHeight);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Camera not fully loaded. Please try again.",
+      });
+      stopCamera();
+      setIsProcessing(false);
+      return;
+    }
+
+    setIsProcessing(true);
+    setProgressMessage("Analyzing your snapshot... 📸");
+
+    // Set canvas dimensions and capture the frame
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageDataUrl = canvas.toDataURL('image/jpeg');
-      setPreviewImage(imageDataUrl);
+    if (!ctx) {
+      console.error('Failed to get 2D context from canvas');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to capture image. Please try again.",
+      });
+      stopCamera();
+      setIsProcessing(false);
+      return;
+    }
 
-      try {
-        const { data, error } = await supabase.functions.invoke('analyze-image', {
-          body: { image: imageDataUrl },
-        });
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8); // Quality set to 0.8
+    console.log('Snapshot captured, image data URL length:', imageDataUrl.length);
+    setPreviewImage(imageDataUrl);
 
-        if (error) throw error;
-        if (!data?.product) throw new Error('No product detected in image');
+    stopCamera();
 
-        setSearchText(data.product);
-        toast({
-          title: "Product Detected!",
-          description: `Found: "${data.product}"`,
-        });
-        await handleSearch();
-      } catch (error) {
-        console.error('Error processing camera image:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error instanceof Error ? error.message : "Could not process the image.",
-        });
-      } finally {
-        setTimeout(() => setIsProcessing(false), 1000);
-      }
+    try {
+      console.log('Sending image to Supabase, preview URL length:', imageDataUrl.length);
+      const { data, error } = await supabase.functions.invoke('analyze-image', {
+        body: { image: imageDataUrl },
+      });
+
+      console.log('Supabase response:', { data, error });
+
+      if (error) throw error;
+      if (!data?.product) throw new Error('No product detected in image');
+
+      setSearchText(data.product);
+      toast({
+        title: "Product Detected!",
+        description: `Found: "${data.product}"`,
+      });
+      await handleSearch();
+    } catch (error) {
+      console.error('Error processing camera image:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Could not process the image.",
+      });
+    } finally {
+      setTimeout(() => setIsProcessing(false), 1000);
     }
   };
 
@@ -239,13 +279,17 @@ const Hero = () => {
       const reader = new FileReader();
       reader.onload = async () => {
         const base64Image = reader.result as string;
+        console.log('Uploaded image base64 length:', base64Image.length);
         const { data, error } = await supabase.functions.invoke('analyze-image', {
           body: { image: base64Image },
         });
 
-        if (error) throw error;
+        console.log('Supabase response for upload:', { data, error });
 
-        setSearchText(data);
+        if (error) throw error;
+        if (!data?.product) throw new Error('No product detected in image');
+
+        setSearchText(data.product);
         await handleSearch();
       };
 
@@ -270,6 +314,7 @@ const Hero = () => {
   const clearPreview = () => {
     setPreviewImage(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    console.log('Preview cleared');
   };
 
   return (
@@ -316,6 +361,7 @@ const Hero = () => {
                 src={previewImage}
                 alt="Preview"
                 className="h-10 w-10 rounded-full object-cover border-2 border-pink-100"
+                onError={() => console.error('Preview image failed to load')}
               />
               <button
                 type="button"
