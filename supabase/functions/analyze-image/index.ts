@@ -12,15 +12,28 @@ serve(async (req) => {
 
   try {
     const { image } = await req.json()
+    console.log('Request body received:', { image: image.substring(0, 50) + '...' }) // Log first 50 chars of image
 
     if (!image) {
       throw new Error('No image provided')
     }
 
-    // Ensure the image is in the correct base64 format if it's not already a URL
-    const imageUrl = image.startsWith('data:image') 
-      ? image 
-      : `data:image/jpeg;base64,${image}`
+    // Ensure the image is a properly formatted base64 string
+    let imageUrl = image
+    if (!image.startsWith('data:image/')) {
+      // If no data URI prefix, assume it's raw base64 and add JPEG prefix (common for canvas output)
+      imageUrl = `data:image/jpeg;base64,${image}`
+      console.log('Added JPEG prefix to image URL')
+    } else {
+      // Validate the format is one of the supported types
+      const formatMatch = image.match(/^data:image\/(png|jpeg|gif|webp);base64,/)
+      if (!formatMatch) {
+        throw new Error('Unsupported image format. Must be PNG, JPEG, GIF, or WEBP')
+      }
+      console.log('Image format detected:', formatMatch[1])
+    }
+
+    console.log('Sending image URL to OpenAI:', imageUrl.substring(0, 50) + '...')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -46,17 +59,18 @@ serve(async (req) => {
                 type: 'image_url',
                 image_url: {
                   url: imageUrl,
-                  detail: 'auto' // Using 'auto' as per OpenAI recommendation
+                  detail: 'auto'
                 },
               },
             ],
           },
         ],
-        max_tokens: 100, // Limiting tokens for a concise response
+        max_tokens: 100,
       }),
     })
 
     const data = await response.json()
+    console.log('Full OpenAI response:', JSON.stringify(data, null, 2))
 
     if (!response.ok) {
       throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`)
@@ -67,8 +81,7 @@ serve(async (req) => {
     }
 
     const productText = data.choices[0].message.content.trim()
-
-    console.log('OpenAI response:', productText)
+    console.log('Extracted product text:', productText)
 
     return new Response(
       JSON.stringify({ product: productText }),
