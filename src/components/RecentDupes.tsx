@@ -1,6 +1,5 @@
-
 import { motion } from "framer-motion";
-import { Shield, Droplet, Check, DollarSign } from "lucide-react";
+import { Shield, Droplet, Check, DollarSign, Heart, Leaf } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
-import { ProductCategory } from "@/types/dupe";
+import { getFlagEmoji } from "@/lib/utils";
 
 interface DupeInfo {
   coverage?: string | null;
@@ -31,7 +30,6 @@ interface DupeSummary {
   name: string;
   brand: string;
   image_url?: string | null;
-  category?: ProductCategory | null;
   match_score: number;
   savings_percentage: number;
 }
@@ -42,7 +40,7 @@ interface RecentDupe {
   brand: string;
   slug: string;
   image_url?: string | null;
-  category?: ProductCategory | null;
+  category?: string | null;
   country_of_origin?: string | null;
   longevity_rating?: number | null;
   free_of?: string[] | null;
@@ -149,7 +147,7 @@ const RecentDupes = () => {
               name: relation.dupe.name,
               brand: relation.dupe.brand, 
               image_url: relation.dupe.image_url,
-              category: relation.dupe.category as ProductCategory | null,
+              category: relation.dupe.category,
               match_score: relation.match_score,
               savings_percentage: relation.savings_percentage
             };
@@ -178,7 +176,7 @@ const RecentDupes = () => {
             brand: product.brands?.name || product.brand,
             slug: product.slug,
             image_url: product.image_url,
-            category: product.category as ProductCategory | null,
+            category: product.category,
             country_of_origin: product.country_of_origin,
             longevity_rating: product.longevity_rating,
             free_of: product.free_of,
@@ -200,13 +198,13 @@ const RecentDupes = () => {
 
   if (isLoading) {
     return (
-      <Card className="glass">
+      <Card className="bg-white/80 backdrop-blur-sm border-slate-100/50 shadow-sm rounded-xl">
         <CardHeader>
-          <CardTitle>Recent Dupes Found</CardTitle>
+          <CardTitle>Recent Discoveries</CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center items-center p-8">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#5840c0]" />
             <p className="text-gray-500">Fetching recent discoveries...</p>
           </div>
         </CardContent>
@@ -216,9 +214,9 @@ const RecentDupes = () => {
 
   if (isError) {
     return (
-      <Card className="glass">
+      <Card className="bg-white/80 backdrop-blur-sm border-slate-100/50 shadow-sm rounded-xl">
         <CardHeader>
-          <CardTitle>Recent Dupes Found</CardTitle>
+          <CardTitle>Recent Discoveries</CardTitle>
         </CardHeader>
         <CardContent>Error loading recent dupes.</CardContent>
       </Card>
@@ -227,9 +225,9 @@ const RecentDupes = () => {
 
   if (!recentDupes || recentDupes.length === 0) {
     return (
-      <Card className="glass">
+      <Card className="bg-white/80 backdrop-blur-sm border-slate-100/50 shadow-sm rounded-xl">
         <CardHeader>
-          <CardTitle>Recent Dupes Found</CardTitle>
+          <CardTitle>Recent Discoveries</CardTitle>
         </CardHeader>
         <CardContent>No recent dupes found.</CardContent>
       </Card>
@@ -237,7 +235,7 @@ const RecentDupes = () => {
   }
 
   return (
-    <Card className="glass">
+    <Card className="bg-white/80 backdrop-blur-sm border-slate-100/50 shadow-sm rounded-xl">
       <CardHeader>
         <CardTitle>Recent Discoveries</CardTitle>
       </CardHeader>
@@ -245,7 +243,7 @@ const RecentDupes = () => {
         {recentDupes?.map((product) => (
           <motion.div
             key={product.slug}
-            className="relative p-5 rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer bg-white/50 backdrop-blur-sm border border-gray-100/50"
+            className="relative p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer bg-white/70 backdrop-blur-sm border border-slate-100/50"
             onClick={() => navigate(`/dupes/for/${product.slug}`)}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
@@ -253,24 +251,24 @@ const RecentDupes = () => {
             {/* Main product image and dupe indicator */}
             <div className="flex justify-between items-start mb-3">
               <div className="relative">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-white shadow-sm bg-white flex items-center justify-center">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border border-slate-100 shadow-sm bg-white flex items-center justify-center">
                   <CategoryImage
                     category={product.category}
                     imageUrl={product.image_url}
-                    alt={product.name}
-                    className="object-contain w-full h-full p-1"
+                    name={product.name}
+                    className="object-contain w-full h-full"
                   />
                 </div>
                 
                 {/* Dupes count indicator */}
-                <div className="absolute -bottom-1 -right-1 bg-[#0EA5E9] text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-sm border border-white">
+                <div className="absolute -bottom-1 -right-1 bg-[#5840c0] text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-sm border border-white">
                   {product.dupes.length}
                 </div>
               </div>
               
               {/* Highest savings if available */}
               {product.highest_savings && product.highest_savings > 0 && (
-                <Badge className="bg-green-100 text-green-800 flex items-center gap-1 px-2 py-1 rounded-lg shadow-sm">
+                <Badge className="bg-green-50 text-green-700 flex items-center gap-1 px-2 py-1 rounded-lg shadow-sm">
                   <DollarSign className="w-3 h-3" />
                   Save up to {Math.round(product.highest_savings)}%
                 </Badge>
@@ -281,6 +279,15 @@ const RecentDupes = () => {
             <div className="mb-3">
               <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">{product.name}</h3>
               <p className="text-sm text-gray-600">by {product.brand}</p>
+              
+              {/* Country badge if available */}
+              {product.country_of_origin && (
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-sm text-gray-500">
+                    {getFlagEmoji(product.country_of_origin)} {product.country_of_origin}
+                  </span>
+                </div>
+              )}
             </div>
             
             {/* Dupe image stack */}
@@ -296,13 +303,13 @@ const RecentDupes = () => {
                       <CategoryImage
                         category={dupe.category}
                         imageUrl={dupe.image_url}
-                        alt={dupe.name}
+                        name={dupe.name}
                         className="object-contain w-full h-full p-1"
                       />
                     </div>
                   ))}
                   {product.dupes.length > 5 && (
-                    <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm flex items-center justify-center bg-gray-100 text-xs font-medium text-gray-600">
+                    <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm flex items-center justify-center bg-gray-50 text-xs font-medium text-gray-600">
                       +{product.dupes.length - 5}
                     </div>
                   )}
@@ -313,33 +320,35 @@ const RecentDupes = () => {
             {/* Feature badges */}
             <div className="flex flex-wrap gap-2 mt-4">
               {product.dupeInfo?.coverage && (
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 rounded-full">
+                <Badge variant="secondary" className="bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 text-xs hover:bg-blue-100 transition-all">
                   <Droplet className="w-3 h-3 mr-1" />
                   {product.dupeInfo.coverage}
                 </Badge>
               )}
               
               {product.dupeInfo?.confidence_level && (
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 rounded-full">
+                <Badge variant="secondary" className="bg-yellow-50 text-yellow-700 rounded-full px-2 py-0.5 text-xs hover:bg-yellow-100 transition-all">
                   <Check className="w-3 h-3 mr-1" />
                   {product.dupeInfo.confidence_level}
                 </Badge>
               )}
               
               {(product.dupeInfo?.cruelty_free || product.brandInfo?.cruelty_free) && (
-                <Badge variant="secondary" className="bg-purple-100 text-purple-800 rounded-full">
+                <Badge variant="secondary" className="bg-purple-50 text-purple-700 rounded-full px-2 py-0.5 text-xs hover:bg-purple-100 transition-all">
+                  <Heart className="w-3 h-3 mr-1" />
                   Cruelty-Free
                 </Badge>
               )}
               
               {(product.dupeInfo?.vegan || product.brandInfo?.vegan) && (
-                <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 rounded-full">
+                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5 text-xs hover:bg-emerald-100 transition-all">
+                  <Leaf className="w-3 h-3 mr-1" />
                   Vegan
                 </Badge>
               )}
               
               {product.brandInfo?.sustainable_packaging && (
-                <Badge variant="secondary" className="bg-green-100 text-green-800 rounded-full">
+                <Badge variant="secondary" className="bg-green-50 text-green-700 rounded-full px-2 py-0.5 text-xs hover:bg-green-100 transition-all">
                   <Shield className="w-3 h-3 mr-1" />
                   Sustainable
                 </Badge>
