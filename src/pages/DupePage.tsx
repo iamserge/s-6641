@@ -52,6 +52,7 @@ const DupePage = () => {
             product_ingredients(ingredients(*)),
             reviews(*),
             product_resources(
+              id,
               is_featured,
               resources:resource_id(*)
             )
@@ -119,6 +120,7 @@ const DupePage = () => {
               ),
               reviews(*),
               product_resources(
+                id,
                 is_featured,
                 resources:resource_id(*)
               )
