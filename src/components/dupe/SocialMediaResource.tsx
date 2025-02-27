@@ -159,7 +159,7 @@ export const SocialMediaResource = ({ resource, index = 0 }: SocialMediaResource
           <span>{resource.author_name || resource.author_handle}</span>
           <div className="flex items-center gap-2">
             {resource.views_count !== undefined && (
-              <span>{resource.views_count.toLocaleString()} views</span>
+              <span>{resource.views_count?.toLocaleString()} views</span>
             )}
             {resource.video_duration && (
               <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{resource.video_duration}</span>
