@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -66,12 +67,15 @@ const DupePage = () => {
 
         // Format the resources array for the original product
         const resources = product.product_resources?.map(pr => ({
-          ...pr,
+          id: pr.id,
+          product_id: product.id,
+          resource_id: pr.resources.id,
+          is_featured: pr.is_featured,
           resource: pr.resources
         })) || [];
 
         // Create the final product data object that matches the Product type
-        const productData = {
+        const productData: Product = {
           ...product,
           ingredients: product.product_ingredients?.map(item => item.ingredients) || [],
           dupes: [], // Initialize empty dupes array to be filled in the next fetch
@@ -145,9 +149,12 @@ const DupePage = () => {
             // Format reviews
             const reviews = relation.dupe.reviews || [];
 
-            // Format resources
+            // Format resources to match ProductResource type
             const resources = relation.dupe.product_resources?.map(pr => ({
-              ...pr,
+              id: pr.id,
+              product_id: relation.dupe.id,
+              resource_id: pr.resources.id,
+              is_featured: pr.is_featured,
               resource: pr.resources
             })) || [];
 
