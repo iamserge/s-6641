@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Shield, Droplet, Check, Clock, DollarSign } from "lucide-react";
+import { Shield, Droplet, Check, DollarSign } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
