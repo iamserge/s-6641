@@ -13,7 +13,7 @@ const Hero = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState("");
-  const [originalProgressMessage, setOriginalProgressMessage] = useState(""); // Store server message
+  const [originalProgressMessage, setOriginalProgressMessage] = useState("");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [showTip, setShowTip] = useState(false);
   const [showRecentProducts, setShowRecentProducts] = useState(false);
@@ -24,41 +24,45 @@ const Hero = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
 
-  // **Client-side variations mapped to server-sent messages**
+  // **Client-side Message Variations**
   const messageVariations = {
     "Heyyy! We're on the hunt for the perfect dupes for you! 🎨": [
-      "Let’s track down some amazing dupes for you! ✨",
-      "Hold tight, we’re searching for your perfect matches! 🔎",
-      "Your dupe quest is officially underway! 🚀",
-      "We’re digging into the beauty vault for you! 🗝️",
+      "Obsessed with finding your makeup twin rn 💄",
+      "BRB, snatching dupes that hit different ✨",
+      "Your wallet's about to thank us so hard 💸",
+      "On a mission to serve looks on a budget 👀",
     ],
+    
     "Oh, we already know this one! Let's show you the dupes... 🌟": [
-      "Good news! We’ve got this one covered—dupes incoming! 🌈",
-      "This one’s in our books—showing you the dupes now! 📖",
-      "No need to search far, we’ve got dupes ready! ⚡",
-      "We recognize this beauty—dupes on the way! 🎉",
+      "This one's giving main character energy—dupes loading 💅",
+      "Bestie we already know this vibe—check these out ☕",
+      "Living for this pick—here's the tea on alternatives 💯",
+      "Core product alert—matches incoming ⚡",
     ],
+    
     "Scouring the beauty universe for your perfect match... 💄": [
-      "Exploring the makeup galaxy for your match... 🌌",
-      "Sweeping the beauty world for your dupes... 🌍",
-      "Diving deep into the cosmetic cosmos... 🪐",
-      "Searching high and low for your perfect find... 🕵️‍♀️",
+      "First one to ask for this—we're on a whole journey rn 🏄‍♀️",
+      "New to our algorithm—breaking the internet for you 🔥",
+      "Giving our AI rizz to find this for you 💯",
+      "No cap, hunting every corner of beauty TikTok for this 🫶",
     ],
+    
     "Found some gems! Let's doll them up with more details... 💎": [
-      "We’ve struck gold—polishing your dupes now! 💰",
-      "Dupes spotted—adding some sparkle to them! ✨",
-      "Treasures found—making them picture-perfect! 🎨",
-      "Got some keepers—enhancing the details! 💅",
+      "Caught some serious dupes—they ate 🔥",
+      "These matches are so valid—just perfecting the vibe 💫",
+      "The girlies came through—adding the juicy details 💅",
+      "It's a slay—making sure it's giving everything 💯",
     ],
+    
     "Putting together your beauty dossier... 📋": [
-      "Assembling your dupe masterpiece... 📜",
-      "Crafting your personalized beauty file... 📑",
-      "Finalizing your dupe lineup—almost there! 🎯",
-      "Packaging your beauty finds with care... 🎁",
+      "Manifest your new go-to's in 3, 2, 1... ✨",
+      "Dropping your beauty rotation upgrade 💁‍♀️",
+      "Your dupe era starts now—finalizing the drop 🔄",
+      "This is about to hit different—just watch 🤌",
     ],
   };
 
-  // **Array of 10 makeup tips**
+  // **Makeup Tips**
   const tips = [
     "Did you know? Applying foundation with a damp sponge can give a more natural finish.",
     "Pro tip: Use a lip liner to prevent lipstick from bleeding.",
@@ -75,10 +79,9 @@ const Hero = () => {
   // **Utility Functions**
   const getRandomVariation = (serverMessage) => {
     const variations = messageVariations[serverMessage];
-    if (variations && variations.length > 0) {
-      return variations[Math.floor(Math.random() * variations.length)];
-    }
-    return serverMessage; // Fallback to original if no variations
+    return variations && variations.length > 0
+      ? variations[Math.floor(Math.random() * variations.length)]
+      : serverMessage;
   };
 
   const getRandomTip = () => tips[Math.floor(Math.random() * tips.length)];
@@ -104,7 +107,6 @@ const Hero = () => {
           .from("product_dupes")
           .select("savings_percentage", { count: "exact" })
           .eq("original_product_id", product.id);
-
         const maxSavings = Math.max(...dupes.map((d) => d.savings_percentage));
         return { ...product, dupesCount: count, maxSavings };
       })
@@ -125,20 +127,20 @@ const Hero = () => {
       const tipTimer = setTimeout(() => {
         setShowTip(true);
         setTip(getRandomTip());
-        setOriginalProgressMessage(progressMessage); // Save current message
+        setOriginalProgressMessage(progressMessage);
         setProgressMessage(`While you wait, here’s a tip: ${getRandomTip()}`);
       }, 5000);
 
       const productsTimer = setTimeout(() => {
         setShowRecentProducts(true);
-        setOriginalProgressMessage(progressMessage); // Save current message
+        setOriginalProgressMessage(progressMessage);
         setProgressMessage("Still searching... Check out these recent dupes!");
       }, 20000);
 
       return () => {
         clearTimeout(tipTimer);
         clearTimeout(productsTimer);
-        if (showTip) setProgressMessage(originalProgressMessage); // Revert when done
+        if (showTip) setProgressMessage(originalProgressMessage);
         if (showRecentProducts) setProgressMessage(originalProgressMessage);
         setShowTip(false);
         setShowRecentProducts(false);
@@ -146,18 +148,22 @@ const Hero = () => {
     }
   }, [isProcessing, showTip, showRecentProducts, progressMessage]);
 
-  // **Handle Search with Variations and Delay**
+  // **Handle Search**
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
     if (!searchText) {
-      toast({ variant: "destructive", title: "Error", description: "Please enter a search term or use image search" });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a search term or use image search",
+      });
       return;
     }
 
     try {
       setIsProcessing(true);
-      setProgressMessage(getRandomVariation("Heyyy! We're on the hunt for the perfect dupes for you! 🎨")); // Initial random message
+      setProgressMessage(getRandomVariation("Heyyy! We're on the hunt for the perfect dupes for you! 🎨"));
 
       const { data: { session } } = await supabase.auth.getSession();
       const apikey = (supabase as any).supabaseKey;
@@ -173,21 +179,19 @@ const Hero = () => {
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === "progress") {
-          // Use server message to get a random variation
-          const randomVariation = getRandomVariation(data.message);
-          setProgressMessage(randomVariation);
-          setOriginalProgressMessage(data.message); // Store original for reversion
+          setProgressMessage(getRandomVariation(data.message));
+          setOriginalProgressMessage(data.message);
         } else if (data.type === "result") {
           if (data.data.success && data.data.data.slug) {
             setProgressMessage("Ta-da! Your dupes are ready to shine! 🌟");
             setTimeout(() => {
-              setProgressMessage("Almost ready... 🚀"); // 3-second delay message
+              setProgressMessage("Almost ready... 🚀");
               setTimeout(() => {
                 eventSource.close();
                 navigate(`/dupes/for/${data.data.data.slug}`);
                 setIsProcessing(false);
-              }, 3000); // 3-second delay
-            }, 1500); // Show final message briefly
+              }, 3000);
+            }, 1500);
           } else {
             throw new Error("No product data returned");
           }
@@ -196,8 +200,7 @@ const Hero = () => {
         }
       };
 
-      eventSource.onerror = (error) => {
-        console.error("SSE error:", error);
+      eventSource.onerror = () => {
         eventSource.close();
         setIsProcessing(false);
         throw new Error("Failed to receive updates from the server");
@@ -205,8 +208,11 @@ const Hero = () => {
 
       return () => eventSource.close();
     } catch (error) {
-      console.error("Search error:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to search for products. Please try again." });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to search for products. Please try again.",
+      });
       setIsProcessing(false);
     }
   };
@@ -221,8 +227,11 @@ const Hero = () => {
         await videoRef.current.play();
       }
     } catch (error) {
-      console.error("Error accessing camera:", error);
-      toast({ variant: "destructive", title: "Error", description: "Could not access camera. Please check permissions." });
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not access camera. Please check permissions.",
+      });
       setIsCameraOpen(false);
     }
   }, []);
@@ -237,14 +246,117 @@ const Hero = () => {
   }, []);
 
   const handleCameraSnap = async () => {
-    // Placeholder: Add camera snap logic if needed
+    if (!videoRef.current || !canvasRef.current) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Camera not ready. Please try again.",
+      });
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Camera not fully loaded. Please try again.",
+      });
+      stopCamera();
+      setIsProcessing(false);
+      return;
+    }
+
+    setIsProcessing(true);
+    setProgressMessage("Analyzing your snapshot... 📸");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to capture image. Please try again.",
+      });
+      stopCamera();
+      setIsProcessing(false);
+      return;
+    }
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageDataUrl = canvas.toDataURL("image/jpeg", 0.8);
+    setPreviewImage(imageDataUrl);
+    stopCamera();
+
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-image", {
+        body: { image: imageDataUrl },
+      });
+
+      if (error) throw error;
+      if (!data?.product) throw new Error("No product detected in image");
+
+      setSearchText(data.product);
+      toast({
+        title: "Product Detected!",
+        description: `Found: "${data.product}"`,
+      });
+      await handleSearch();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Could not process the image.",
+      });
+    } finally {
+      setTimeout(() => setIsProcessing(false), 1000);
+    }
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    // Placeholder: Add image upload logic if needed
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsProcessing(true);
+      setProgressMessage("Analyzing your makeup muse... 📸");
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewImage(previewUrl);
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Image = reader.result as string;
+        const { data, error } = await supabase.functions.invoke("analyze-image", {
+          body: { image: base64Image },
+        });
+
+        if (error) throw error;
+        if (!data?.product) throw new Error("No product detected in image");
+
+        setSearchText(data.product);
+        await handleSearch();
+      };
+
+      reader.onerror = (error) => {
+        throw error;
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Could not process the image.",
+      });
+    } finally {
+      setTimeout(() => setIsProcessing(false), 1000);
+    }
   };
 
   const handleCameraSearch = () => startCamera();
+
   const clearPreview = () => {
     setPreviewImage(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -253,6 +365,36 @@ const Hero = () => {
   // **JSX Rendering**
   return (
     <section className="container mx-auto px-4 min-h-screen flex flex-col items-center justify-center font-urbanist">
+      {/* Logo and Tagline */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.6, -0.05, 0.01, 0.99] }}
+        className="mb-16 text-center"
+      >
+        <motion.img
+          src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png"
+          alt="Dupe Academy Logo"
+          className="h-32 md:h-40 mb-8 mx-auto"
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.6, ease: [0.6, -0.05, 0.01, 0.99], delay: 0.2 }}
+        />
+        <div className="text-2xl md:text-3xl text-gray-600 font-extralight flex justify-center gap-2 md:gap-3">
+          {["Smart", "Dupes,", "Stunning", "You"].map((word, index) => (
+            <motion.span
+              key={word}
+              initial={{ opacity: 0, scale: 1.1, filter: "blur(5px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              transition={{ duration: 0.5, delay: 0.8 + index * 0.15, ease: [0.6, -0.05, 0.01, 0.99] }}
+            >
+              {word}
+            </motion.span>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Search Form */}
       <motion.form
         className="relative w-full max-w-3xl hero-search-section"
         initial={{ opacity: 0, y: 20 }}
@@ -260,23 +402,71 @@ const Hero = () => {
         transition={{ delay: 1.6, duration: 0.8 }}
         onSubmit={handleSearch}
       >
-        <Input
-          type="text"
-          placeholder="Search for a product to find dupes..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          className="w-full pr-24 py-6 text-lg bg-white/90 backdrop-blur-sm border-pink-200 focus:border-pink-400"
-        />
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
-          <Button type="button" variant="ghost" size="icon" onClick={handleCameraSearch}>
-            <Camera className="w-5 h-5 text-pink-500" />
+        <div className="relative">
+          {previewImage && (
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 group">
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="h-10 w-10 rounded-full object-cover border-2 border-pink-100"
+              />
+              <button
+                type="button"
+                onClick={clearPreview}
+                className="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="w-3 h-3 text-gray-500" />
+              </button>
+            </div>
+          )}
+          <Input
+            type="text"
+            placeholder="Search for your favorite makeup product..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className={`w-full h-16 pr-32 text-xl rounded-full border-2 border-pink-100 focus:border-pink-300 focus:ring-pink-200 font-light ${
+              previewImage ? "pl-16" : "pl-8"
+            }`}
+          />
+        </div>
+
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2 items-center">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleCameraSearch}
+            disabled={isProcessing || isCameraOpen}
+            className="h-12 w-12 hover:bg-pink-50"
+          >
+            <Camera className="w-6 h-6 text-pink-500" />
           </Button>
-          <Button type="submit" variant="ghost" size="icon">
-            <Search className="w-5 h-5 text-pink-500" />
+          <div className="w-px h-8 bg-pink-100" />
+          <Button
+            type="submit"
+            variant="ghost"
+            size="icon"
+            disabled={isProcessing || isCameraOpen}
+            className="h-12 w-12 hover:bg-pink-50 ml-2"
+          >
+            {isProcessing ? (
+              <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
+            ) : (
+              <Search className="w-6 h-6 text-pink-500" />
+            )}
           </Button>
         </div>
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          capture="environment"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
       </motion.form>
 
+      {/* Camera Modal */}
       {isCameraOpen && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -284,14 +474,21 @@ const Hero = () => {
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
         >
           <div className="relative bg-white p-4 rounded-lg">
-            <video ref={videoRef} className="w-full max-w-md" />
-            <Button onClick={stopCamera} className="absolute top-2 right-2">
-              <X />
+            <video ref={videoRef} className="w-full max-w-md rounded" autoPlay playsInline />
+            <Button
+              onClick={handleCameraSnap}
+              className="mt-4 w-full bg-pink-500 hover:bg-pink-600 text-white"
+            >
+              Snap Photo
+            </Button>
+            <Button onClick={stopCamera} variant="outline" className="mt-2 w-full">
+              Cancel
             </Button>
           </div>
         </motion.div>
       )}
 
+      {/* Processing Modal */}
       {isProcessing && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -305,9 +502,7 @@ const Hero = () => {
           >
             <p className="text-2xl font-light text-gray-800 mb-4">{progressMessage}</p>
 
-            {showTip && (
-              <p className="mt-4 text-sm text-gray-600 italic">{tip}</p>
-            )}
+            {showTip && <p className="mt-4 text-sm text-gray-600 italic">{tip}</p>}
 
             {showRecentProducts && recentProducts && recentProducts.length > 0 && (
               <div className="mt-6">
