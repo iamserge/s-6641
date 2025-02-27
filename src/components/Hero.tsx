@@ -1,7 +1,8 @@
+
 import { useState, useRef, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Mic, Camera, Loader2, Search, X } from "lucide-react";
+import { Camera, Loader2, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
 import { motion } from "framer-motion";
@@ -87,70 +88,6 @@ const Hero = () => {
         description: "Failed to search for products. Please try again.",
       });
       setIsProcessing(false);
-    }
-  };
-
-  const handleVoiceSearch = async () => {
-    try {
-      setIsProcessing(true);
-      setProgressMessage("Listening to your beauty wishes... 💬");
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      const audioChunks: Blob[] = [];
-
-      return new Promise<void>((resolve, reject) => {
-        mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
-
-        mediaRecorder.onstop = async () => {
-          try {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            const reader = new FileReader();
-
-            reader.onload = async () => {
-              const base64Audio = (reader.result as string).split(',')[1];
-              const { data, error } = await supabase.functions.invoke('process-voice', {
-                body: { audio: base64Audio },
-              });
-
-              if (error) throw error;
-              if (!data?.text) throw new Error('No text returned from voice processing');
-
-              setSearchText(data.text);
-              toast({
-                title: "Voice processed!",
-                description: `Detected text: "${data.text}"`,
-              });
-              await handleSearch();
-              resolve();
-            };
-
-            reader.onerror = (error) => reject(error);
-            reader.readAsDataURL(audioBlob);
-          } catch (error) {
-            reject(error);
-          }
-        };
-
-        mediaRecorder.start();
-        toast({
-          title: "Recording...",
-          description: "Speak now. Recording will stop after 5 seconds.",
-        });
-
-        setTimeout(() => {
-          mediaRecorder.stop();
-          stream.getTracks().forEach(track => track.stop());
-        }, 5000);
-      });
-    } catch (error) {
-      console.error('Error in voice search:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error instanceof Error ? error.message : "Could not access microphone.",
-      });
-    } finally {
-      setTimeout(() => setIsProcessing(false), 1000);
     }
   };
 
@@ -377,14 +314,11 @@ const Hero = () => {
             placeholder="Search for your favorite makeup product..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className={`w-full h-16 pr-48 text-xl rounded-full border-2 border-pink-100 focus:border-pink-300 focus:ring-pink-200 font-light ${previewImage ? 'pl-16' : 'pl-8'}`}
+            className={`w-full h-16 pr-32 text-xl rounded-full border-2 border-pink-100 focus:border-pink-300 focus:ring-pink-200 font-light ${previewImage ? 'pl-16' : 'pl-8'}`}
           />
         </div>
 
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2 items-center">
-          <Button type="button" variant="ghost" size="icon" onClick={handleVoiceSearch} disabled={isProcessing || isCameraOpen} className="h-12 w-12 hover:bg-pink-50">
-            <Mic className="w-6 h-6 text-pink-500" />
-          </Button>
           <Button type="button" variant="ghost" size="icon" onClick={handleCameraSearch} disabled={isProcessing || isCameraOpen} className="h-12 w-12 hover:bg-pink-50">
             <Camera className="w-6 h-6 text-pink-500" />
           </Button>
