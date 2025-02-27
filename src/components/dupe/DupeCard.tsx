@@ -8,6 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dupe, Review, EnhancedResource } from "@/types/dupe";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
 import { IngredientPill } from "@/components/dupe/IngredientPill";
+import { ReviewCard } from "@/components/dupe/ReviewCard";
+import { SocialMediaResource } from "@/components/dupe/SocialMediaResource";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 interface DupeCardProps {
   dupe: Dupe;
@@ -38,123 +41,6 @@ const StarRating = ({ rating }: { rating: number }) => {
       ))}
       <span className="ml-1 text-sm font-medium">{rating.toFixed(1)}</span>
     </div>
-  );
-};
-
-// Review component
-const ReviewCard = ({ review }: { review: Review }) => {
-  return (
-    <div className="bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-sm border border-gray-100 mb-3">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center">
-          {review.author_avatar ? (
-            <img 
-              src={review.author_avatar} 
-              alt={review.author_name || "Reviewer"} 
-              className="w-8 h-8 rounded-full mr-2 object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
-              <MessageSquare className="w-4 h-4 text-gray-500" />
-            </div>
-          )}
-          <div>
-            <p className="font-medium text-sm">{review.author_name || "Anonymous"}</p>
-            {review.source && (
-              <p className="text-xs text-gray-500">via {review.source}</p>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center">
-          <StarRating rating={review.rating} />
-          {review.verified_purchase && (
-            <Badge className="ml-2 bg-green-50 text-green-700 text-xs rounded-full">Verified</Badge>
-          )}
-        </div>
-      </div>
-      <div className="relative">
-        <p className="text-sm text-gray-700 italic">
-          "{review.review_text}"
-        </p>
-      </div>
-    </div>
-  );
-};
-
-// Resource Preview component
-const ResourcePreview = ({ resource }: { resource: EnhancedResource }) => {
-  let bgColor = "bg-gray-50";
-  let textColor = "text-gray-700";
-
-  switch(resource.type) {
-    case "Instagram":
-      bgColor = "bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-500";
-      textColor = "text-white";
-      break;
-    case "TikTok":
-      bgColor = "bg-black";
-      textColor = "text-white";
-      break;
-    case "YouTube":
-      bgColor = "bg-red-600";
-      textColor = "text-white";
-      break;
-    case "Article":
-      bgColor = "bg-blue-50";
-      textColor = "text-blue-700";
-      break;
-  }
-
-  return (
-    <a
-      href={resource.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block group"
-    >
-      <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 transition-transform transform group-hover:shadow-md group-hover:scale-[1.02]">
-        <div className="relative aspect-video">
-          {resource.video_thumbnail ? (
-            <img 
-              src={resource.video_thumbnail} 
-              alt={resource.title} 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className={`w-full h-full ${bgColor} flex items-center justify-center`}>
-              <span className={`${textColor} font-medium`}>{resource.type}</span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-            <ExternalLink className="w-8 h-8 text-white" />
-          </div>
-          {resource.video_duration && (
-            <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-1 py-0.5 rounded">
-              {resource.video_duration}
-            </div>
-          )}
-          <div className={`absolute top-2 left-2 ${bgColor} ${textColor} text-xs px-2 py-1 rounded-full`}>
-            {resource.type}
-          </div>
-        </div>
-        <div className="p-3">
-          <h4 className="text-sm font-medium line-clamp-2 mb-1">{resource.title}</h4>
-          <div className="flex justify-between items-center text-xs text-gray-500">
-            <span>{resource.author_name}</span>
-            {(resource.views_count !== undefined || resource.likes_count !== undefined) && (
-              <div className="flex items-center gap-2">
-                {resource.views_count !== undefined && (
-                  <span>{resource.views_count.toLocaleString()} views</span>
-                )}
-                {resource.likes_count !== undefined && (
-                  <span>{resource.likes_count.toLocaleString()} likes</span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </a>
   );
 };
 
@@ -209,6 +95,27 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
     [dupe.resources]
   );
 
+  // Get YouTube resources for potential background
+  const youtubeResources = useMemo(() => 
+    featuredResources.filter(r => 
+      r.resource?.type === 'YouTube' || 
+      (r.resource?.url && r.resource.url.includes('youtube.com'))
+    ) || [], 
+    [featuredResources]
+  );
+
+  // Background YouTube video if available
+  const backgroundVideoId = useMemo(() => {
+    if (youtubeResources.length > 0) {
+      const url = youtubeResources[0].resource?.url;
+      if (url) {
+        const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+        return match ? match[1] : null;
+      }
+    }
+    return null;
+  }, [youtubeResources]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -220,7 +127,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
         {/* Top badges row - Aligned side by side */}
         <div className="flex justify-between items-center p-3 bg-gradient-to-r from-slate-50 to-zinc-50 border-b border-gray-100">
           <div className="flex items-center gap-2">
-          <Badge className="bg-[#0EA5E9] text-white px-4 py-1.5 text-sm rounded-full">
+            <Badge className="bg-[#0EA5E9] text-white px-4 py-1.5 text-sm rounded-full">
               {dupe.match_score}% Match
             </Badge>
             
@@ -247,8 +154,22 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
           </div>
         </div>
         
-        <CardContent className="p-4 md:p-6">
-          <div className="flex flex-col md:flex-row gap-6">
+        <CardContent className="p-4 md:p-6 relative">
+          {/* YouTube video background if available */}
+          {backgroundVideoId && isExpanded && (
+            <div className="absolute inset-0 overflow-hidden -z-10 opacity-10 pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-b from-white to-white/80 z-20"></div>
+              <iframe
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%]"
+                src={`https://www.youtube.com/embed/${backgroundVideoId}?autoplay=1&controls=0&loop=1&mute=1&playlist=${backgroundVideoId}`}
+                title="Background Video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              ></iframe>
+            </div>
+          )}
+
+          <div className="flex flex-col md:flex-row gap-6 relative z-10">
             {/* Left Column - Circular Image */}
             <div className="w-full md:w-1/4 lg:w-1/5">
               <div className="w-36 h-36 rounded-full overflow-hidden bg-white shadow-sm p-1 mx-auto md:mx-0">
@@ -330,23 +251,25 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                 <div className="mb-3">
                   <p className="text-sm font-medium text-gray-700 mb-2">Key Ingredients:</p>
                   <div className="flex flex-wrap gap-2">
-                    {/* Problematic ingredients */}
-                    {problematicIngredients.map((ingredient, index) => (
-                      <IngredientPill
-                        key={`problem-${index}`}
-                        ingredient={ingredient}
-                        className="bg-rose-50/50 text-rose-700 border-rose-200"
-                      />
-                    ))}
-                    
-                    {/* Beneficial ingredients */}
-                    {beneficialIngredients.map((ingredient, index) => (
-                      <IngredientPill
-                        key={`benefit-${index}`}
-                        ingredient={ingredient}
-                        className="bg-emerald-50/50 text-emerald-700 border-emerald-200"
-                      />
-                    ))}
+                    <TooltipProvider>
+                      {/* Problematic ingredients */}
+                      {problematicIngredients.map((ingredient, index) => (
+                        <IngredientPill
+                          key={`problem-${index}`}
+                          ingredient={ingredient}
+                          className="bg-rose-50/50 text-rose-700 border-rose-200"
+                        />
+                      ))}
+                      
+                      {/* Beneficial ingredients */}
+                      {beneficialIngredients.map((ingredient, index) => (
+                        <IngredientPill
+                          key={`benefit-${index}`}
+                          ingredient={ingredient}
+                          className="bg-emerald-50/50 text-emerald-700 border-emerald-200"
+                        />
+                      ))}
+                    </TooltipProvider>
                   </div>
                 </div>
               )}
@@ -446,12 +369,14 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                           <div>
                             <h5 className="text-sm font-medium text-gray-700 mb-2">All Ingredients:</h5>
                             <div className="flex flex-wrap gap-2">
-                              {dupe.ingredients.map((ingredient, index) => (
-                                <IngredientPill
-                                  key={index}
-                                  ingredient={ingredient}
-                                />
-                              ))}
+                              <TooltipProvider>
+                                {dupe.ingredients.map((ingredient, index) => (
+                                  <IngredientPill
+                                    key={index}
+                                    ingredient={ingredient}
+                                  />
+                                ))}
+                              </TooltipProvider>
                             </div>
                           </div>
                         )}
@@ -538,7 +463,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                       {dupe.reviews && dupe.reviews.length > 0 ? (
                         <div className="space-y-4">
                           {dupe.reviews.slice(0, 3).map((review, index) => (
-                            <ReviewCard key={index} review={review} />
+                            <ReviewCard key={index} review={review} index={index} />
                           ))}
                           {dupe.reviews.length > 3 && (
                             <button className="text-sm text-[#5840c0] hover:text-[#4330a0] hover:underline">
@@ -557,9 +482,10 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                       {dupe.resources && dupe.resources.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {dupe.resources.map((resourceItem, index) => (
-                            <ResourcePreview 
+                            <SocialMediaResource 
                               key={index} 
                               resource={resourceItem.resource as EnhancedResource} 
+                              index={index}
                             />
                           ))}
                         </div>

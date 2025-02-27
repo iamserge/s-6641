@@ -1,4 +1,3 @@
-
 import { ProductCategory } from "@/types/dupe";
 import { useState, useEffect } from "react";
 
@@ -35,7 +34,7 @@ export const CategoryImage = ({ category, imageUrl, images, alt, className }: Ca
     <img
       src={processedImage || fallbackSrc}
       alt={alt}
-      className={className}
+      className={`transition-transform duration-300 hover:scale-105 ${className}`}
       onError={(e) => {
         (e.target as HTMLImageElement).src = fallbackSrc;
       }}

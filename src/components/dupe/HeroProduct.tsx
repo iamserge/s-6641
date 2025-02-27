@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
 import { IngredientPill } from "@/components/dupe/IngredientPill";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ReviewCard } from "@/components/dupe/ReviewCard";
+import { SocialMediaResource } from "@/components/dupe/SocialMediaResource";
 
 interface HeroProductProps {
   product: Product;
@@ -42,21 +44,69 @@ const StarRating = ({ rating }: { rating: number }) => {
 export const HeroProduct = ({ product }: HeroProductProps) => {
   const [activeTab, setActiveTab] = useState<'details' | 'reviews' | 'resources'>('details');
   
-  // Filter featured resources
-  const featuredResources = product.resources?.filter(r => r.is_featured && r.resource) || [];
+  // Get featured resources
+  const featuredResources = useMemo(() => 
+    product.resources?.filter(r => r.is_featured && r.resource) || [], 
+    [product.resources]
+  );
+  
+  // Get YouTube resources for background
+  const youtubeResources = useMemo(() => 
+    featuredResources.filter(r => r.resource?.type === 'YouTube' || r.resource?.url.includes('youtube.com')) || [], 
+    [featuredResources]
+  );
   
   // Group ingredients by importance and sensitivity
-  const notableIngredients = useMemo(() => product.ingredients?.filter(i => i.is_controversial || i.benefits?.length > 0) || [], [product.ingredients]);
-  const problematicIngredients = useMemo(() => product.ingredients?.filter(i => i.is_controversial) || [], [product.ingredients]);
-  const beneficialIngredients = useMemo(() => product.ingredients?.filter(i => i.benefits?.length > 0 && !i.is_controversial) || [], [product.ingredients]);
+  const notableIngredients = useMemo(() => 
+    product.ingredients?.filter(i => i.is_controversial || i.benefits?.length > 0) || [], 
+    [product.ingredients]
+  );
+  
+  const problematicIngredients = useMemo(() => 
+    product.ingredients?.filter(i => i.is_controversial) || [], 
+    [product.ingredients]
+  );
+  
+  const beneficialIngredients = useMemo(() => 
+    product.ingredients?.filter(i => i.benefits?.length > 0 && !i.is_controversial) || [], 
+    [product.ingredients]
+  );
+  
+  // Background YouTube video if available
+  const backgroundVideoId = useMemo(() => {
+    if (youtubeResources.length > 0) {
+      const url = youtubeResources[0].resource?.url;
+      if (url) {
+        const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+        return match ? match[1] : null;
+      }
+    }
+    return null;
+  }, [youtubeResources]);
   
   return (
-    <div className="container mx-auto px-4 pt-24 pb-8 md:pt-32 md:pb-16">
+    <div className="container mx-auto px-4 pt-24 pb-8 md:pt-32 md:pb-16 relative">
+      {/* YouTube Background Video */}
+      {backgroundVideoId && (
+        <div className="absolute inset-0 overflow-hidden -z-10 opacity-10">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#F8F3FF] to-white z-20"></div>
+          <div className="absolute inset-0 z-10"></div>
+          <iframe
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%]"
+            src={`https://www.youtube.com/embed/${backgroundVideoId}?autoplay=1&controls=0&loop=1&mute=1&playlist=${backgroundVideoId}`}
+            title="Background Video"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+        </div>
+      )}
+      
       <div className="max-w-4xl mx-auto">
         <motion.div 
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center text-center"
+          className="flex flex-col items-center text-center relative z-10"
         >
           {/* Brand & Title Section */}
           <motion.div className="w-full mb-8">
@@ -191,7 +241,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.85 }}
-              className="mb-6 max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl"
+              className="mb-6 max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl shadow-sm"
             >
               <h3 className="text-lg font-medium mb-3">Key Ingredients</h3>
               <div className="flex flex-wrap justify-center gap-2">
@@ -224,7 +274,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
-              className="mb-6 max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl"
+              className="mb-6 max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl shadow-sm"
             >
               <p className="text-base text-gray-700">
                 {product.description}
@@ -237,13 +287,17 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
-            className="w-full max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl mt-6"
+            className="w-full max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-4 rounded-xl mt-6 shadow-sm"
           >
             <Tabs defaultValue="details" className="w-full" onValueChange={(val) => setActiveTab(val as any)}>
               <TabsList className="grid grid-cols-3 mb-4 rounded-lg bg-gray-50/80">
                 <TabsTrigger value="details" className="rounded-md">Details</TabsTrigger>
-                <TabsTrigger value="reviews" className="rounded-md">Reviews</TabsTrigger>
-                <TabsTrigger value="resources" className="rounded-md">Content</TabsTrigger>
+                <TabsTrigger value="reviews" className="rounded-md">
+                  Reviews {product.reviews?.length ? `(${product.reviews.length})` : ''}
+                </TabsTrigger>
+                <TabsTrigger value="resources" className="rounded-md">
+                  Content {featuredResources.length ? `(${featuredResources.length})` : ''}
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="details" className="mt-2">
@@ -332,18 +386,9 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               
               <TabsContent value="reviews" className="mt-2">
                 {product.reviews && product.reviews.length > 0 ? (
-                  <div>
+                  <div className="space-y-4">
                     {product.reviews.slice(0, 3).map((review, index) => (
-                      <div key={index} className="bg-white/80 p-3 rounded-lg mb-3 text-left">
-                        <div className="flex justify-between items-start mb-1">
-                          <p className="font-medium text-sm">{review.author_name || "Anonymous"}</p>
-                          <StarRating rating={review.rating} />
-                        </div>
-                        <p className="text-sm text-gray-700 italic">"{review.review_text}"</p>
-                        {review.source && (
-                          <p className="text-xs text-gray-500 mt-1">via {review.source}</p>
-                        )}
-                      </div>
+                      <ReviewCard key={index} review={review} index={index} />
                     ))}
                     {product.reviews.length > 3 && (
                       <button className="text-sm text-[#5840c0] hover:text-[#4330a0] mt-1 hover:underline">
@@ -358,23 +403,13 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               
               <TabsContent value="resources" className="mt-2">
                 {featuredResources.length > 0 ? (
-                  <div className="grid gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {featuredResources.map((resourceItem, index) => (
-                      <a
-                        key={index}
-                        href={resourceItem.resource.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between bg-white/80 p-3 rounded-lg hover:bg-white transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Badge className="rounded-full bg-[#d2c9f9] text-[#5840c0] px-3 py-1">
-                            {resourceItem.resource.type}
-                          </Badge>
-                          <span className="text-sm">{resourceItem.resource.title}</span>
-                        </div>
-                        <ExternalLink className="h-4 w-4 text-gray-400 flex-shrink-0 ml-2" />
-                      </a>
+                      <SocialMediaResource 
+                        key={index} 
+                        resource={resourceItem.resource}
+                        index={index}
+                      />
                     ))}
                   </div>
                 ) : (
