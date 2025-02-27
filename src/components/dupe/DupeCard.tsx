@@ -128,12 +128,12 @@ export const DupeCard = ({ dupe, index, originalIngredients, showBottomBar = fal
         {/* Top badges row - Always hidden on mobile, always shown on desktop */}
         <div className="hidden md:flex justify-between items-center p-4 bg-gradient-to-r from-slate-50 to-zinc-50 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <Badge className="bg-[#0EA5E9] text-white px-5 py-2 text-sm rounded-full">
+            <Badge variant="pastelPurple" className="px-5 py-2.5 text-sm rounded-full font-medium">
               {Math.round(dupe.match_score)}% Match
             </Badge>
             
             {dupe.savings_percentage && (
-              <Badge className="bg-green-50 text-green-700 px-5 py-2 text-sm gap-1.5 flex items-center rounded-full">
+              <Badge variant="pastelGreen" className="px-5 py-2.5 text-sm gap-1.5 flex items-center rounded-full font-medium">
                 <DollarSign className="w-3.5 h-3.5" />
                 Save {Math.round(dupe.savings_percentage)}%
               </Badge>
@@ -199,34 +199,34 @@ export const DupeCard = ({ dupe, index, originalIngredients, showBottomBar = fal
               {/* Feature Badges */}
               <div className="flex flex-wrap gap-2.5 my-4">
                 {dupe.cruelty_free && (
-                  <Badge className="bg-purple-50 text-purple-700 rounded-full px-4 py-1.5 text-sm flex items-center gap-1.5 hover:bg-purple-100 transition-all">
+                  <Badge variant="pastelPink" className="rounded-full px-4 py-1.5 text-sm flex items-center gap-1.5 transition-all font-medium">
                     <Heart className="w-3.5 h-3.5" />
                     Cruelty-Free
                   </Badge>
                 )}
                 
                 {dupe.vegan && (
-                  <Badge className="bg-green-50 text-green-700 rounded-full px-4 py-1.5 text-sm flex items-center gap-1.5 hover:bg-green-100 transition-all">
+                  <Badge variant="pastelGreen" className="rounded-full px-4 py-1.5 text-sm flex items-center gap-1.5 transition-all font-medium">
                     <Leaf className="w-3.5 h-3.5" />
                     Vegan
                   </Badge>
                 )}
                 
                 {commonIngredientsCount > 0 && (
-                  <Badge className="bg-blue-50 text-blue-700 rounded-full px-4 py-1.5 text-sm flex items-center gap-1.5 hover:bg-blue-100 transition-all">
+                  <Badge variant="pastelBlue" className="rounded-full px-4 py-1.5 text-sm flex items-center gap-1.5 transition-all font-medium">
                     <Check className="w-3.5 h-3.5" />
                     {commonIngredientsPercentage}% Formula Match
                   </Badge>
                 )}
 
                 {dupe.finish && (
-                  <Badge className="bg-pink-50 text-pink-700 rounded-full px-4 py-1.5 text-sm hover:bg-pink-100 transition-all">
+                  <Badge variant="pastelPink" className="rounded-full px-4 py-1.5 text-sm transition-all font-medium">
                     {dupe.finish} Finish
                   </Badge>
                 )}
                 
                 {dupe.texture && (
-                  <Badge className="bg-yellow-50 text-yellow-700 rounded-full px-4 py-1.5 text-sm flex items-center gap-1.5 hover:bg-yellow-100 transition-all">
+                  <Badge variant="pastelYellow" className="rounded-full px-4 py-1.5 text-sm flex items-center gap-1.5 transition-all font-medium">
                     <Droplet className="w-3.5 h-3.5" />
                     {dupe.texture}
                   </Badge>
@@ -250,7 +250,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, showBottomBar = fal
                         <IngredientPill
                           key={`problem-${index}`}
                           ingredient={ingredient}
-                          className="bg-rose-50/50 text-rose-700 border-rose-200"
+                          className="text-sm"
                         />
                       ))}
                       
@@ -259,7 +259,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, showBottomBar = fal
                         <IngredientPill
                           key={`benefit-${index}`}
                           ingredient={ingredient}
-                          className="bg-emerald-50/50 text-emerald-700 border-emerald-200"
+                          className="text-sm"
                         />
                       ))}
                     </TooltipProvider>

@@ -373,12 +373,12 @@ const DupePage = () => {
               <div className="flex items-center justify-between">
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-[#0EA5E9] text-white rounded-full px-3 py-1">
+                    <Badge variant="pastelPurple" className="rounded-full px-3 py-1.5 font-medium text-sm">
                       {Math.round(activeDupe.match_score)}% Match
                     </Badge>
                     
                     {activeDupe.savings_percentage && (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 rounded-full">
+                      <Badge variant="pastelGreen" className="rounded-full px-3 py-1.5 font-medium text-sm">
                         Save {Math.round(activeDupe.savings_percentage)}%
                       </Badge>
                     )}
@@ -391,7 +391,7 @@ const DupePage = () => {
                 
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="default" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 rounded-full">
+                    <Button variant="default" className="bg-[#E5DEFF] text-purple-700 hover:bg-[#E5DEFF]/90 rounded-full">
                       Buy Now
                     </Button>
                   </SheetTrigger>

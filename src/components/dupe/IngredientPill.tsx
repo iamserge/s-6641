@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, ExternalLink } from "lucide-react";
@@ -16,8 +17,9 @@ export const IngredientPill = ({ ingredient, className }: IngredientPillProps) =
         <Badge 
           variant="outline" 
           className={`
-            rounded-full bg-white/50 text-gray-700 transition-all hover:bg-white flex items-center gap-1
-            ${ingredient.is_controversial ? 'border-rose-300' : 'border-slate-200'}
+            rounded-full bg-white/50 text-gray-700 transition-all hover:bg-white flex items-center gap-1 px-3 py-1
+            ${ingredient.is_controversial ? 'border-[#FFDEE2]' : ingredient.benefits?.length ? 'border-[#F2FCE2]' : 'border-slate-200'}
+            ${ingredient.is_controversial ? 'bg-[#FFDEE2]/30' : ingredient.benefits?.length ? 'bg-[#F2FCE2]/40' : ''}
             ${className}
           `}
         >
@@ -63,13 +65,13 @@ export const IngredientPill = ({ ingredient, className }: IngredientPillProps) =
           <div className="flex justify-between items-center pt-1">
             <div className="flex flex-wrap gap-1">
               {ingredient.vegan && (
-                <Badge className="bg-green-50 text-green-700 text-xs">Vegan</Badge>
+                <Badge variant="pastelGreen" className="text-xs">Vegan</Badge>
               )}
               {ingredient.ethically_sourced && (
-                <Badge className="bg-blue-50 text-blue-700 text-xs">Ethically Sourced</Badge>
+                <Badge variant="pastelBlue" className="text-xs">Ethically Sourced</Badge>
               )}
               {ingredient.comedogenic_rating !== undefined && ingredient.comedogenic_rating > 0 && (
-                <Badge className="bg-amber-50 text-amber-700 text-xs">
+                <Badge variant="pastelYellow" className="text-xs">
                   Comedogenic: {ingredient.comedogenic_rating}/5
                 </Badge>
               )}
