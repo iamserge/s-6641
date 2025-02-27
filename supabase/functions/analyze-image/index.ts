@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -36,11 +35,13 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Please analyze this image and extract string: {product name} by {brand} OR {product code} (if barcode ), output just that, nothing else',
+                text: 'Please analyze this image and extract string: {product name} by {brand} OR {product code} (if barcode), output just that, nothing else',
               },
               {
                 type: 'image_url',
-                image_url: image,
+                image_url: {
+                  url: image  // Changed from direct string to object with url property
+                },
               },
             ],
           },
@@ -48,11 +49,13 @@ serve(async (req) => {
       }),
     })
 
-    const text = await response.text()
-    console.log('OpenAI response:', text)
+    const data = await response.json()
+    const productText = data.choices[0].message.content
+
+    console.log('OpenAI response:', productText)
 
     return new Response(
-      JSON.stringify({ product: text }),
+      JSON.stringify({ product: productText }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
