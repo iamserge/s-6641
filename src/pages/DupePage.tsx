@@ -400,22 +400,26 @@ const DupePage = () => {
     >
       <div className="container mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="flex flex-col">
-            <div className="flex items-center">
-              <span className="text-sm text-gray-500 line-through mr-2">~${Math.round(product.price)}</span>
+          {/* Improved first line with match badge, pricing info, and product details */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Badge className="bg-[#0EA5E9] text-white rounded-full px-3 py-1">
+              {activeDupe.match_score}% Match
+            </Badge>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 line-through">~${Math.round(product.price)}</span>
               <span className="text-lg font-bold text-[#0EA5E9]">~${Math.round(activeDupe.price)}</span>
+              
               {activeDupe.savings_percentage && (
-                <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200 rounded-full">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 rounded-full">
                   Save {activeDupe.savings_percentage}%
                 </Badge>
               )}
             </div>
-            <div className="flex items-center mt-1">
-              <Badge className="bg-[#0EA5E9] text-white rounded-full">
-                {activeDupe.match_score}% Match
-              </Badge>
-              <p className="text-sm text-gray-600 ml-2 truncate max-w-[200px]">
-                {activeDupe.brand} {activeDupe.name}
+            
+            <div className="mt-1 md:mt-0 flex items-center">
+              <p className="text-sm text-gray-700 font-medium ml-1 md:ml-3">
+                {activeDupe.brand} <span className="font-semibold">{activeDupe.name}</span>
               </p>
             </div>
           </div>
