@@ -1,13 +1,13 @@
-
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Heart, Leaf, Info, Check, DollarSign, Droplet, Shield, AlertTriangle, Star, MessageSquare } from 'lucide-react';
+import { ExternalLink, Heart, Leaf, Check, DollarSign, Droplet, Star, MessageSquare, ChevronDown } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dupe, Review, ProductResource, EnhancedResource } from "@/types/dupe";
+import { Dupe, Review, EnhancedResource } from "@/types/dupe";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
+import { IngredientPill } from "@/components/dupe/IngredientPill";
 
 interface DupeCardProps {
   dupe: Dupe;
@@ -68,7 +68,7 @@ const ReviewCard = ({ review }: { review: Review }) => {
         <div className="flex items-center">
           <StarRating rating={review.rating} />
           {review.verified_purchase && (
-            <Badge className="ml-2 bg-green-100 text-green-700 text-xs rounded-full">Verified</Badge>
+            <Badge className="ml-2 bg-green-50 text-green-700 text-xs rounded-full">Verified</Badge>
           )}
         </div>
       </div>
@@ -83,8 +83,8 @@ const ReviewCard = ({ review }: { review: Review }) => {
 
 // Resource Preview component
 const ResourcePreview = ({ resource }: { resource: EnhancedResource }) => {
-  let bgColor = "bg-gray-100";
-  let textColor = "text-gray-800";
+  let bgColor = "bg-gray-50";
+  let textColor = "text-gray-700";
 
   switch(resource.type) {
     case "Instagram":
@@ -100,8 +100,8 @@ const ResourcePreview = ({ resource }: { resource: EnhancedResource }) => {
       textColor = "text-white";
       break;
     case "Article":
-      bgColor = "bg-blue-100";
-      textColor = "text-blue-800";
+      bgColor = "bg-blue-50";
+      textColor = "text-blue-700";
       break;
   }
 
@@ -205,30 +205,47 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
       className="w-full"
     >
       <Card className="w-full bg-white/50 backdrop-blur-sm border-gray-100/50 overflow-hidden shadow-md rounded-3xl">
-        {/* Top badges row */}
-        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
-          <Badge className="bg-[#0EA5E9] text-white px-4 py-1 text-base rounded-full">
-            {dupe.match_score}% Match
-          </Badge>
-          {dupe.savings_percentage && (
-            <Badge className="bg-green-100 text-green-700 px-4 py-1 gap-1 flex items-center rounded-full">
-              <DollarSign className="w-3 h-3" />
-              Save ${savingsAmount} ({dupe.savings_percentage}%)
+        {/* Top badges row - Aligned side by side */}
+        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-slate-50 to-zinc-50 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Badge className="bg-[#0EA5E9] text-white px-4 py-1.5 text-sm rounded-full">
+              {dupe.match_score}% Match
             </Badge>
-          )}
+            
+            {dupe.savings_percentage && (
+              <Badge className="bg-green-50 text-green-700 px-4 py-1.5 text-sm gap-1 flex items-center rounded-full">
+                <DollarSign className="w-3 h-3" />
+                Save ${savingsAmount} ({dupe.savings_percentage}%)
+              </Badge>
+            )}
+          </div>
+          
+          {/* Buy Now button - desktop only */}
+          <div className="hidden md:block">
+            {dupe.purchase_link && (
+              <a 
+                href={dupe.purchase_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-[#0EA5E9] rounded-full hover:bg-[#0EA5E9]/90 transition-colors"
+              >
+                Buy Now <ExternalLink className="ml-2 h-4 w-4" />
+              </a>
+            )}
+          </div>
         </div>
         
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Left Column - Circular Image */}
             <div className="w-full md:w-1/4 lg:w-1/5">
-              <div className="w-32 h-32 rounded-full overflow-hidden bg-white shadow-sm p-2 mx-auto md:mx-0">
+              <div className="w-36 h-36 rounded-full overflow-hidden bg-white shadow-sm p-1 mx-auto md:mx-0">
                 <div className="w-full h-full rounded-full bg-gray-50 flex items-center justify-center overflow-hidden">
                   <CategoryImage 
                     category={dupe.category}
                     imageUrl={dupe.image_url}
-                    alt={dupe.name}
-                    className="object-contain w-full h-full p-2"
+                    name={dupe.name}
+                    className="object-contain w-full h-full p-1"
                   />
                 </div>
               </div>
@@ -262,47 +279,53 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
               {/* Feature Badges */}
               <div className="flex flex-wrap gap-2 my-3">
                 {dupe.cruelty_free && (
-                  <Badge className="bg-purple-100 text-purple-800 rounded-full px-3 py-1 flex items-center gap-1">
+                  <Badge className="bg-purple-50 text-purple-700 rounded-full px-3 py-1 text-sm flex items-center gap-1 hover:bg-purple-100 transition-all">
                     <Heart className="w-3 h-3" />
                     Cruelty-Free
                   </Badge>
                 )}
                 
                 {dupe.vegan && (
-                  <Badge className="bg-green-100 text-green-800 rounded-full px-3 py-1 flex items-center gap-1">
+                  <Badge className="bg-green-50 text-green-700 rounded-full px-3 py-1 text-sm flex items-center gap-1 hover:bg-green-100 transition-all">
                     <Leaf className="w-3 h-3" />
                     Vegan
                   </Badge>
                 )}
                 
                 {commonIngredientsCount > 0 && (
-                  <Badge className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 flex items-center gap-1">
+                  <Badge className="bg-blue-50 text-blue-700 rounded-full px-3 py-1 text-sm flex items-center gap-1 hover:bg-blue-100 transition-all">
                     <Check className="w-3 h-3" />
                     {commonIngredientsPercentage}% Formula Match
                   </Badge>
                 )}
 
                 {dupe.finish && (
-                  <Badge className="bg-pink-100 text-pink-800 rounded-full px-3 py-1">
+                  <Badge className="bg-pink-50 text-pink-700 rounded-full px-3 py-1 text-sm hover:bg-pink-100 transition-all">
                     {dupe.finish} Finish
                   </Badge>
                 )}
                 
                 {dupe.texture && (
-                  <Badge className="bg-yellow-100 text-yellow-800 rounded-full px-3 py-1 flex items-center gap-1">
+                  <Badge className="bg-yellow-50 text-yellow-700 rounded-full px-3 py-1 text-sm flex items-center gap-1 hover:bg-yellow-100 transition-all">
                     <Droplet className="w-3 h-3" />
                     {dupe.texture}
                   </Badge>
                 )}
               </div>
               
-              {/* Warning for Controversial Ingredients */}
+              {/* Sensitive Ingredients as Pills */}
               {problematicIngredients.length > 0 && (
-                <div className="flex items-center gap-2 mb-3 bg-amber-50 p-2 rounded-lg">
-                  <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  <span className="text-xs text-amber-700">
-                    Contains ingredients that may cause sensitivity
-                  </span>
+                <div className="mb-3">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Sensitive Ingredients:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {problematicIngredients.map((ingredient, index) => (
+                      <IngredientPill
+                        key={index}
+                        ingredient={ingredient}
+                        className="bg-rose-50/50 text-rose-700 border-rose-200"
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
               
@@ -340,23 +363,26 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
               )}
               
               {/* Description Snippet */}
-              {dupe.description && (
+              {dupe.description && !isExpanded && (
                 <p className="text-sm text-gray-600 mb-4 line-clamp-2">
                   {dupe.description}
                 </p>
               )}
 
-              {/* Action buttons */}
-              <div className="flex flex-wrap gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full"
+              {/* Collapsed/Expanded toggle - centered */}
+              <div className="flex justify-center mt-4">
+                <button
+                  className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors"
                   onClick={() => setIsExpanded(!isExpanded)}
+                  aria-expanded={isExpanded}
                 >
-                  {isExpanded ? 'Show Less' : 'Show More'}
-                </Button>
-                
+                  {isExpanded ? "Show Less" : "Show More"}
+                  <ChevronDown className={`w-4 h-4 transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
+                </button>
+              </div>
+
+              {/* Mobile Buy Now - only shown on mobile */}
+              <div className="flex md:hidden justify-center mt-4">
                 {dupe.purchase_link && (
                   <a 
                     href={dupe.purchase_link}
@@ -385,6 +411,29 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
 
                     <TabsContent value="details" className="mt-4">
                       <div className="grid gap-y-4">
+                        {/* Description in full */}
+                        {dupe.description && (
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Description:</h5>
+                            <p className="text-sm text-gray-700">{dupe.description}</p>
+                          </div>
+                        )}
+                        
+                        {/* All Ingredients */}
+                        {dupe.ingredients && dupe.ingredients.length > 0 && (
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">All Ingredients:</h5>
+                            <div className="flex flex-wrap gap-2">
+                              {dupe.ingredients.map((ingredient, index) => (
+                                <IngredientPill
+                                  key={index}
+                                  ingredient={ingredient}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
                         {/* Common Ingredients */}
                         {commonIngredients.length > 0 && (
                           <div>
@@ -394,7 +443,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                                 <Badge
                                   key={i}
                                   variant="outline"
-                                  className="bg-green-50 text-green-700 border-green-200 rounded-full flex items-center"
+                                  className="bg-green-50 text-green-700 border-green-200 rounded-full flex items-center hover:bg-green-100 transition-all"
                                 >
                                   <Check className="w-3 h-3 mr-1" />
                                   {ingredient}
@@ -410,12 +459,12 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                             <h5 className="text-sm font-medium text-gray-700 mb-2">Best For:</h5>
                             <div className="flex flex-wrap gap-2">
                               {dupe.skin_types?.map((type, i) => (
-                                <Badge key={i} variant="outline" className="bg-white/50 text-gray-700 rounded-full">
+                                <Badge key={i} variant="outline" className="bg-white/50 text-gray-700 rounded-full hover:bg-white transition-all">
                                   {type}
                                 </Badge>
                               ))}
                               {dupe.best_for?.map((item, i) => (
-                                <Badge key={i} variant="outline" className="bg-white/50 text-gray-700 rounded-full">
+                                <Badge key={i} variant="outline" className="bg-white/50 text-gray-700 rounded-full hover:bg-white transition-all">
                                   {item}
                                 </Badge>
                               ))}
@@ -429,7 +478,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                             <h5 className="text-sm font-medium text-gray-700 mb-2">Free Of:</h5>
                             <div className="flex flex-wrap gap-2">
                               {dupe.free_of.map((item, i) => (
-                                <Badge key={i} variant="outline" className="bg-white/50 text-gray-700 rounded-full">
+                                <Badge key={i} variant="outline" className="bg-white/50 text-gray-700 rounded-full hover:bg-white transition-all">
                                   {item}
                                 </Badge>
                               ))}
@@ -470,7 +519,7 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                             <ReviewCard key={index} review={review} />
                           ))}
                           {dupe.reviews.length > 3 && (
-                            <button className="text-sm text-blue-500 hover:text-blue-700 hover:underline">
+                            <button className="text-sm text-[#5840c0] hover:text-[#4330a0] hover:underline">
                               View all {dupe.reviews.length} reviews
                             </button>
                           )}
