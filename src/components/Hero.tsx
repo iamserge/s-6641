@@ -18,65 +18,49 @@ const Hero = () => {
   const [showTip, setShowTip] = useState(false);
   const [showRecentProducts, setShowRecentProducts] = useState(false);
   const [tip, setTip] = useState("");
-  const [searchTriggered, setSearchTriggered] = useState(false); // Tracks if search has started after detection
+  const [searchTriggered, setSearchTriggered] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
 
-  // **Client-side Message Variations**
+  // **Message Variations**
   const messageVariations = {
     "Heyyy! We're on the hunt for the perfect dupes for you! 🎨": [
       "Obsessed with finding your makeup twin rn 💄",
       "BRB, snatching dupes that hit different ✨",
       "Your wallet's about to thank us so hard 💸",
-      "On a mission to serve looks on a budget 👀",
     ],
     "Oh, we already know this one! Let's show you the dupes... 🌟": [
       "This one's giving main character energy—dupes loading 💅",
       "Bestie we already know this vibe—check these out ☕",
-      "Living for this pick—here's the tea on alternatives 💯",
-      "Core product alert—matches incoming ⚡",
     ],
     "Scouring the beauty universe for your perfect match... 💄": [
       "First one to ask for this—we're on a whole journey rn 🏄‍♀️",
       "New to our algorithm—breaking the internet for you 🔥",
-      "Giving our AI rizz to find this for you 💯",
-      "No cap, hunting every corner of beauty TikTok for this 🫶",
     ],
     "Found some gems! Let's doll them up with more details... 💎": [
       "Caught some serious dupes—they ate 🔥",
       "These matches are so valid—just perfecting the vibe 💫",
-      "The girlies came through—adding the juicy details 💅",
-      "It's a slay—making sure it's giving everything 💯",
     ],
     "Putting together your beauty dossier... 📋": [
       "Manifest your new go-to's in 3, 2, 1... ✨",
       "Dropping your beauty rotation upgrade 💁‍♀️",
-      "Your dupe era starts now—finalizing the drop 🔄",
-      "This is about to hit different—just watch 🤌",
     ],
   };
 
-  // **Makeup Tips**
+  // **Tips**
   const tips = [
-    "Did you know? Applying foundation with a damp sponge can give a more natural finish.",
-    "Pro tip: Use a lip liner to prevent lipstick from bleeding.",
-    "Fun fact: The average woman owns 40 makeup products.",
-    "Beauty hack: Use a white eyeliner as a base to make eyeshadow colors pop.",
-    "Skincare tip: Always apply sunscreen as the last step in your morning routine.",
-    "Try this: Set your makeup with a light mist for longer wear.",
-    "Did you know? Blending blush upwards can lift your face.",
-    "Pro tip: Warm up your eyelash curler for a better curl.",
-    "Fun fact: Mascara wands can change the whole look of your lashes.",
-    "Beauty hack: Use a spoon to shield your skin while applying mascara.",
+    "Apply foundation with a damp sponge for a natural finish.",
+    "Use lip liner to prevent lipstick bleeding.",
+    "Set makeup with a light mist for longer wear.",
   ];
 
   // **Utility Functions**
   const getRandomVariation = (serverMessage) => {
     const variations = messageVariations[serverMessage];
-    return variations && variations.length > 0
+    return variations?.length > 0
       ? variations[Math.floor(Math.random() * variations.length)]
       : serverMessage;
   };
@@ -92,7 +76,6 @@ const Hero = () => {
       .limit(3);
 
     const productIds = productsWithDupes.map((item) => item.original_product_id);
-
     const { data: products } = await supabase
       .from("products")
       .select("id, name, brand, image_url, slug")
@@ -108,7 +91,6 @@ const Hero = () => {
         return { ...product, dupesCount: count, maxSavings };
       })
     );
-
     return productsWithDetails;
   };
 
@@ -120,22 +102,14 @@ const Hero = () => {
 
   // **Timers for Tips and Recent Products**
   useEffect(() => {
-    let tipTimer;
-    let productsTimer;
-
+    let tipTimer, productsTimer;
     if (isProcessing) {
-      // Show tip after 10 seconds
       tipTimer = setTimeout(() => {
         setShowTip(true);
         setTip(getRandomTip());
-      }, 10000); // 10 seconds
-
-      // Show recent products after 20 seconds
-      productsTimer = setTimeout(() => {
-        setShowRecentProducts(true);
-      }, 20000); // 20 seconds
+      }, 10000); // 10s
+      productsTimer = setTimeout(() => setShowRecentProducts(true), 20000); // 20s
     }
-
     return () => {
       clearTimeout(tipTimer);
       clearTimeout(productsTimer);
@@ -147,10 +121,11 @@ const Hero = () => {
   }, [isProcessing]);
 
   // **Handle Search**
-  const handleSearch = async (e?: React.FormEvent) => {
+  const handleSearch = async (e?: React.FormEvent, productName?: string) => {
     if (e) e.preventDefault();
 
-    if (!searchText.trim()) {
+    const textToSearch = productName || searchText.trim();
+    if (!textToSearch) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -161,15 +136,14 @@ const Hero = () => {
 
     try {
       setIsProcessing(true);
-      setSearchTriggered(true); // Indicate search has started
+      setSearchTriggered(true);
       setProgressMessage(getRandomVariation("Heyyy! We're on the hunt for the perfect dupes for you! 🎨"));
 
       const { data: { session } } = await supabase.auth.getSession();
       const apikey = (supabase as any).supabaseKey;
-
       const baseUrl = `${(supabase as any).supabaseUrl}/functions/v1/search-dupes`;
       const url = new URL(baseUrl);
-      url.searchParams.append("searchText", searchText);
+      url.searchParams.append("searchText", textToSearch);
       url.searchParams.append("apikey", apikey);
       if (session?.access_token) url.searchParams.append("authorization", `Bearer ${session.access_token}`);
 
@@ -188,8 +162,8 @@ const Hero = () => {
               setTimeout(() => {
                 eventSource.close();
                 navigate(`/dupes/for/${data.data.data.slug}`);
-                setIsProcessing(false); // Close modal on redirect
-                setSearchTriggered(false); // Reset search trigger
+                setIsProcessing(false);
+                setSearchTriggered(false);
               }, 1000);
             }, 1500);
           } else {
@@ -243,7 +217,7 @@ const Hero = () => {
   }, []);
 
   const stopCamera = useCallback(() => {
-    if (videoRef.current && videoRef.current.srcObject) {
+    if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => track.stop());
       videoRef.current.srcObject = null;
@@ -297,10 +271,18 @@ const Hero = () => {
     stopCamera();
 
     try {
-      const { data, error } = await supabase.functions.invoke("analyze-image", {
-        body: { image: imageDataUrl },
-      });
+      // Add timeout to prevent hanging
+      const analyzeImage = async () => {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Analysis timed out")), 10000)
+        );
+        const analysisPromise = supabase.functions.invoke("analyze-image", {
+          body: { image: imageDataUrl },
+        });
+        return Promise.race([analysisPromise, timeoutPromise]);
+      };
 
+      const { data, error } = await analyzeImage();
       if (error) throw error;
       if (!data?.product) throw new Error("No product detected in image");
 
@@ -310,12 +292,12 @@ const Hero = () => {
         title: "Product Detected!",
         description: `Found: "${cleanedProduct}"`,
       });
-      setTimeout(() => handleSearch(), 100); // Trigger search after setting text
+      handleSearch(undefined, cleanedProduct); // Pass product directly
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Could not process the image.",
+        description: error.message || "Could not process the image.",
       });
       setIsProcessing(false);
     }
@@ -325,19 +307,27 @@ const Hero = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    try {
-      setIsProcessing(true);
-      setProgressMessage("Analyzing your makeup muse... 📸");
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewImage(previewUrl);
+    setIsProcessing(true);
+    setProgressMessage("Analyzing your makeup muse... 📸");
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewImage(previewUrl);
 
+    try {
       const reader = new FileReader();
       reader.onload = async () => {
         const base64Image = reader.result as string;
-        const { data, error } = await supabase.functions.invoke("analyze-image", {
-          body: { image: base64Image },
-        });
 
+        const analyzeImage = async () => {
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Analysis timed out")), 10000)
+          );
+          const analysisPromise = supabase.functions.invoke("analyze-image", {
+            body: { image: base64Image },
+          });
+          return Promise.race([analysisPromise, timeoutPromise]);
+        };
+
+        const { data, error } = await analyzeImage();
         if (error) throw error;
         if (!data?.product) throw new Error("No product detected in image");
 
@@ -347,7 +337,7 @@ const Hero = () => {
           title: "Product Detected!",
           description: `Found: "${cleanedProduct}"`,
         });
-        setTimeout(() => handleSearch(), 100);
+        handleSearch(undefined, cleanedProduct); // Pass product directly
       };
 
       reader.onerror = () => {
@@ -358,7 +348,7 @@ const Hero = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Could not process the image.",
+        description: error.message || "Could not process the image.",
       });
       setIsProcessing(false);
     }
@@ -554,12 +544,13 @@ const Hero = () => {
                 transition={{ duration: 0.5, ease: "easeIn" }}
                 className="mt-4"
               >
+                <p className="text-lg font-light text-gray-800 mb-2">Beauty Tip</p>
                 <p className="text-sm text-gray-600 italic">{tip}</p>
               </motion.div>
             )}
 
             {/* Recent Products Section */}
-            {showRecentProducts && recentProducts && recentProducts.length > 0 && (
+            {showRecentProducts && recentProducts?.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -567,7 +558,7 @@ const Hero = () => {
                 className="mt-6"
               >
                 <p className="text-lg font-light text-gray-800 mb-2">
-                  Here are some dupes to vibe with...
+                  Trending Dupe Finds
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {recentProducts.map((product) => (
