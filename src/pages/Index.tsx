@@ -2,7 +2,7 @@ import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Footer from "../components/Footer";
 import { motion } from "framer-motion";
-import { Flame, Shield, Globe, Star, Droplet, Check, Clock } from "lucide-react";
+import { Shield, Globe, Star, Droplet, Check, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-// Define proper types for our data
 interface DupeInfo {
   coverage?: string | null;
   confidence_level?: number | null;
@@ -88,7 +87,6 @@ const RecentDupes = () => {
       }
       
       return data.map(product => {
-        // Safely extract the first dupe info
         const dupeInfo = product.dupes && product.dupes.length > 0 ? 
           product.dupes[0] as unknown as DupeInfo : 
           null;
@@ -107,7 +105,7 @@ const RecentDupes = () => {
     return (
       <Card className="glass">
         <CardHeader>
-          <CardTitle>Recent Dupes</CardTitle>
+          <CardTitle>Recent Dupes Found</CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center items-center">
           <Loader2 className="w-6 h-6 animate-spin" />
@@ -120,9 +118,20 @@ const RecentDupes = () => {
     return (
       <Card className="glass">
         <CardHeader>
-          <CardTitle>Recent Dupes</CardTitle>
+          <CardTitle>Recent Dupes Found</CardTitle>
         </CardHeader>
         <CardContent>Error loading recent dupes.</CardContent>
+      </Card>
+    );
+  }
+
+  if (!recentDupes || recentDupes.length === 0) {
+    return (
+      <Card className="glass">
+        <CardHeader>
+          <CardTitle>Recent Dupes Found</CardTitle>
+        </CardHeader>
+        <CardContent>No recent dupes found.</CardContent>
       </Card>
     );
   }
@@ -130,7 +139,7 @@ const RecentDupes = () => {
   return (
     <Card className="glass">
       <CardHeader>
-        <CardTitle>Recent Dupes</CardTitle>
+        <CardTitle>Recent Dupes Found</CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {recentDupes?.map((dupe) => (
@@ -164,7 +173,7 @@ const RecentDupes = () => {
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-2">
               {dupe.brandInfo?.sustainable_packaging && (
                 <Badge variant="secondary" className="bg-green-100 text-green-800">
                   <Shield className="w-3 h-3 mr-1" />
@@ -182,34 +191,6 @@ const RecentDupes = () => {
                 </Badge>
               )}
             </div>
-
-            {dupe.country_of_origin && (
-              <div className="flex items-center text-xs text-gray-600 mb-2">
-                <Globe className="w-3 h-3 mr-1" />
-                {dupe.country_of_origin}
-              </div>
-            )}
-
-            {dupe.longevity_rating && (
-              <div className="flex items-center text-xs text-gray-600 mb-2">
-                <Star className="w-3 h-3 mr-1" />
-                Longevity: {dupe.longevity_rating}/10
-              </div>
-            )}
-
-            {dupe.best_for && dupe.best_for.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {dupe.best_for.map((tag, index) => (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    className="text-xs bg-blue-50 border-blue-200 text-blue-700"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </motion.div>
         ))}
       </CardContent>
@@ -276,14 +257,6 @@ const AnimatedBackground = () => (
 );
 
 const Index = () => {
-  const trendingProducts = [
-    { name: "Flawless Filter", brand: "Charlotte Tilbury" },
-    { name: "Soft Pinch Liquid Blush", brand: "Rare Beauty" },
-    { name: "Airwrap Complete", brand: "Dyson" },
-    { name: "Cloud Paint", brand: "Glossier" },
-    { name: "No. 3 Hair Perfector", brand: "Olaplex" },
-  ];
-
   return (
     <div className="min-h-screen">
       <AnimatedBackground />
@@ -292,36 +265,10 @@ const Index = () => {
       <div className="relative">
         <Hero />
         
-        {/* Trending Section */}
-        <div className="container mx-auto px-4 mt-12 relative z-10">
-          <div className="flex items-center gap-6 max-w-4xl mx-auto overflow-x-auto no-scrollbar">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex-shrink-0"
-            >
-              <Flame className="w-6 h-6 text-orange-500" />
-            </motion.div>
-            
-            <div className="flex gap-4">
-              {trendingProducts.map((product, index) => (
-                <motion.div
-                  key={product.name}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <TrendingPill product={product} />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <section className="container mx-auto px-4 py-12">
+          <RecentDupes />
+        </section>
       </div>
-
-      <section className="container mx-auto px-4 py-12">
-        <RecentDupes />
-      </section>
 
       <Footer />
     </div>

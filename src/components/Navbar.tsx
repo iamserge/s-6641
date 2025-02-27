@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { CircleDollarSign, User } from "lucide-react";
@@ -59,17 +58,10 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Static top navbar */}
+      {/* Static top navbar - now only showing currency and user buttons */}
       <div className="absolute top-0 left-0 right-0 z-40 px-6 py-4">
         <div className="max-w-[1200px] mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img 
-                src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
-                alt="Dupe Academy Logo" 
-                className="h-8"
-              />
-            </div>
+          <div className="flex items-center justify-end">
             <div className="flex items-center gap-4">
               <CurrencySelector
                 selectedCurrency={selectedCurrency}
@@ -83,7 +75,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Sticky navbar that appears on scroll */}
+      {/* Sticky navbar that appears on scroll - keeps the logo */}
       <motion.nav 
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: isScrolled ? 0 : -100, opacity: isScrolled ? 1 : 0 }}
