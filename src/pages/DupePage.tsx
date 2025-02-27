@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ExternalLink, ChevronUp, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
-import { Product } from "@/types/dupe";
+import { Product, ProductCategory } from "@/types/dupe";
 import { HeroProduct } from "@/components/dupe/HeroProduct";
 import { DupeCard } from "@/components/dupe/DupeCard";
 import Navbar from '@/components/Navbar';
@@ -81,11 +81,14 @@ const DupePage = () => {
           is_featured: pr.is_featured,
           resource: pr.resources
         })) || [];
+        
+        // Ensure category is a valid ProductCategory
+        const category = product.category as ProductCategory;
 
         // Create the final product data object that matches the Product type
         const productData: Product = {
           ...product,
-          category: product.category,
+          category,
           ingredients: product.product_ingredients?.map(item => item.ingredients) || [],
           dupes: [], // Initialize empty dupes array to be filled in the next fetch
           reviews,
@@ -142,7 +145,7 @@ const DupePage = () => {
         if (dupesError) throw dupesError;
 
         // Fetch ingredients for each dupe and process all dupe data
-        const dupes = await Promise.all(
+        const processedDupes = await Promise.all(
           dupeRelations.map(async (relation) => {
             const { data: ingredientsData, error: ingredientsError } = await supabase
               .from('product_ingredients')
@@ -170,10 +173,13 @@ const DupePage = () => {
               is_featured: pr.is_featured,
               resource: pr.resources
             })) || [];
+            
+            // Ensure category is a valid ProductCategory
+            const category = relation.dupe.category as ProductCategory || 'Other' as ProductCategory;
 
             return {
               ...relation.dupe,
-              category: relation.dupe.category,
+              category,
               match_score: relation.match_score,
               savings_percentage: relation.savings_percentage,
               ingredients,
@@ -192,7 +198,7 @@ const DupePage = () => {
           if (!prevProduct) return null;
           return {
             ...prevProduct,
-            dupes
+            dupes: processedDupes
           };
         });
         

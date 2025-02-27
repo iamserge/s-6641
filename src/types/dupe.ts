@@ -26,7 +26,7 @@ export const PRODUCT_CATEGORIES = [
 ] as const;
 
 // Define the type based on the array
-export type ProductCategory = string;
+export type ProductCategory = typeof PRODUCT_CATEGORIES[number];
 
 // Perplexity API Response Types with enhanced fields from report
 export interface DupeResponse {
