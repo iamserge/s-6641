@@ -1,3 +1,4 @@
+
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Footer from "../components/Footer";
@@ -63,12 +64,14 @@ const RecentDupes = () => {
           longevity_rating,
           free_of,
           best_for,
+          coverage,
+          confidence_level,
+          longevity_comparison,
+          cruelty_free,
+          vegan,
           dupes:product_dupes!product_dupes_original_product_id_fkey(
-            coverage,
-            confidence_level,
-            longevity_comparison,
-            cruelty_free,
-            vegan
+            match_score,
+            savings_percentage
           ),
           brands!products_brand_id_fkey (
             name,
@@ -85,16 +88,21 @@ const RecentDupes = () => {
         console.error("Error fetching recent dupes:", error);
         throw error;
       }
-
-      return data.map((product) => {
-        const dupeInfo =
-          product.dupes && product.dupes.length > 0 ? product.dupes[0] as unknown as DupeInfo : null;
-
+      
+      return data.map(product => {
+        const dupeInfo = product.dupes && product.dupes.length > 0 ? {
+          coverage: product.coverage,
+          confidence_level: product.confidence_level,
+          longevity_comparison: product.longevity_comparison,
+          cruelty_free: product.cruelty_free,
+          vegan: product.vegan
+        } : null;
+        
         return {
           ...product,
           brand: product.brands?.name || product.brand,
           brandInfo: product.brands as unknown as BrandInfo || null,
-          dupeInfo: dupeInfo,
+          dupeInfo: dupeInfo
         } as RecentDupe;
       });
     },
