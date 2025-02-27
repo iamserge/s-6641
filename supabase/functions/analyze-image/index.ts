@@ -40,7 +40,7 @@ serve(async (req) => {
               {
                 type: 'image_url',
                 image_url: {
-                  url: image  // Changed from direct string to object with url property
+                  url: image
                 },
               },
             ],
@@ -50,6 +50,16 @@ serve(async (req) => {
     })
 
     const data = await response.json()
+
+    // Check if the response is successful and has the expected structure
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`)
+    }
+
+    if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+      throw new Error('Invalid response from OpenAI: No choices returned')
+    }
+
     const productText = data.choices[0].message.content
 
     console.log('OpenAI response:', productText)
