@@ -31,177 +31,201 @@ const DupePage = () => {
   // Refs for scroll to top functionality
   const heroRef = useRef<HTMLDivElement>(null);
 
-  // Add this to your DupePage component's useEffect where you fetch data:
+  useEffect(() => {
+    const fetchDupeData = async () => {
+      if (!slug) {
+        setError('No product slug provided');
+        setIsLoading(false);
+        return;
+      }
 
-useEffect(() => {
-  const fetchDupeData = async () => {
-    if (!slug) {
-      setError('No product slug provided');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      // Fetch the original product with all fields including reviews and resources
-      const { data: product, error: productError } = await supabase
-        .from('products')
-        .select(`
-          *,
-          brand_info:brands(*),
-          product_ingredients(ingredients(*)),
-          reviews(*),
-          product_resources(
-            is_featured,
-            resources:resource_id(*)
-          )
-        `)
-        .eq('slug', slug)
-        .single();
-
-      if (productError) throw productError;
-      if (!product) throw new Error('Product not found');
-
-      // Fetch dupes with expanded fields through product_offers junction table
-      const { data: dupeRelations, error: dupesError } = await supabase
-        .from('product_dupes')
-        .select(`
-          match_score,
-          savings_percentage,
-          dupe:products!product_dupes_dupe_product_id_fkey(
+      try {
+        // Fetch the original product with all fields including reviews and resources
+        const { data: product, error: productError } = await supabase
+          .from('products')
+          .select(`
             *,
-            product_offers(
-              offers(
-                *,
-                merchant:merchants(*)
-              )
-            ),
+            brand_info:brands(*),
+            product_ingredients(ingredients(*)),
             reviews(*),
             product_resources(
               is_featured,
               resources:resource_id(*)
             )
-          )
-        `)
-        .eq('original_product_id', product.id);
+          `)
+          .eq('slug', slug)
+          .single();
 
-      if (dupesError) throw dupesError;
+        if (productError) throw productError;
+        if (!product) throw new Error('Product not found');
 
-      // Fetch ingredients for each dupe
-      const dupes = await Promise.all(
-        dupeRelations.map(async (relation) => {
-          const { data: ingredientsData, error: ingredientsError } = await supabase
-            .from('product_ingredients')
-            .select(`ingredients(*)`)
-            .eq('product_id', relation.dupe.id);
+        // Fetch dupes with expanded fields through product_offers junction table
+        const { data: dupeRelations, error: dupesError } = await supabase
+          .from('product_dupes')
+          .select(`
+            match_score,
+            savings_percentage,
+            dupe:products!product_dupes_dupe_product_id_fkey(
+              *,
+              product_offers(
+                offers(
+                  *,
+                  merchant:merchants(*)
+                )
+              ),
+              reviews(*),
+              product_resources(
+                is_featured,
+                resources:resource_id(*)
+              )
+            )
+          `)
+          .eq('original_product_id', product.id);
 
-          if (ingredientsError) console.error('Error fetching ingredients:', ingredientsError);
+        if (dupesError) throw dupesError;
 
-          const ingredients = ingredientsData ? ingredientsData.map(item => item.ingredients) : [];
-          
-          // Process offers to flatten the nested structure
-          const offers = relation.dupe.product_offers?.map(po => ({
-            ...po.offers,
-            merchant: po.offers.merchant
-          })) || [];
+        // Fetch ingredients for each dupe
+        const dupes = await Promise.all(
+          dupeRelations.map(async (relation) => {
+            const { data: ingredientsData, error: ingredientsError } = await supabase
+              .from('product_ingredients')
+              .select(`ingredients(*)`)
+              .eq('product_id', relation.dupe.id);
 
-          // Format reviews
-          const reviews = relation.dupe.reviews || [];
+            if (ingredientsError) console.error('Error fetching ingredients:', ingredientsError);
 
-          // Format resources
-          const resources = relation.dupe.product_resources?.map(pr => ({
-            ...pr,
-            resource: pr.resources
-          })) || [];
+            const ingredients = ingredientsData ? ingredientsData.map(item => item.ingredients) : [];
+            
+            // Process offers to flatten the nested structure
+            const offers = relation.dupe.product_offers?.map(po => ({
+              ...po.offers,
+              merchant: po.offers.merchant
+            })) || [];
 
-          return {
-            ...relation.dupe,
-            match_score: relation.match_score,
-            savings_percentage: relation.savings_percentage,
-            ingredients,
-            offers,
-            reviews,
-            resources
-          };
-        })
-      );
+            // Format reviews
+            const reviews = relation.dupe.reviews || [];
 
-      // Format the reviews array for the original product
-      const reviews = product.reviews || [];
+            // Format resources
+            const resources = relation.dupe.product_resources?.map(pr => ({
+              ...pr,
+              resource: pr.resources
+            })) || [];
 
-      // Format the resources array for the original product
-      const resources = product.product_resources?.map(pr => ({
-        ...pr,
-        resource: pr.resources
-      })) || [];
+            return {
+              ...relation.dupe,
+              match_score: relation.match_score,
+              savings_percentage: relation.savings_percentage,
+              ingredients,
+              offers,
+              reviews,
+              resources
+            };
+          })
+        );
 
-      // Create the final product data object that matches the Product type
-      const productData = {
-        ...product,
-        ingredients: product.product_ingredients?.map(item => item.ingredients) || [],
-        dupes,
-        reviews,
-        resources
-      };
+        // Format the reviews array for the original product
+        const reviews = product.reviews || [];
 
-      setData(productData);
-    } catch (error) {
-      console.error('Error fetching dupe data:', error);
-      setError('Failed to load product data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        // Format the resources array for the original product
+        const resources = product.product_resources?.map(pr => ({
+          ...pr,
+          resource: pr.resources
+        })) || [];
 
-  fetchDupeData();
-}, [slug]);
+        // Create the final product data object that matches the Product type
+        const productData = {
+          ...product,
+          ingredients: product.product_ingredients?.map(item => item.ingredients) || [],
+          dupes,
+          reviews,
+          resources
+        };
+
+        setData(productData);
+      } catch (error) {
+        console.error('Error fetching dupe data:', error);
+        setError('Failed to load product data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDupeData();
+  }, [slug]);
 
   useEffect(() => {
-    // Setup intersection observer to detect when dupes are in view
-    if (!isLoading && data?.dupes) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              const index = dupeRefs.current.findIndex(ref => ref === entry.target);
+    // Only set up observers when data is loaded and component is mounted
+    if (!isLoading && data?.dupes && dupeRefs.current.length > 0) {
+      let observer: IntersectionObserver;
+      let heroObserver: IntersectionObserver;
+      
+      // Use requestAnimationFrame to ensure DOM is ready
+      const rafId = requestAnimationFrame(() => {
+        // Create new observers each time to prevent stale closures
+        observer = new IntersectionObserver(
+          (entries) => {
+            // Use the most visible entry instead of iterating through all
+            const visibleEntries = entries.filter(entry => entry.isIntersecting)
+              .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+              
+            if (visibleEntries.length > 0) {
+              const mostVisibleEntry = visibleEntries[0];
+              const index = dupeRefs.current.findIndex(ref => ref === mostVisibleEntry.target);
               if (index !== -1) {
                 setActiveDupeIndex(index);
                 setShowBottomBar(true);
               }
             }
-          });
-        },
-        { threshold: 0.3 } // Trigger when 30% of the element is visible
-      );
+          },
+          { 
+            threshold: [0.1, 0.2, 0.3, 0.4, 0.5], // Multiple thresholds for smoother detection
+            rootMargin: "-100px 0px" // Adjust based on your layout
+          }
+        );
 
-      dupeRefs.current.forEach(ref => {
-        if (ref) observer.observe(ref);
+        // Apply observer to valid refs only
+        dupeRefs.current.forEach((ref, index) => {
+          if (ref && index < data.dupes.length) {
+            observer.observe(ref);
+          }
+        });
+
+        // Create another observer for the hero section
+        heroObserver = new IntersectionObserver(
+          (entries) => {
+            if (entries[0]?.isIntersecting && entries[0].intersectionRatio > 0.5) {
+              setShowBottomBar(false);
+            }
+          },
+          { 
+            threshold: [0.5, 0.6, 0.7], 
+            rootMargin: "0px 0px -20% 0px" 
+          }
+        );
+
+        if (heroRef.current) {
+          heroObserver.observe(heroRef.current);
+        }
       });
 
-      // Also observe when we scroll back to the product (top of the page)
-      const heroObserver = new IntersectionObserver(
-        (entries) => {
-          const isHeroVisible = entries[0]?.isIntersecting;
-          if (isHeroVisible) {
-            setShowBottomBar(false);
-          }
-        },
-        { threshold: 0.7 } // Hide the bottom bar when most of the hero is visible
-      );
-
-      if (heroRef.current) {
-        heroObserver.observe(heroRef.current);
-      }
-
       return () => {
-        dupeRefs.current.forEach(ref => {
-          if (ref) observer.unobserve(ref);
-        });
-        if (heroRef.current) {
-          heroObserver.unobserve(heroRef.current);
+        // Clean up everything properly
+        cancelAnimationFrame(rafId);
+        
+        if (observer) {
+          dupeRefs.current.forEach(ref => {
+            if (ref) observer.unobserve(ref);
+          });
+          observer.disconnect();
+        }
+        
+        if (heroObserver) {
+          if (heroRef.current) heroObserver.unobserve(heroRef.current);
+          heroObserver.disconnect();
         }
       };
     }
-  }, [isLoading, data]);
+  }, [isLoading, data, data?.dupes?.length]);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -287,14 +311,14 @@ useEffect(() => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-200 px-4 py-3 z-50"
+            className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200 px-4 py-3 z-50 shadow-lg"
           >
             <div className="container mx-auto">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div className="flex flex-col">
                   <div className="flex items-center">
-                    <span className="text-sm text-gray-500 line-through mr-2">${data.price.toFixed(2)}</span>
-                    <span className="text-lg font-bold text-[#0EA5E9]">${activeDupe.price.toFixed(2)}</span>
+                    <span className="text-sm text-gray-500 line-through mr-2">~${Math.round(data.price)}</span>
+                    <span className="text-lg font-bold text-[#0EA5E9]">~${Math.round(activeDupe.price)}</span>
                     {activeDupe.savings_percentage && (
                       <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
                         Save {activeDupe.savings_percentage}%
@@ -346,7 +370,7 @@ useEffect(() => {
                             >
                               <div>
                                 <p className="font-medium">{offer.merchant.name}</p>
-                                <p className="text-sm text-gray-500">${offer.price} - {offer.condition || 'New'}</p>
+                                <p className="text-sm text-gray-500">~${Math.round(offer.price)} - {offer.condition || 'New'}</p>
                               </div>
                               <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
                             </a>
@@ -360,7 +384,7 @@ useEffect(() => {
                           >
                             <div>
                               <p className="font-medium">Shop Now</p>
-                              <p className="text-sm text-gray-500">${activeDupe.price}</p>
+                              <p className="text-sm text-gray-500">~${Math.round(activeDupe.price)}</p>
                             </div>
                             <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
                           </a>

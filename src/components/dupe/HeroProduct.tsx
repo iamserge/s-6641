@@ -173,12 +173,12 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center text-center"
         >
-          {/* Product Image */}
+          {/* Product Image - reduced size */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="relative mb-8 max-w-xs w-full"
+            className="relative mb-8 max-w-[180px] w-full"
           >
             <div className="relative aspect-square w-full">
               <CategoryImage
@@ -245,7 +245,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             
             {product.price && (
               <Badge variant="secondary" className="bg-[#9b87f5] text-white px-4 py-1">
-                ${product.price.toFixed(2)}
+                ~${Math.round(product.price)}
               </Badge>
             )}
             
@@ -364,159 +364,158 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             transition={{ delay: 1.2 }}
             className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors mt-4"
             onClick={() => setIsExpanded(!isExpanded)}
+            aria-expanded={isExpanded}
           >
             {isExpanded ? 'Show Less' : 'Show More'}
             <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           </motion.button>
 
-          {/* Expanded Tabs and Content */}
-          {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="w-full mt-8"
-            >
-              {/* Tabs */}
-              <div className="border-b border-gray-200 mb-6">
-                <nav className="flex space-x-8">
-                  <button
-                    onClick={() => setActiveTab('details')}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === 'details' 
-                        ? 'border-indigo-500 text-indigo-600' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Product Details
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('reviews')}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === 'reviews' 
-                        ? 'border-indigo-500 text-indigo-600' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Reviews {product.reviews?.length ? `(${product.reviews.length})` : ''}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('videos')}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === 'videos' 
-                        ? 'border-indigo-500 text-indigo-600' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Videos & Articles {product.resources?.length ? `(${product.resources.length})` : ''}
-                  </button>
-                </nav>
-              </div>
+          {/* Expanded Tabs and Content - Using CSS transitions instead of motion for smoother performance */}
+          <div
+            className={`w-full mt-8 overflow-hidden transition-all duration-300 ease-in-out ${
+              isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+            }`}
+          >
+            {/* Tabs */}
+            <div className="border-b border-gray-200 mb-6">
+              <nav className="flex space-x-8">
+                <button
+                  onClick={() => setActiveTab('details')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'details' 
+                      ? 'border-indigo-500 text-indigo-600' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Product Details
+                </button>
+                <button
+                  onClick={() => setActiveTab('reviews')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'reviews' 
+                      ? 'border-indigo-500 text-indigo-600' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Reviews {product.reviews?.length ? `(${product.reviews.length})` : ''}
+                </button>
+                <button
+                  onClick={() => setActiveTab('videos')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'videos' 
+                      ? 'border-indigo-500 text-indigo-600' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Videos & Articles {product.resources?.length ? `(${product.resources.length})` : ''}
+                </button>
+              </nav>
+            </div>
 
-              {/* Tab Content */}
-              <div className="mb-8">
-                {activeTab === 'details' && (
-                  <div className="grid gap-8">
-                    {/* Product Details Section */}
-                    {(product.texture || product.finish || product.coverage || product.spf) && (
-                      <div>
-                        <h3 className="text-lg font-medium mb-3">Product Details</h3>
-                        <div className="flex flex-wrap justify-center gap-2">
-                          {product.texture && (
-                            <Badge variant="outline" className="bg-white/50 text-gray-700">
-                              Texture: {product.texture}
-                            </Badge>
-                          )}
-                          {product.finish && (
-                            <Badge variant="outline" className="bg-white/50 text-gray-700">
-                              Finish: {product.finish}
-                            </Badge>
-                          )}
-                          {product.coverage && (
-                            <Badge variant="outline" className="bg-white/50 text-gray-700">
-                              Coverage: {product.coverage}
-                            </Badge>
-                          )}
-                          {product.spf && (
-                            <Badge variant="outline" className="bg-white/50 text-gray-700">
-                              SPF: {product.spf}
-                            </Badge>
-                          )}
-                        </div>
+            {/* Tab Content */}
+            <div className="mb-8">
+              {activeTab === 'details' && (
+                <div className="grid gap-8">
+                  {/* Product Details Section */}
+                  {(product.texture || product.finish || product.coverage || product.spf) && (
+                    <div>
+                      <h3 className="text-lg font-medium mb-3">Product Details</h3>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {product.texture && (
+                          <Badge variant="outline" className="bg-white/50 text-gray-700">
+                            Texture: {product.texture}
+                          </Badge>
+                        )}
+                        {product.finish && (
+                          <Badge variant="outline" className="bg-white/50 text-gray-700">
+                            Finish: {product.finish}
+                          </Badge>
+                        )}
+                        {product.coverage && (
+                          <Badge variant="outline" className="bg-white/50 text-gray-700">
+                            Coverage: {product.coverage}
+                          </Badge>
+                        )}
+                        {product.spf && (
+                          <Badge variant="outline" className="bg-white/50 text-gray-700">
+                            SPF: {product.spf}
+                          </Badge>
+                        )}
                       </div>
-                    )}
-                    
-                    {/* Suitability Section */}
-                    {(product.skin_types?.length > 0 || product.best_for?.length > 0) && (
-                      <div>
-                        <h3 className="text-lg font-medium mb-3">Suitability</h3>
-                        <div className="flex flex-wrap justify-center gap-2">
-                          {product.skin_types?.map((type, index) => (
-                            <Badge key={`skin-${index}`} variant="outline" className="bg-white/50 text-gray-700">
-                              {type}
-                            </Badge>
-                          ))}
-                          {product.best_for?.map((item, index) => (
-                            <Badge key={`best-${index}`} variant="outline" className="bg-white/50 text-gray-700">
-                              Best for: {item}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Free Of Section */}
-                    {product.free_of && product.free_of.length > 0 && (
-                      <div>
-                        <h3 className="text-lg font-medium mb-3">Free Of</h3>
-                        <div className="flex flex-wrap justify-center gap-2">
-                          {product.free_of.map((item, index) => (
-                            <Badge key={index} variant="outline" className="bg-white/50 text-gray-700">
-                              {item}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === 'reviews' && (
-                  <div>
-                    {product.reviews && product.reviews.length > 0 ? (
-                      <div className="space-y-4">
-                        {product.reviews.map((review, index) => (
-                          <ReviewCard key={index} review={review} />
+                    </div>
+                  )}
+                  
+                  {/* Suitability Section */}
+                  {(product.skin_types?.length > 0 || product.best_for?.length > 0) && (
+                    <div>
+                      <h3 className="text-lg font-medium mb-3">Suitability</h3>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {product.skin_types?.map((type, index) => (
+                          <Badge key={`skin-${index}`} variant="outline" className="bg-white/50 text-gray-700">
+                            {type}
+                          </Badge>
+                        ))}
+                        {product.best_for?.map((item, index) => (
+                          <Badge key={`best-${index}`} variant="outline" className="bg-white/50 text-gray-700">
+                            Best for: {item}
+                          </Badge>
                         ))}
                       </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-gray-500">No reviews available for this product yet.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === 'videos' && (
-                  <div>
-                    {product.resources && product.resources.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {product.resources.map((resourceItem, index) => (
-                          <ResourcePreview 
-                            key={index} 
-                            resource={resourceItem.resource as EnhancedResource} 
-                          />
+                    </div>
+                  )}
+                  
+                  {/* Free Of Section */}
+                  {product.free_of && product.free_of.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-medium mb-3">Free Of</h3>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {product.free_of.map((item, index) => (
+                          <Badge key={index} variant="outline" className="bg-white/50 text-gray-700">
+                            {item}
+                          </Badge>
                         ))}
                       </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-gray-500">No videos or articles available for this product yet.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'reviews' && (
+                <div>
+                  {product.reviews && product.reviews.length > 0 ? (
+                    <div className="space-y-4">
+                      {product.reviews.map((review, index) => (
+                        <ReviewCard key={index} review={review} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No reviews available for this product yet.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'videos' && (
+                <div>
+                  {product.resources && product.resources.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {product.resources.map((resourceItem, index) => (
+                        <ResourcePreview 
+                          key={index} 
+                          resource={resourceItem.resource as EnhancedResource} 
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No videos or articles available for this product yet.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>

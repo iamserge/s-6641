@@ -187,11 +187,24 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
       className="w-full"
     >
       <Card className="w-full bg-white/50 backdrop-blur-sm border-[#0EA5E9]/20 overflow-hidden shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Left Column - Image and Match Score */}
-            <div className="w-full md:w-1/4 flex flex-col items-center gap-4">
-              <div className="relative aspect-square w-full max-w-[160px]">
+        {/* Add top badges row */}
+        <div className="flex justify-between items-center p-3 bg-gray-50/50 border-b border-gray-100">
+          <Badge className="bg-[#0EA5E9] text-white px-4 py-1 text-base">
+            {dupe.match_score}% Match
+          </Badge>
+          {dupe.savings_percentage && (
+            <Badge className="bg-green-100 text-green-700 px-4 py-1 gap-1 flex items-center">
+              <DollarSign className="w-3 h-3" />
+              Save ~${Math.round(savingsAmount)} ({dupe.savings_percentage}%)
+            </Badge>
+          )}
+        </div>
+        
+        <CardContent className="p-4 md:p-6">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+            {/* Left Column - Image and Ratings */}
+            <div className="w-full md:w-1/5 flex flex-col items-center gap-3">
+              <div className="relative aspect-square w-full max-w-[140px]">
                 <CategoryImage
                   category={dupe.category}
                   imageUrl={dupe.image_url}
@@ -200,9 +213,6 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                   className="w-full h-full object-contain"
                 />
               </div>
-              <Badge className="bg-[#0EA5E9] text-white px-4 py-1 text-lg w-full flex justify-center">
-                {dupe.match_score}% Match
-              </Badge>
               
               {/* Ratings if available */}
               {dupe.rating && (
@@ -218,21 +228,15 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
             </div>
 
             {/* Right Column - Product Details */}
-            <div className="w-full md:w-3/4">
+            <div className="w-full md:w-4/5">
               {/* Brand, Title, and Price */}
-              <div className="flex flex-col md:flex-row items-start justify-between mb-4">
+              <div className="flex flex-col md:flex-row items-start justify-between mb-3">
                 <div>
                   <h3 className="text-xl font-medium">{dupe.brand}</h3>
                   <h4 className="text-lg text-gray-600 mb-2">{dupe.name}</h4>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold text-[#0EA5E9]">${dupe.price.toFixed(2)}</span>
-                  {dupe.savings_percentage && (
-                    <Badge className="bg-green-100 text-green-700 px-4 py-1 gap-1 flex items-center">
-                      <DollarSign className="w-3 h-3" />
-                      Save ${savingsAmount.toFixed(2)} ({dupe.savings_percentage}%)
-                    </Badge>
-                  )}
+                <div className="flex items-center">
+                  <span className="text-2xl font-bold text-[#0EA5E9]">~${Math.round(dupe.price)}</span>
                 </div>
               </div>
 
@@ -307,8 +311,8 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                         key={i}
                         variant="outline"
                         className="bg-white text-gray-700 border-gray-200 flex items-center gap-1"
-                        href={resourceItem.resource?.url}
-                        target="_blank"
+                        // href={resourceItem.resource?.url}
+                        // target="_blank"
                         rel="noopener noreferrer"
                       >
                         {resourceItem.resource?.type === "Instagram" && "Instagram"}
@@ -338,22 +342,27 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
               <button 
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="text-sm text-gray-500 hover:text-[#0EA5E9] transition-colors mt-2 flex items-center gap-1"
+                aria-expanded={isExpanded}
               >
                 {isExpanded ? 'Less Details' : 'More Details'}
                 <span className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
               </button>
 
-              {/* Expanded Content */}
-              {isExpanded && (
+              {/* Expanded Content - Using height animation for smoother transitions */}
+              <div 
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                }`}
+              >
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                  {/* Tabs */}
-                  <div className="border-b border-gray-200 mb-4">
-                    <nav className="flex space-x-8">
+                  {/* Tabs - simplified with fixed height to prevent layout shift */}
+                  <div className="border-b border-gray-200 mb-4 flex">
+                    <nav className="flex space-x-4 flex-wrap">
                       <button
                         onClick={() => setActiveTab('details')}
-                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                        className={`py-1 px-3 border-b-2 font-medium text-sm rounded-t-md ${
                           activeTab === 'details' 
-                            ? 'border-[#0EA5E9] text-[#0EA5E9]' 
+                            ? 'border-[#0EA5E9] text-[#0EA5E9] bg-blue-50/30' 
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                       >
@@ -361,9 +370,9 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                       </button>
                       <button
                         onClick={() => setActiveTab('reviews')}
-                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                        className={`py-1 px-3 border-b-2 font-medium text-sm rounded-t-md ${
                           activeTab === 'reviews' 
-                            ? 'border-[#0EA5E9] text-[#0EA5E9]' 
+                            ? 'border-[#0EA5E9] text-[#0EA5E9] bg-blue-50/30' 
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                       >
@@ -371,9 +380,9 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                       </button>
                       <button
                         onClick={() => setActiveTab('resources')}
-                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                        className={`py-1 px-3 border-b-2 font-medium text-sm rounded-t-md ${
                           activeTab === 'resources' 
-                            ? 'border-[#0EA5E9] text-[#0EA5E9]' 
+                            ? 'border-[#0EA5E9] text-[#0EA5E9] bg-blue-50/30' 
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                       >
@@ -382,123 +391,125 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
                     </nav>
                   </div>
 
-                  {/* Tab Content */}
-                  {activeTab === 'details' && (
-                    <div className="grid gap-y-4">
-                      {/* Common Ingredients */}
-                      {commonIngredients.length > 0 && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700 mb-2">Common Ingredients with Original:</h5>
-                          <div className="flex flex-wrap gap-2">
-                            {commonIngredients.map((ingredient, i) => (
-                              <Badge
-                                key={i}
-                                variant="outline"
-                                className="bg-green-50 text-green-700 border-green-200 flex items-center"
-                              >
-                                <Check className="w-3 h-3 mr-1" />
-                                {ingredient}
-                              </Badge>
-                            ))}
+                  {/* Tab Content - using fixed height containers to prevent layout shift */}
+                  <div className="min-h-[200px]">
+                    {activeTab === 'details' && (
+                      <div className="grid gap-y-4">
+                        {/* Common Ingredients */}
+                        {commonIngredients.length > 0 && (
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Common Ingredients with Original:</h5>
+                            <div className="flex flex-wrap gap-2">
+                              {commonIngredients.map((ingredient, i) => (
+                                <Badge
+                                  key={i}
+                                  variant="outline"
+                                  className="bg-green-50 text-green-700 border-green-200 flex items-center"
+                                >
+                                  <Check className="w-3 h-3 mr-1" />
+                                  {ingredient}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      
-                      {/* Suitability */}
-                      {(dupe.skin_types?.length > 0 || dupe.best_for?.length > 0) && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700 mb-2">Best For:</h5>
-                          <div className="flex flex-wrap gap-2">
-                            {dupe.skin_types?.map((type, i) => (
-                              <Badge key={i} variant="outline" className="bg-white/50 text-gray-700">
-                                {type}
-                              </Badge>
-                            ))}
-                            {dupe.best_for?.map((item, i) => (
-                              <Badge key={i} variant="outline" className="bg-white/50 text-gray-700">
-                                {item}
-                              </Badge>
-                            ))}
+                        )}
+                        
+                        {/* Suitability */}
+                        {(dupe.skin_types?.length > 0 || dupe.best_for?.length > 0) && (
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Best For:</h5>
+                            <div className="flex flex-wrap gap-2">
+                              {dupe.skin_types?.map((type, i) => (
+                                <Badge key={i} variant="outline" className="bg-white/50 text-gray-700">
+                                  {type}
+                                </Badge>
+                              ))}
+                              {dupe.best_for?.map((item, i) => (
+                                <Badge key={i} variant="outline" className="bg-white/50 text-gray-700">
+                                  {item}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      
-                      {/* Free Of */}
-                      {dupe.free_of && dupe.free_of.length > 0 && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700 mb-2">Free Of:</h5>
-                          <div className="flex flex-wrap gap-2">
-                            {dupe.free_of.map((item, i) => (
-                              <Badge key={i} variant="outline" className="bg-white/50 text-gray-700">
-                                {item}
-                              </Badge>
-                            ))}
+                        )}
+                        
+                        {/* Free Of */}
+                        {dupe.free_of && dupe.free_of.length > 0 && (
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Free Of:</h5>
+                            <div className="flex flex-wrap gap-2">
+                              {dupe.free_of.map((item, i) => (
+                                <Badge key={i} variant="outline" className="bg-white/50 text-gray-700">
+                                  {item}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      
-                      {/* Purchase Options */}
-                      {dupe.offers && dupe.offers.length > 0 && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700 mb-2">Where to Buy:</h5>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {dupe.offers.slice(0, 4).map((offer, i) => (
-                              <a
-                                key={i}
-                                href={offer.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-between p-2 text-sm rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
-                              >
-                                <div>
-                                  <p className="font-medium">{offer.merchant.name}</p>
-                                  <p className="text-xs text-gray-500">${offer.price} {offer.condition && `- ${offer.condition}`}</p>
-                                </div>
-                                <ExternalLink className="h-4 w-4 text-[#0EA5E9]" />
-                              </a>
-                            ))}
+                        )}
+                        
+                        {/* Purchase Options */}
+                        {dupe.offers && dupe.offers.length > 0 && (
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Where to Buy:</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {dupe.offers.slice(0, 4).map((offer, i) => (
+                                <a
+                                  key={i}
+                                  href={offer.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between p-2 text-sm rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
+                                >
+                                  <div>
+                                    <p className="font-medium">{offer.merchant.name}</p>
+                                    <p className="text-xs text-gray-500">~${Math.round(offer.price)} {offer.condition && `- ${offer.condition}`}</p>
+                                  </div>
+                                  <ExternalLink className="h-4 w-4 text-[#0EA5E9]" />
+                                </a>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
 
-                  {activeTab === 'reviews' && (
-                    <div>
-                      {dupe.reviews && dupe.reviews.length > 0 ? (
-                        <div className="space-y-4">
-                          {dupe.reviews.map((review, index) => (
-                            <ReviewCard key={index} review={review} />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-4">
-                          <p className="text-gray-500">No reviews available for this product yet.</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    {activeTab === 'reviews' && (
+                      <div>
+                        {dupe.reviews && dupe.reviews.length > 0 ? (
+                          <div className="space-y-4">
+                            {dupe.reviews.map((review, index) => (
+                              <ReviewCard key={index} review={review} />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-4">
+                            <p className="text-gray-500">No reviews available for this product yet.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                  {activeTab === 'resources' && (
-                    <div>
-                      {dupe.resources && dupe.resources.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {dupe.resources.map((resourceItem, index) => (
-                            <ResourcePreview 
-                              key={index} 
-                              resource={resourceItem.resource as EnhancedResource} 
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-4">
-                          <p className="text-gray-500">No videos or articles available for this product yet.</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    {activeTab === 'resources' && (
+                      <div>
+                        {dupe.resources && dupe.resources.length > 0 ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {dupe.resources.map((resourceItem, index) => (
+                              <ResourcePreview 
+                                key={index} 
+                                resource={resourceItem.resource as EnhancedResource} 
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-4">
+                            <p className="text-gray-500">No videos or articles available for this product yet.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
               
               {/* Purchase Button only on mobile */}
               <div className="md:hidden mt-4">
