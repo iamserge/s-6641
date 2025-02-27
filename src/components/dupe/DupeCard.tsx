@@ -125,8 +125,8 @@ export const DupeCard = ({ dupe, index, originalIngredients, showBottomBar = fal
       className="w-full"
     >
       <Card className="w-full bg-white/50 backdrop-blur-sm border-gray-100/50 overflow-hidden shadow-md rounded-3xl">
-        {/* Top badges row - Hide on mobile when bottom bar is visible */}
-        <div className={`${showBottomBar ? 'hidden md:flex' : 'flex'} justify-between items-center p-4 bg-gradient-to-r from-slate-50 to-zinc-50 border-b border-gray-100`}>
+        {/* Top badges row - Always hidden on mobile, always shown on desktop */}
+        <div className="hidden md:flex justify-between items-center p-4 bg-gradient-to-r from-slate-50 to-zinc-50 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <Badge className="bg-[#0EA5E9] text-white px-5 py-2 text-sm rounded-full">
               {Math.round(dupe.match_score)}% Match
