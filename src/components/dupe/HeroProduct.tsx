@@ -247,7 +247,7 @@ export const HeroProduct = ({
           duration: 0.3
         }} className="w-full max-w-2xl mx-auto mt-4">
               <Tabs defaultValue="details" onValueChange={val => setActiveTab(val as any)} className="w-full bg-slate-50">
-                <TabsList className="grid grid-cols-3 mb-4 rounded-lg">
+                <TabsList className="grid grid-cols-3 mb-4 rounded-lg bg-zinc-50">
                   <TabsTrigger value="details" className="rounded-md">Details</TabsTrigger>
                   <TabsTrigger value="reviews" className="rounded-md" disabled={product.loading_reviews}>
                     <TooltipProvider>
