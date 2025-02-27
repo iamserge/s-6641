@@ -1,7 +1,6 @@
 
 import { ProductCategory } from "@/types/dupe";
 import { useState, useEffect } from "react";
-import * as backgroundRemoval from "@imgly/background-removal";
 
 // Define available placeholder images
 const PLACEHOLDER_COUNT = 3; // Could be dynamically determined based on files in folder
@@ -26,25 +25,7 @@ export const CategoryImage = ({ category, imageUrl, images, alt, className }: Ca
 
   useEffect(() => {
     const processImage = async () => {
-      // Use provided imageUrl or first image from images array
-      const src = imageUrl || (images && images.length > 0 ? images[0] : null);
-
-      if (src) {
-        try {
-          // Remove background using @imgly/background-removal
-          const blob = await backgroundRemoval.removeBackground(src);
-          const url = URL.createObjectURL(blob);
-          setProcessedImage(url);
-
-          // Cleanup: Revoke the object URL when component unmounts or src changes
-          return () => URL.revokeObjectURL(url);
-        } catch (error) {
-          console.error("Failed to remove background:", error);
-          setProcessedImage(fallbackSrc); // Fallback to category default on error
-        }
-      } else {
-        setProcessedImage(fallbackSrc); // Use fallback if no src provided
-      }
+      setProcessedImage(fallbackSrc); 
     };
 
     processImage();
