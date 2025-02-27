@@ -1,6 +1,7 @@
+
 import { ProductCategory } from "@/types/dupe";
 import { useState, useEffect } from "react";
-import imglyRemoveBackground from "@imgly/background-removal";
+import * as backgroundRemoval from "@imgly/background-removal";
 
 const categoryImageMap: Record<string, string> = {
   Foundation: "/cream.png",
@@ -49,7 +50,7 @@ export const CategoryImage = ({ category, imageUrl, images, alt, className }: Ca
       if (src) {
         try {
           // Remove background using @imgly/background-removal
-          const blob = await imglyRemoveBackground(src);
+          const blob = await backgroundRemoval.removeBackground(src);
           const url = URL.createObjectURL(blob);
           setProcessedImage(url);
 
