@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -37,10 +36,8 @@ const DupePage = () => {
   const [showBottomBar, setShowBottomBar] = useState(false);
   const dupeRefs = useRef<(HTMLDivElement | null)[]>([]);
   
-  // Ref for scroll to top functionality
   const heroRef = useRef<HTMLDivElement>(null);
 
-  // Fetch original product data
   useEffect(() => {
     const fetchProductData = async () => {
       if (!slug) {
@@ -50,7 +47,6 @@ const DupePage = () => {
       }
 
       try {
-        // Fetch the original product with all fields including reviews and resources
         const { data: product, error: productError } = await supabase
           .from('products')
           .select(`
@@ -70,10 +66,7 @@ const DupePage = () => {
         if (productError) throw productError;
         if (!product) throw new Error('Product not found');
 
-        // Format the reviews array for the original product
         const reviews = product.reviews || [];
-
-        // Format the resources array for the original product
         const resources = product.product_resources?.map(pr => ({
           id: pr.id,
           product_id: product.id,
@@ -82,15 +75,13 @@ const DupePage = () => {
           resource: pr.resources
         })) || [];
         
-        // Ensure category is a valid ProductCategory
         const category = product.category as ProductCategory;
 
-        // Create the final product data object that matches the Product type
         const productData: Product = {
           ...product,
           category,
           ingredients: product.product_ingredients?.map(item => item.ingredients) || [],
-          dupes: [], // Initialize empty dupes array to be filled in the next fetch
+          dupes: [],
           reviews,
           resources,
           loading_ingredients: product.loading_ingredients !== undefined ? product.loading_ingredients : false,
@@ -110,7 +101,6 @@ const DupePage = () => {
     fetchProductData();
   }, [slug]);
 
-  // Fetch dupes data separately after main product is loaded
   useEffect(() => {
     const fetchDupesData = async () => {
       if (!product || !product.id) return;
@@ -118,7 +108,6 @@ const DupePage = () => {
       try {
         setIsLoadingDupes(true);
         
-        // Fetch dupes with expanded fields through product_offers junction table
         const { data: dupeRelations, error: dupesError } = await supabase
           .from('product_dupes')
           .select(`
@@ -144,7 +133,6 @@ const DupePage = () => {
 
         if (dupesError) throw dupesError;
 
-        // Fetch ingredients for each dupe and process all dupe data
         const processedDupes = await Promise.all(
           dupeRelations.map(async (relation) => {
             const { data: ingredientsData, error: ingredientsError } = await supabase
@@ -156,16 +144,13 @@ const DupePage = () => {
 
             const ingredients = ingredientsData ? ingredientsData.map(item => item.ingredients) : [];
             
-            // Process offers to flatten the nested structure
             const offers = relation.dupe.product_offers?.map(po => ({
               ...po.offers,
               merchant: po.offers.merchant
             })) || [];
 
-            // Format reviews
             const reviews = relation.dupe.reviews || [];
 
-            // Format resources to match ProductResource type
             const resources = relation.dupe.product_resources?.map(pr => ({
               id: pr.id,
               product_id: relation.dupe.id,
@@ -174,7 +159,6 @@ const DupePage = () => {
               resource: pr.resources
             })) || [];
             
-            // Ensure category is a valid ProductCategory
             const category = relation.dupe.category as ProductCategory || 'Other' as ProductCategory;
 
             return {
@@ -193,7 +177,6 @@ const DupePage = () => {
           })
         );
 
-        // Update product with dupes
         setProduct(prevProduct => {
           if (!prevProduct) return null;
           return {
@@ -204,7 +187,6 @@ const DupePage = () => {
         
       } catch (error) {
         console.error('Error fetching dupes data:', error);
-        // Don't set overall error since we already have the main product
       } finally {
         setIsLoadingDupes(false);
       }
@@ -215,14 +197,11 @@ const DupePage = () => {
     }
   }, [product?.id]);
 
-  // Set up Intersection Observer for dupe cards
   useEffect(() => {
-    // Only set up observers when dupes are loaded
     if (!product?.dupes || dupeRefs.current.length === 0) return;
   
     const observer = new IntersectionObserver(
       (entries) => {
-        // Get the most visible entry
         const visibleEntries = entries
           .filter(entry => entry.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
@@ -239,12 +218,11 @@ const DupePage = () => {
         }
       },
       { 
-        threshold: [0.3], // Use a single threshold for better performance
+        threshold: [0.3],
         rootMargin: "-100px 0px" 
       }
     );
     
-    // Create second observer for hero section
     const heroObserver = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
@@ -254,7 +232,6 @@ const DupePage = () => {
       { threshold: 0.3 }
     );
   
-    // Register observers
     dupeRefs.current.forEach(ref => {
       if (ref) observer.observe(ref);
     });
@@ -263,7 +240,6 @@ const DupePage = () => {
       heroObserver.observe(heroRef.current);
     }
   
-    // Cleanup function
     return () => {
       dupeRefs.current.forEach(ref => {
         if (ref) observer.unobserve(ref);
@@ -276,13 +252,11 @@ const DupePage = () => {
     };
   }, [product?.dupes]);
 
-  // Memoize active dupe to prevent unnecessary calculations
   const activeDupe = useMemo(() => 
     activeDupeIndex >= 0 && product?.dupes ? 
     product.dupes[activeDupeIndex] : null, 
   [activeDupeIndex, product?.dupes]);
 
-  // Memoize problematic ingredients for efficiency
   const problematicIngredients = useMemo(() => 
     activeDupe?.ingredients?.filter(i => i.is_controversial) || [],
   [activeDupe]);
@@ -294,7 +268,6 @@ const DupePage = () => {
     });
   };
 
-  // Loading states
   if (isLoadingProduct) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#F8F3FF] to-white">
@@ -372,7 +345,6 @@ const DupePage = () => {
         )}
       </div>
 
-      {/* Scroll to top button */}
       <AnimatePresence>
         {showBottomBar && (
           <motion.button
@@ -387,120 +359,110 @@ const DupePage = () => {
         )}
       </AnimatePresence>
 
-
-{/* Fixed bottom bar that appears when scrolling through dupes */}
-<AnimatePresence>
-  {showBottomBar && activeDupe && (
-    <motion.div
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 100, opacity: 0 }}
-      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-      className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200 px-4 py-3 z-50 shadow-lg"
-    >
-      <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          {/* Improved first line with match badge, pricing info, and product details */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <Badge className="bg-[#0EA5E9] text-white rounded-full px-3 py-1">
-              {activeDupe.match_score}% Match
-            </Badge>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 line-through">~${Math.round(product.price)}</span>
-              <span className="text-lg font-bold text-[#0EA5E9]">~${Math.round(activeDupe.price)}</span>
-              
-              {activeDupe.savings_percentage && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 rounded-full">
-                  Save {activeDupe.savings_percentage}%
-                </Badge>
-              )}
-            </div>
-            
-            <div className="mt-1 md:mt-0 flex items-center">
-              <p className="text-sm text-gray-700 font-medium ml-1 md:ml-3">
-                {activeDupe.brand} <span className="font-semibold">{activeDupe.name}</span>
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap gap-2 items-center">
-            {problematicIngredients.length > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-1 rounded-lg">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    <span className="text-xs">
-                      Contains {problematicIngredients.length} flagged {problematicIngredients.length === 1 ? 'ingredient' : 'ingredients'}
-                    </span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="p-2 max-w-xs">
-                  <p className="text-sm font-medium">Flagged Ingredients:</p>
-                  <ul className="text-xs mt-1 list-disc list-inside">
-                    {problematicIngredients.map((ing, i) => (
-                      <li key={i} className="text-gray-700">{ing.name}</li>
-                    ))}
-                  </ul>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="default" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 rounded-full">
-                  Buy Now
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="px-4 sm:px-6 rounded-t-3xl">
-                <SheetHeader>
-                  <SheetTitle>Shop {activeDupe.brand} {activeDupe.name}</SheetTitle>
-                  <SheetDescription>
-                    Choose where to purchase this dupe
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="space-y-3 mt-6">
-                  {activeDupe.offers && activeDupe.offers.length > 0 ? (
-                    activeDupe.offers.map((offer, i) => (
-                      <a
-                        key={i}
-                        href={offer.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
-                      >
-                        <div>
-                          <p className="font-medium">{offer.merchant?.name || "Retailer"}</p>
-                          <p className="text-sm text-gray-500">~${Math.round(offer.price)} - {offer.condition || 'New'}</p>
-                        </div>
-                        <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
-                      </a>
-                    ))
-                  ) : activeDupe.purchase_link ? (
-                    <a
-                      href={activeDupe.purchase_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
-                    >
-                      <div>
-                        <p className="font-medium">Shop Now</p>
-                        <p className="text-sm text-gray-500">~${Math.round(activeDupe.price)}</p>
-                      </div>
-                      <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
-                    </a>
-                  ) : (
-                    <p className="text-center text-gray-500 py-6">No purchasing options available</p>
+      <AnimatePresence>
+        {showBottomBar && activeDupe && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200 px-4 py-3 z-50 shadow-lg"
+          >
+            <div className="container mx-auto">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <Badge className="shrink-0 bg-[#0EA5E9] text-white rounded-full px-3 py-1">
+                    {Math.round(activeDupe.match_score)}% Match
+                  </Badge>
+                  
+                  {activeDupe.savings_percentage && (
+                    <Badge variant="outline" className="shrink-0 bg-green-50 text-green-700 border-green-200 rounded-full">
+                      Save {Math.round(activeDupe.savings_percentage)}%
+                    </Badge>
                   )}
+                  
+                  <p className="text-sm text-gray-700 font-medium truncate">
+                    {activeDupe.brand} <span className="font-semibold">{activeDupe.name}</span>
+                  </p>
                 </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
+                
+                <div className="flex gap-2 items-center">
+                  {problematicIngredients.length > 0 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="hidden md:flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-1 rounded-lg">
+                          <AlertTriangle className="w-4 h-4 text-amber-500" />
+                          <span className="text-xs">
+                            {problematicIngredients.length} flagged
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="p-2 max-w-xs">
+                        <p className="text-sm font-medium">Flagged Ingredients:</p>
+                        <ul className="text-xs mt-1 list-disc list-inside">
+                          {problematicIngredients.map((ing, i) => (
+                            <li key={i} className="text-gray-700">{ing.name}</li>
+                          ))}
+                        </ul>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="default" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 rounded-full">
+                        Buy Now
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="px-4 sm:px-6 rounded-t-3xl">
+                      <SheetHeader>
+                        <SheetTitle>Shop {activeDupe.brand} {activeDupe.name}</SheetTitle>
+                        <SheetDescription>
+                          Choose where to purchase this dupe
+                        </SheetDescription>
+                      </SheetHeader>
+                      <div className="space-y-3 mt-6">
+                        {activeDupe.offers && activeDupe.offers.length > 0 ? (
+                          activeDupe.offers.map((offer, i) => (
+                            <a
+                              key={i}
+                              href={offer.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                            >
+                              <div>
+                                <p className="font-medium">{offer.merchant?.name || "Retailer"}</p>
+                                <p className="text-sm text-gray-500">~${Math.round(offer.price)} - {offer.condition || 'New'}</p>
+                              </div>
+                              <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
+                            </a>
+                          ))
+                        ) : activeDupe.purchase_link ? (
+                          <a
+                            href={activeDupe.purchase_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                          >
+                            <div>
+                              <p className="font-medium">Shop Now</p>
+                              <p className="text-sm text-gray-500">~${Math.round(activeDupe.price)}</p>
+                            </div>
+                            <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
+                          </a>
+                        ) : (
+                          <p className="text-center text-gray-500 py-6">No purchasing options available</p>
+                        )}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

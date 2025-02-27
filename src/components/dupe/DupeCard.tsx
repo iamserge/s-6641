@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, Heart, Leaf, Check, DollarSign, Droplet, Star, MessageSquare, ChevronDown, AlertTriangle, Loader2 } from 'lucide-react';
@@ -17,6 +16,7 @@ interface DupeCardProps {
   dupe: Dupe;
   index: number;
   originalIngredients?: string[]; // For comparing with original product
+  showBottomBar: boolean;
 }
 
 const StarRating = ({ rating }: { rating: number }) => {
@@ -45,7 +45,7 @@ const StarRating = ({ rating }: { rating: number }) => {
   );
 };
 
-export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) => {
+export const DupeCard = ({ dupe, index, originalIngredients, showBottomBar }: DupeCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'reviews' | 'resources'>('details');
   
@@ -126,21 +126,19 @@ export const DupeCard = ({ dupe, index, originalIngredients }: DupeCardProps) =>
     >
       <Card className="w-full bg-white/50 backdrop-blur-sm border-gray-100/50 overflow-hidden shadow-md rounded-3xl">
         {/* Top badges row - Aligned side by side */}
-        <div className="flex justify-between items-center p-4 bg-gradient-to-r from-slate-50 to-zinc-50 border-b border-gray-100">
+        <div className={`flex justify-between items-center p-4 bg-gradient-to-r from-slate-50 to-zinc-50 border-b border-gray-100 ${showBottomBar ? 'md:flex hidden' : 'flex'}`}>
           <div className="flex items-center gap-3">
             <Badge className="bg-[#0EA5E9] text-white px-5 py-2 text-sm rounded-full">
-              {dupe.match_score}% Match
+              {Math.round(dupe.match_score)}% Match
             </Badge>
             
             {dupe.savings_percentage && (
               <Badge className="bg-green-50 text-green-700 px-5 py-2 text-sm gap-1.5 flex items-center rounded-full">
                 <DollarSign className="w-3.5 h-3.5" />
-                Save ${savingsAmount} ({dupe.savings_percentage}%)
+                Save {Math.round(dupe.savings_percentage)}%
               </Badge>
             )}
           </div>
-          
-          {/* Buy Now button is removed as requested */}
         </div>
         
         <CardContent className="p-6 md:p-8 lg:p-10 relative">
