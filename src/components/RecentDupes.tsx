@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { Shield, Droplet, Check, DollarSign } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -55,12 +56,11 @@ const RecentDupes = () => {
     queryKey: ["recentDupes"],
     queryFn: async () => {
       try {
-        // First query: Get products that have dupes
+        // First query: Get distinct original products from product_dupes table
         const { data: productsWithDupes, error: dupeError } = await supabase
           .from('product_dupes')
-          .select('original_product_id, max(savings_percentage)')
-          .group('original_product_id')
-          .order('max', { ascending: false })
+          .select('original_product_id, savings_percentage')
+          .order('savings_percentage', { ascending: false })
           .limit(6);
 
         if (dupeError) throw dupeError;

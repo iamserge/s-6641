@@ -338,6 +338,45 @@ export type Database = {
           },
         ]
       }
+      product_resources: {
+        Row: {
+          created_at: string
+          id: string
+          is_featured: boolean | null
+          product_id: string
+          resource_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_featured?: boolean | null
+          product_id: string
+          resource_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_featured?: boolean | null
+          product_id?: string
+          resource_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_resources_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_resources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           asin: string | null
@@ -480,37 +519,58 @@ export type Database = {
       }
       resources: {
         Row: {
+          author_handle: string | null
+          author_name: string | null
           brand_id: string | null
           created_at: string
+          embed_code: string | null
           id: string
           ingredient_id: string | null
+          likes_count: number | null
           product_id: string | null
           title: string
           type: Database["public"]["Enums"]["resource_type"]
           updated_at: string
           url: string
+          video_duration: string | null
+          video_thumbnail: string | null
+          views_count: number | null
         }
         Insert: {
+          author_handle?: string | null
+          author_name?: string | null
           brand_id?: string | null
           created_at?: string
+          embed_code?: string | null
           id?: string
           ingredient_id?: string | null
+          likes_count?: number | null
           product_id?: string | null
           title: string
           type: Database["public"]["Enums"]["resource_type"]
           updated_at?: string
           url: string
+          video_duration?: string | null
+          video_thumbnail?: string | null
+          views_count?: number | null
         }
         Update: {
+          author_handle?: string | null
+          author_name?: string | null
           brand_id?: string | null
           created_at?: string
+          embed_code?: string | null
           id?: string
           ingredient_id?: string | null
+          likes_count?: number | null
           product_id?: string | null
           title?: string
           type?: Database["public"]["Enums"]["resource_type"]
           updated_at?: string
           url?: string
+          video_duration?: string | null
+          video_thumbnail?: string | null
+          views_count?: number | null
         }
         Relationships: [
           {
@@ -529,6 +589,56 @@ export type Database = {
           },
           {
             foreignKeyName: "resources_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          author_avatar: string | null
+          author_name: string | null
+          created_at: string
+          id: string
+          product_id: string
+          rating: number | null
+          review_text: string
+          source: string | null
+          source_url: string | null
+          updated_at: string
+          verified_purchase: boolean | null
+        }
+        Insert: {
+          author_avatar?: string | null
+          author_name?: string | null
+          created_at?: string
+          id?: string
+          product_id: string
+          rating?: number | null
+          review_text: string
+          source?: string | null
+          source_url?: string | null
+          updated_at?: string
+          verified_purchase?: boolean | null
+        }
+        Update: {
+          author_avatar?: string | null
+          author_name?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string
+          rating?: number | null
+          review_text?: string
+          source?: string | null
+          source_url?: string | null
+          updated_at?: string
+          verified_purchase?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
