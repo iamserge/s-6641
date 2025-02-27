@@ -1,33 +1,14 @@
-
 import { ProductCategory } from "@/types/dupe";
 import { useState, useEffect } from "react";
 import * as backgroundRemoval from "@imgly/background-removal";
 
-const categoryImageMap: Record<string, string> = {
-  Foundation: "/cream.png",
-  Concealer: "/cream.png",
-  Primer: "/cream.png",
-  "Eye Primer": "/cream.png",
-  "Makeup Remover": "/cream.png",
-  Skincare: "/cream.png",
-  Haircare: "/cream.png",
-  "Setting Spray": "/spray.png",
-  Powder: "/compact.png",
-  Blush: "/compact.png",
-  Bronzer: "/compact.png",
-  Contour: "/compact.png",
-  Highlighter: "/compact.png",
-  Eyeshadow: "/compact.png",
-  Lipstick: "/tube.png",
-  "Lip Gloss": "/tube.png",
-  "Lip Liner": "/tube.png",
-  "Lip Balm": "/tube.png",
-  "Lip Stain": "/tube.png",
-  Eyeliner: "/tube.png",
-  Mascara: "/tube.png",
-  "Eyebrow Products": "/tube.png",
-  Tools: "/brush.png",
-  Other: "/cream.png",
+// Define available placeholder images
+const PLACEHOLDER_COUNT = 3; // Could be dynamically determined based on files in folder
+const getPlaceholderForProduct = (category: string): string => {
+  // Simple hash function to consistently map category to a number 1-3
+  const hash = Array.from(category).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const placeholderNum = (hash % PLACEHOLDER_COUNT) + 1;
+  return `/placeholders/${placeholderNum}.png`;
 };
 
 interface CategoryImageProps {
@@ -40,7 +21,7 @@ interface CategoryImageProps {
 
 export const CategoryImage = ({ category, imageUrl, images, alt, className }: CategoryImageProps) => {
   const [processedImage, setProcessedImage] = useState<string | null>(null);
-  const fallbackSrc = categoryImageMap[category || "Other"] || "/cream.png";
+  const fallbackSrc = category ? getPlaceholderForProduct(category) : "/placeholders/1.png";
 
   useEffect(() => {
     const processImage = async () => {
