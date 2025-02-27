@@ -124,17 +124,16 @@ const Hero = () => {
     let productsTimer;
 
     if (isProcessing) {
+      // Show tip after 10 seconds
       tipTimer = setTimeout(() => {
         setShowTip(true);
-        const newTip = getRandomTip();
-        setTip(newTip);
-        setProgressMessage(`Hey, here’s a tip while we work: ${newTip}`);
-      }, 5000);
+        setTip(getRandomTip());
+      }, 10000); // 10 seconds
 
+      // Show recent products after 20 seconds
       productsTimer = setTimeout(() => {
         setShowRecentProducts(true);
-        setProgressMessage("Here are some dupes to vibe with...");
-      }, 10000); // Changed to 10 seconds as per request
+      }, 20000); // 20 seconds
     }
 
     return () => {
@@ -544,47 +543,58 @@ const Hero = () => {
               </div>
             )}
 
-            {/* Progress Text */}
+            {/* Progress Message */}
             <p className="text-2xl font-light text-gray-800 mb-4">{progressMessage}</p>
 
-            {/* Extra Content: Tips and Products */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, ease: "easeIn" }}
-            >
-              {showTip && (
-                <p className="mt-4 text-sm text-gray-600 italic">{tip}</p>
-              )}
-              {showRecentProducts && recentProducts && recentProducts.length > 0 && (
-                <div className="mt-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {recentProducts.map((product) => (
-                      <div key={product.id} className="border rounded-lg p-2 bg-gray-50">
-                        <img
-                          src={product.image_url || "/placeholder-image.png"}
-                          alt={product.name}
-                          className="w-full h-24 object-cover rounded mb-2"
-                        />
-                        <p className="text-sm font-medium">
-                          <a
-                            href={`/dupes/for/${product.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-pink-500 hover:underline"
-                          >
-                            {product.name}
-                          </a>
-                        </p>
-                        <p className="text-xs text-gray-600">{product.brand}</p>
-                        <p className="text-xs text-gray-600">{product.dupesCount} dupes</p>
-                        <p className="text-xs text-gray-600">Max saving: {product.maxSavings}%</p>
-                      </div>
-                    ))}
-                  </div>
+            {/* Tips Section */}
+            {showTip && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, ease: "easeIn" }}
+                className="mt-4"
+              >
+                <p className="text-sm text-gray-600 italic">{tip}</p>
+              </motion.div>
+            )}
+
+            {/* Recent Products Section */}
+            {showRecentProducts && recentProducts && recentProducts.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, ease: "easeIn" }}
+                className="mt-6"
+              >
+                <p className="text-lg font-light text-gray-800 mb-2">
+                  Here are some dupes to vibe with...
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {recentProducts.map((product) => (
+                    <div key={product.id} className="border rounded-lg p-2 bg-gray-50">
+                      <img
+                        src={product.image_url || "/placeholder-image.png"}
+                        alt={product.name}
+                        className="w-full h-24 object-cover rounded mb-2"
+                      />
+                      <p className="text-sm font-medium">
+                        <a
+                          href={`/dupes/for/${product.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-pink-500 hover:underline"
+                        >
+                          {product.name}
+                        </a>
+                      </p>
+                      <p className="text-xs text-gray-600">{product.brand}</p>
+                      <p className="text-xs text-gray-600">{product.dupesCount} dupes</p>
+                      <p className="text-xs text-gray-600">Max saving: {product.maxSavings}%</p>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </motion.div>
+              </motion.div>
+            )}
 
             <Loader2 className="w-12 h-12 text-pink-500 animate-spin mx-auto mt-6" />
           </motion.div>
