@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { Shield, Droplet, Check, DollarSign, Heart, Leaf } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";

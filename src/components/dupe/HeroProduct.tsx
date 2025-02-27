@@ -1,7 +1,4 @@
 
-// Need to update the CategoryImage component usage in HeroProduct to fix TypeScript error
-// Updating the code in relevant locations:
-
 import { useState, useMemo } from 'react';
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -163,6 +160,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 <CategoryImage 
                   category={product.category}
                   imageUrl={product.image_url}
+                  name={product.name}
                   className="object-contain w-full h-full p-1"
                 />
               </div>

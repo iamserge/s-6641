@@ -1,3 +1,4 @@
+
 import { ProductCategory } from "@/types/dupe";
 import { useState, useEffect } from "react";
 
@@ -14,11 +15,11 @@ export interface CategoryImageProps {
   category?: ProductCategory | string | null;
   imageUrl?: string | null;
   images?: string[];
-  name: string; // Add this prop
+  name?: string; // Make name optional
   className?: string;
 }
 
-export const CategoryImage = ({ category, imageUrl, images, name, className }: CategoryImageProps) => {
+export const CategoryImage = ({ category, imageUrl, images, name = "Product", className }: CategoryImageProps) => {
   const [processedImage, setProcessedImage] = useState<string | null>(null);
   const fallbackSrc = category ? getPlaceholderForProduct(category) : "/placeholders/1.png";
 
