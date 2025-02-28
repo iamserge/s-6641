@@ -1,9 +1,6 @@
 /// <reference lib="es2015" />
 
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+
 /**
  * Logs an informational message with a timestamp 
  */
@@ -104,4 +101,10 @@ export async function withRetry<T>(
   }
 
   throw lastError;
+}
+
+
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
