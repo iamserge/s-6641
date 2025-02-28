@@ -1,6 +1,7 @@
 
 // Updated process-resources/index.ts
 // Re-deployed to fix the error with missing exports
+// Adding comment to trigger redeployment (timestamp: new update)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getBatchProductResources } from "../services/perplexity.ts";
 import { processBatchResources } from "../services/db-client.ts";

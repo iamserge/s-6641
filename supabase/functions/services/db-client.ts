@@ -1,3 +1,6 @@
+
+// db-client.ts
+// Adding a comment to trigger redeployment (timestamp: new update)
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../shared/types';
 
