@@ -124,7 +124,7 @@ const Hero = () => {
   // **Handle Search**
   const handleSearch = async (e?: React.FormEvent, productName?: string) => {
     if (e) e.preventDefault();
-
+    
     const textToSearch = productName || searchText.trim();
     if (!textToSearch) {
       toast({
@@ -134,12 +134,12 @@ const Hero = () => {
       });
       return;
     }
-
+    
     try {
       setIsProcessing(true);
       setSearchTriggered(true);
       setProgressMessage(getRandomVariation("Heyyy! We're on the hunt for the perfect dupes for you! 🎨"));
-
+      
       const { data: { session } } = await supabase.auth.getSession();
       const apikey = (supabase as any).supabaseKey;
       const baseUrl = `${(supabase as any).supabaseUrl}/functions/v1/search-dupes`;
@@ -147,9 +147,9 @@ const Hero = () => {
       url.searchParams.append("searchText", textToSearch);
       url.searchParams.append("apikey", apikey);
       if (session?.access_token) url.searchParams.append("authorization", `Bearer ${session.access_token}`);
-
+      
       const eventSource = new EventSource(url.toString());
-
+      
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === "progress") {
@@ -174,7 +174,7 @@ const Hero = () => {
           throw new Error(data.error);
         }
       };
-
+      
       eventSource.onerror = () => {
         eventSource.close();
         setIsProcessing(false);
@@ -185,7 +185,7 @@ const Hero = () => {
           description: "Something went wrong. Please try again.",
         });
       };
-
+      
       return () => eventSource.close();
     } catch (error) {
       toast({
@@ -284,13 +284,19 @@ const Hero = () => {
       };
 
       const response = await analyzeImage();
-      const result = response.data;
-      const error = response.error;
       
-      if (error) throw error;
-      if (!result?.product) throw new Error("No product detected in image");
+      // Properly type the response
+      interface AnalysisResponse {
+        data?: { product?: string };
+        error?: Error;
+      }
+      
+      const typedResponse = response as AnalysisResponse;
+      
+      if (typedResponse.error) throw typedResponse.error;
+      if (!typedResponse.data?.product) throw new Error("No product detected in image");
 
-      const cleanedProduct = result.product.replace(/["']/g, "").trim();
+      const cleanedProduct = typedResponse.data.product.replace(/["']/g, "").trim();
       setSearchText(cleanedProduct);
       toast({
         title: "Product Detected!",
@@ -332,13 +338,19 @@ const Hero = () => {
         };
 
         const response = await analyzeImage();
-        const result = response.data;
-        const error = response.error;
         
-        if (error) throw error;
-        if (!result?.product) throw new Error("No product detected in image");
+        // Properly type the response
+        interface AnalysisResponse {
+          data?: { product?: string };
+          error?: Error;
+        }
+        
+        const typedResponse = response as AnalysisResponse;
+        
+        if (typedResponse.error) throw typedResponse.error;
+        if (!typedResponse.data?.product) throw new Error("No product detected in image");
 
-        const cleanedProduct = result.product.replace(/["']/g, "").trim();
+        const cleanedProduct = typedResponse.data.product.replace(/["']/g, "").trim();
         setSearchText(cleanedProduct);
         toast({
           title: "Product Detected!",
