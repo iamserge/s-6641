@@ -730,7 +730,7 @@ export async function getBatchProductResources(products: ProductInfo[]): Promise
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "sonar-medium-online",
+        model: "sonar-pro",
         messages: [
           {
             role: "system",
