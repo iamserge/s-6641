@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +8,7 @@ import { Product, ProductCategory } from "@/types/dupe";
 import { HeroProduct } from "@/components/dupe/HeroProduct";
 import { DupeCard } from "@/components/dupe/DupeCard";
 import Navbar from '@/components/Navbar';
+import AnimatedBackground from '@/components/AnimatedBackground';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -270,7 +272,8 @@ const DupePage = () => {
 
   if (isLoadingProduct) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#F8F3FF] to-white">
+      <div className="min-h-screen flex items-center justify-center">
+        <AnimatedBackground />
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-[#9b87f5] mb-4 mx-auto" />
           <p className="text-gray-600">Loading product details...</p>
@@ -281,7 +284,8 @@ const DupePage = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#F8F3FF] to-white">
+      <div className="min-h-screen flex items-center justify-center">
+        <AnimatedBackground />
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h1>
           <p className="text-gray-600">{error || "Product could not be loaded"}</p>
@@ -291,7 +295,8 @@ const DupePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F8F3FF] to-white font-urbanist">
+    <div className="min-h-screen font-urbanist">
+      <AnimatedBackground />
       <Navbar />
       
       <div ref={heroRef} className="hero-product">
