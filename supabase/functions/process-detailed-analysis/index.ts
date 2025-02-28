@@ -5,6 +5,76 @@ import { fetchProductDataFromExternalDb } from "../services/external-db.ts";
 import { processAndUploadImage } from "../services/images.ts";
 import { supabase } from "../shared/db-client.ts";
 
+// Function to store product offers
+async function storeProductOffers(productId, offers) {
+  // Store merchant information and offers
+  for (const offer of offers) {
+    // First, store or update merchant
+    let merchantId;
+    
+    if (offer.merchant) {
+      const { data: existingMerchant } = await supabase
+        .from('merchants')
+        .select('id')
+        .eq('name', offer.merchant.name)
+        .single();
+      
+      if (existingMerchant) {
+        merchantId = existingMerchant.id;
+        
+        // Update merchant if needed
+        await supabase
+          .from('merchants')
+          .update({
+            domain: offer.merchant.domain || null,
+            logo_url: offer.merchant.logo_url || null
+          })
+          .eq('id', merchantId);
+      } else {
+        // Create new merchant
+        const { data: newMerchant } = await supabase
+          .from('merchants')
+          .insert({
+            name: offer.merchant.name,
+            domain: offer.merchant.domain || null,
+            logo_url: offer.merchant.logo_url || null
+          })
+          .select('id')
+          .single();
+        
+        merchantId = newMerchant.id;
+      }
+    }
+    
+    // Store offer
+    const { data: newOffer } = await supabase
+      .from('offers')
+      .insert({
+        merchant_id: merchantId,
+        title: offer.title || null,
+        price: offer.price,
+        list_price: offer.list_price || null,
+        currency: offer.currency || 'USD',
+        condition: offer.condition || 'New',
+        availability: offer.availability || null,
+        shipping: offer.shipping || null,
+        link: offer.link,
+        updated_t: offer.updated_t || Math.floor(Date.now() / 1000)
+      })
+      .select('id')
+      .single();
+    
+    // Link offer to product
+    await supabase
+      .from('product_offers')
+      .insert({
+        product_id: productId,
+        offer_id: newOffer.id,
+        is_best_price: true // Mark as best price (can be updated later with proper logic)
+      });
+  }
+}
+
 serve(async (req) => {
   try {
     const {
@@ -93,6 +163,11 @@ serve(async (req) => {
       })
       .eq('id', originalProductId);
 
+    // Store offers for original product if available
+    if (detailedAnalysis.original.offers && detailedAnalysis.original.offers.length > 0) {
+      await storeProductOffers(originalProductId, detailedAnalysis.original.offers);
+    }
+
     // Process and update dupes with detailed info
     await Promise.all(
       dupeProductIds.map(async (dupeId, index) => {
@@ -137,6 +212,11 @@ serve(async (req) => {
             highest_recorded_price: dupe.highest_recorded_price
           })
           .eq('id', dupeId);
+
+        // Store offers for dupe product if available
+        if (dupe.offers && dupe.offers.length > 0) {
+          await storeProductOffers(dupeId, dupe.offers);
+        }
 
         // Update dupe relationship
         await supabase
