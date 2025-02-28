@@ -118,44 +118,33 @@ port = 54327
 
 [functions.analyze-image]
 verify_jwt = false
-system_on_behalf_of_users = false
 
 [functions.search-dupes]
 verify_jwt = false
-system_on_behalf_of_users = false
 
 [functions.process-brands]
 verify_jwt = false
-system_on_behalf_of_users = false
 
 [functions.process-ingredients]
 verify_jwt = false
-system_on_behalf_of_users = false
 
 [functions.process-reviews]
 verify_jwt = false
-system_on_behalf_of_users = false
 
 [functions.process-resources]
 verify_jwt = false
-system_on_behalf_of_users = false
 
 [functions.process-detailed-analysis]
 verify_jwt = false
-system_on_behalf_of_users = false
 
 [functions.analyze-input]
 verify_jwt = false
-system_on_behalf_of_users = false
 
 [functions.find-dupes]
 verify_jwt = false
-system_on_behalf_of_users = false
 
 [functions.populate-brands-and-ingredients]
 verify_jwt = false
-system_on_behalf_of_users = false
 
 [functions.process-voice]
 verify_jwt = false
-system_on_behalf_of_users = false

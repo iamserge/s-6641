@@ -166,14 +166,15 @@ const Hero = () => {
   const handleSearch = async (e?: React.FormEvent, productData?: any) => {
     if (e) e.preventDefault();
     
-    let searchData = {};
+    let searchData: { searchText?: string; imageData?: string } = {};
     let bodyMethod = 'GET';
     const url = new URL(`${(supabase as any).supabaseUrl}/functions/v1/search-dupes`);
     
     if (productData) {
       // Direct product data provided (from image analysis)
-      searchData = { searchText: `${productData.brand || ''} ${productData.name || ''}`.trim() };
-      url.searchParams.append("searchText", searchData.searchText);
+      const formattedText = `${productData.brand || ''} ${productData.name || ''}`.trim();
+      searchData = { searchText: formattedText };
+      url.searchParams.append("searchText", formattedText);
     } else if (previewImage) {
       // Process image upload
       searchData = { imageData: previewImage.replace(/^data:image\/\w+;base64,/, '') };
@@ -181,7 +182,7 @@ const Hero = () => {
     } else if (searchText.trim()) {
       // Process text input
       searchData = { searchText: searchText.trim() };
-      url.searchParams.append("searchText", searchData.searchText);
+      url.searchParams.append("searchText", searchText.trim());
     } else {
       toast({
         variant: "destructive",
