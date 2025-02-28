@@ -8,10 +8,13 @@ import { Button } from "@/components/ui/button";
 import { SocialMediaResource } from "@/components/dupe/SocialMediaResource";
 import { EnhancedResource } from "@/types/dupe";
 
+// Define the exact resource type union to match Supabase enum
+type ResourceType = "Video" | "YouTube" | "Instagram" | "TikTok" | "Article" | "Reddit";
+
 interface IngredientResourcesProps {
   resources: any[];
   ingredientId?: string;
-  resourceType?: string;
+  resourceType?: ResourceType;
 }
 
 export const IngredientResources = ({ 
@@ -20,7 +23,7 @@ export const IngredientResources = ({
   resourceType 
 }: IngredientResourcesProps) => {
   const [page, setPage] = useState(1);
-  const [selectedType, setSelectedType] = useState<string | undefined>(resourceType);
+  const [selectedType, setSelectedType] = useState<ResourceType | undefined>(resourceType);
   const pageSize = 6;
 
   // Query to fetch more resources for pagination
@@ -87,16 +90,16 @@ export const IngredientResources = ({
   const hasMore = totalCount ? page * pageSize < totalCount : false;
   const displayResources = paginatedResources || resources;
 
-  // Handle resource type change
-  const handleTypeChange = (type: string | undefined) => {
+  // Handle resource type change - ensure we're passing the correct type
+  const handleTypeChange = (type: ResourceType | undefined) => {
     setSelectedType(type);
     setPage(1); // Reset to page 1 when changing type
   };
 
-  // Get unique resource types for filter buttons
+  // Get unique resource types for filter buttons - make sure we cast to the correct type
   const resourceTypes = ['YouTube', 'Article', 'TikTok', 'Instagram'].filter(type => 
     resources.some(resource => resource.type === type)
-  );
+  ) as ResourceType[];
 
   return (
     <div className="max-w-6xl mx-auto">
