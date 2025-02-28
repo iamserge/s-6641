@@ -639,7 +639,6 @@ export async function processBatchReviews(batchReviewsData: any): Promise<void> 
                   source: review.source,
                   source_url: review.sourceUrl,
                   verified_purchase: review.verifiedPurchase,
-                  date: review.date,
                 });
                 
               if (error) {
