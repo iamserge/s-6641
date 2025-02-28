@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getProductReviewsAndResources, storeProductReviewsAndResources } from "../shared/db-client.ts";
-import { supabase } from "../shared/db-client.ts";
+import { getProductReviewsAndResources, storeProductReviewsAndResources, supabase } from "../shared/db-client.ts";
 
 serve(async (req) => {
   try {

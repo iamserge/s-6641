@@ -3,8 +3,7 @@ import { supabase } from "../shared/db-client.ts";
 import { logInfo, logError } from "../shared/utils.ts";
 import { processBrand } from "../services/brands.ts";
 import { processProductIngredients, processDupeIngredients } from "../services/ingredients.ts";
-import { getProductReviewsAndResources } from "../services/product-reviews.ts";
-import { storeProductReviewsAndResources } from "../shared/db-client.ts";
+import { storeProductReviewsAndResources, getProductReviewsAndResources } from "../shared/db-client.ts";
 
 serve(async (req) => {
   try {
