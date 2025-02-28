@@ -1,9 +1,10 @@
+
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Camera, Loader2, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "./ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -282,11 +283,14 @@ const Hero = () => {
         return Promise.race([analysisPromise, timeoutPromise]);
       };
 
-      const { data, error } = await analyzeImage();
+      const response = await analyzeImage();
+      const result = response.data;
+      const error = response.error;
+      
       if (error) throw error;
-      if (!data?.product) throw new Error("No product detected in image");
+      if (!result?.product) throw new Error("No product detected in image");
 
-      const cleanedProduct = data.product.replace(/["']/g, "").trim();
+      const cleanedProduct = result.product.replace(/["']/g, "").trim();
       setSearchText(cleanedProduct);
       toast({
         title: "Product Detected!",
@@ -327,11 +331,14 @@ const Hero = () => {
           return Promise.race([analysisPromise, timeoutPromise]);
         };
 
-        const { data, error } = await analyzeImage();
+        const response = await analyzeImage();
+        const result = response.data;
+        const error = response.error;
+        
         if (error) throw error;
-        if (!data?.product) throw new Error("No product detected in image");
+        if (!result?.product) throw new Error("No product detected in image");
 
-        const cleanedProduct = data.product.replace(/["']/g, "").trim();
+        const cleanedProduct = result.product.replace(/["']/g, "").trim();
         setSearchText(cleanedProduct);
         toast({
           title: "Product Detected!",
