@@ -191,10 +191,7 @@ export const BrandHero = ({ brand }: BrandHeroProps) => {
                 transition={{ delay: 0.8 }}
               >
                 <Button 
-                  as="a" 
-                  href={brand.website_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  onClick={() => window.open(brand.website_url, '_blank', 'noopener noreferrer')}
                   className="mt-4 bg-[#5840c0] hover:bg-[#4330a0] text-white"
                 >
                   Visit Official Website

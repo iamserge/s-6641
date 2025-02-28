@@ -41,8 +41,7 @@ export const BrandProducts = ({ products, brandId }: BrandProductsProps) => {
       if (error) throw error;
       return data || [];
     },
-    enabled: page > 1 || products.length === 0,
-    keepPreviousData: true
+    enabled: page > 1 || products.length === 0
   });
 
   // Calculate if there are more products to load

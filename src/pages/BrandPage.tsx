@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ExternalLink } from 'lucide-react';
+import { Loader2, ExternalLink, ChevronUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Brand } from '@/types/dupe';
 import Navbar from '@/components/Navbar';
@@ -13,7 +13,6 @@ import { BrandResources } from '@/components/brand/BrandResources';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronUp } from 'lucide-react';
 
 interface BrandData extends Brand {
   product_count?: number;
@@ -57,15 +56,29 @@ const BrandPage = () => {
 
         if (productCountError) throw productCountError;
 
-        // Fetch dupes count where this brand is used
-        const { count: dupesCount, error: dupesCountError } = await supabase
-          .from('product_dupes')
-          .select('*', { count: 'exact', head: true })
-          .in('dupe_product_id', 
-            supabase.from('products').select('id').eq('brand_id', brandData.id)
-          );
-
-        if (dupesCountError) throw dupesCountError;
+        // Fetch dupes count where this brand's products are used as dupes
+        // Create a subquery to get product IDs for this brand
+        const { data: productIds } = await supabase
+          .from('products')
+          .select('id')
+          .eq('brand_id', brandData.id);
+        
+        // If there are no products, set dupes count to 0
+        let dupesCount = 0;
+        
+        if (productIds && productIds.length > 0) {
+          // Extract just the IDs into an array
+          const ids = productIds.map(p => p.id);
+          
+          // Use the array in the IN clause
+          const { count, error: dupesCountError } = await supabase
+            .from('product_dupes')
+            .select('*', { count: 'exact', head: true })
+            .in('dupe_product_id', ids);
+            
+          if (dupesCountError) throw dupesCountError;
+          dupesCount = count || 0;
+        }
 
         // Fetch top products
         const { data: topProducts, error: topProductsError } = await supabase
@@ -97,7 +110,7 @@ const BrandPage = () => {
         const enhancedBrandData: BrandData = {
           ...brandData,
           product_count: productCount || 0,
-          dupes_count: dupesCount || 0,
+          dupes_count: dupesCount,
           top_products: topProducts || [],
           resources: resources || []
         };
@@ -180,7 +193,7 @@ const BrandPage = () => {
           </TabsContent>
           
           <TabsContent value="resources" className="mt-2">
-            <BrandResources resources={brand.resources || []} />
+            <BrandResources resources={brand.resources || []} brandId={brand.id} />
           </TabsContent>
         </Tabs>
       </div>

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
@@ -12,16 +12,17 @@ import { CategoryImage } from "@/components/dupe/CategoryImage";
 interface IngredientProductsProps {
   products: any[];
   ingredientId: string;
+  isKeyOnly?: boolean;
 }
 
-export const IngredientProducts = ({ products, ingredientId }: IngredientProductsProps) => {
+export const IngredientProducts = ({ products, ingredientId, isKeyOnly = true }: IngredientProductsProps) => {
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
   const pageSize = 6;
 
   // Query to fetch more products for pagination
   const { data: paginatedProducts, isLoading, isFetching } = useQuery({
-    queryKey: ["ingredientProducts", ingredientId, page],
+    queryKey: ["ingredientProducts", ingredientId, page, isKeyOnly],
     queryFn: async () => {
       if (page === 1) return products; // Use initial products for first page
       
@@ -33,28 +34,31 @@ export const IngredientProducts = ({ products, ingredientId }: IngredientProduct
         .select(`
           products:product_id(
             id, name, brand, slug, image_url, category, price,
+            rating, rating_count,
             product_dupes!product_dupes_dupe_product_id_fkey(match_score)
           )
         `)
         .eq("ingredient_id", ingredientId)
-        .order("is_key_ingredient", { ascending: false })
+        .eq("is_key_ingredient", isKeyOnly)
         .range(from, to);
       
       if (error) throw error;
+      
+      // Extract products from the nested structure
       return data?.map(item => item.products) || [];
     },
-    enabled: page > 1 || products.length === 0,
-    keepPreviousData: true
+    enabled: page > 1 || products.length === 0
   });
 
   // Calculate if there are more products to load
   const { data: totalCount } = useQuery({
-    queryKey: ["ingredientProductsCount", ingredientId],
+    queryKey: ["ingredientProductsCount", ingredientId, isKeyOnly],
     queryFn: async () => {
       const { count, error } = await supabase
         .from("product_ingredients")
         .select("*", { count: "exact", head: true })
-        .eq("ingredient_id", ingredientId);
+        .eq("ingredient_id", ingredientId)
+        .eq("is_key_ingredient", isKeyOnly);
       
       if (error) throw error;
       return count || 0;
@@ -69,8 +73,36 @@ export const IngredientProducts = ({ products, ingredientId }: IngredientProduct
 
   const displayProducts = paginatedProducts || products;
 
+  // Toggle function to switch between key and all ingredients
+  const toggleIsKeyOnly = () => {
+    setPage(1); // Reset to page 1 when toggling
+    // Handle toggling in a way that re-triggers the query
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
+      {/* Filter options */}
+      <div className="flex justify-end mb-6">
+        <div className="space-x-2">
+          <Button 
+            variant={isKeyOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => toggleIsKeyOnly()}
+            className={isKeyOnly ? "bg-[#5840c0] hover:bg-[#4330a0] text-white" : ""}
+          >
+            Key Ingredients
+          </Button>
+          <Button 
+            variant={!isKeyOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => toggleIsKeyOnly()}
+            className={!isKeyOnly ? "bg-[#5840c0] hover:bg-[#4330a0] text-white" : ""}
+          >
+            All Products
+          </Button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {displayProducts.map((product, index) => (
           <motion.div
@@ -95,11 +127,9 @@ export const IngredientProducts = ({ products, ingredientId }: IngredientProduct
                 {product.name}
               </h3>
               
-              <p className="text-sm text-gray-600 text-center mb-3">
-                {product.brand}
-              </p>
+              <p className="text-sm text-gray-600 mb-3">by {product.brand}</p>
               
-              <div className="flex justify-center items-center gap-2 mb-4">
+              <div className="flex justify-center items-center gap-2 mb-3">
                 <Badge variant="secondary" className="rounded-full bg-[#d2c9f9] text-[#5840c0]">
                   ${Math.round(product.price || 0)}
                 </Badge>
@@ -111,6 +141,20 @@ export const IngredientProducts = ({ products, ingredientId }: IngredientProduct
                 )}
               </div>
               
+              {/* Rating if available */}
+              {product.rating && (
+                <div className="flex items-center gap-1 mb-3">
+                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  <span className="text-sm font-medium">
+                    {product.rating.toFixed(1)}
+                    {product.rating_count && (
+                      <span className="text-xs text-gray-500"> ({product.rating_count})</span>
+                    )}
+                  </span>
+                </div>
+              )}
+              
+              {/* Dupes badge */}
               {product.product_dupes && product.product_dupes.length > 0 ? (
                 <Badge variant="secondary" className="rounded-full px-3 py-1 bg-green-50 text-green-700">
                   Has {product.product_dupes.length} dupes
@@ -148,8 +192,8 @@ export const IngredientProducts = ({ products, ingredientId }: IngredientProduct
 
       {/* Empty state */}
       {displayProducts.length === 0 && !isLoading && (
-        <div className="text-center py-12 bg-white/50 backdrop-blur-sm rounded-xl mt-4">
-          <p className="text-lg text-gray-600">No products found with this ingredient.</p>
+        <div className="text-center py-12 bg-white/50 backdrop-blur-sm rounded-xl">
+          <p className="text-lg text-gray-600">No products found containing this ingredient.</p>
         </div>
       )}
     </div>

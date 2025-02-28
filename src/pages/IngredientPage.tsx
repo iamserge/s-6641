@@ -27,6 +27,7 @@ const IngredientPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('products');
   const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [isKeyOnly, setIsKeyOnly] = useState(true);
 
   useEffect(() => {
     const fetchIngredientData = async () => {
@@ -56,14 +57,19 @@ const IngredientPage = () => {
         if (productCountError) throw productCountError;
 
         // Fetch similar ingredients (ingredients with similar benefits or concerns)
-        const { data: similarIngredients, error: similarIngredientsError } = await supabase
-          .from('ingredients')
-          .select('*')
-          .neq('id', ingredientData.id)
-          .in('skin_types', ingredientData.skin_types || [])
-          .limit(5);
+        let similarIngredients = [];
+        if (ingredientData.skin_types && ingredientData.skin_types.length > 0) {
+          const skinTypesArray = ingredientData.skin_types as string[];
+          const { data: similarData, error: similarIngredientsError } = await supabase
+            .from('ingredients')
+            .select('*')
+            .neq('id', ingredientData.id)
+            .overlaps('skin_types', skinTypesArray)
+            .limit(5);
 
-        if (similarIngredientsError) throw similarIngredientsError;
+          if (similarIngredientsError) throw similarIngredientsError;
+          similarIngredients = similarData || [];
+        }
 
         // Fetch top products containing this ingredient
         const { data: topProducts, error: topProductsError } = await supabase
@@ -100,7 +106,7 @@ const IngredientPage = () => {
         const enhancedIngredientData: IngredientData = {
           ...ingredientData,
           product_count: productCount || 0,
-          similar_ingredients: similarIngredients || [],
+          similar_ingredients: similarIngredients,
           top_products: processedTopProducts,
           resources: resources || []
         };
@@ -156,6 +162,10 @@ const IngredientPage = () => {
     );
   }
 
+  const toggleKeyIngredients = () => {
+    setIsKeyOnly(!isKeyOnly);
+  };
+
   return (
     <div className="min-h-screen font-urbanist">
       <AnimatedBackground />
@@ -179,11 +189,18 @@ const IngredientPage = () => {
           </div>
           
           <TabsContent value="products" className="mt-2">
-            <IngredientProducts products={ingredient.top_products || []} ingredientId={ingredient.id} />
+            <IngredientProducts 
+              products={ingredient.top_products || []} 
+              ingredientId={ingredient.id} 
+              isKeyOnly={isKeyOnly}
+            />
           </TabsContent>
           
           <TabsContent value="resources" className="mt-2">
-            <IngredientResources resources={ingredient.resources || []} />
+            <IngredientResources 
+              resources={ingredient.resources || []} 
+              ingredientId={ingredient.id}
+            />
           </TabsContent>
         </Tabs>
       </div>

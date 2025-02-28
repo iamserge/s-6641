@@ -43,8 +43,7 @@ export const BrandResources = ({ resources, brandId }: BrandResourcesProps) => {
       if (error) throw error;
       return data || [];
     },
-    enabled: page > 1 && !!brandId,
-    keepPreviousData: true
+    enabled: page > 1 && !!brandId
   });
 
   // Calculate if there are more resources to load
