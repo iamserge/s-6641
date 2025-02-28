@@ -1,8 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getBatchProductReviews } from "../services/perplexity.ts";
-import { processBatchReviews } from "../services/db-client.ts";
-import { supabase } from "../shared/db-client.ts";
+import { supabase, processBatchReviews } from "../shared/db-client.ts";
 import { corsHeaders } from "../shared/utils.ts";
 
 // Adding this comment to trigger redeployment of the process-reviews function (timestamp: 2025-02-28 16:30:45)
