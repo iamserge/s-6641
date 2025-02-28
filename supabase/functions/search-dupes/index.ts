@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getInitialDupes } from "../services/perplexity.ts";
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
@@ -98,7 +97,7 @@ serve(async (req) => {
             .limit(1);
 
           if (existingProducts && existingProducts.length > 0) {
-            sendProgress("Found existing product! Loading dupes...");
+            sendProgress("Oh, we already know this one! Let's show you the dupes... 🌟");
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
               type: "result",
               data: {
@@ -115,7 +114,7 @@ serve(async (req) => {
           }
 
           // 3. Get initial dupes from Perplexity
-          sendProgress("Searching for beauty dupes across the web...");
+          sendProgress("Scouring the beauty universe for your perfect match... 💄");
           const initialDupes = await getInitialDupes(searchText);
           
           if (!initialDupes.originalName || !initialDupes.originalBrand) {
@@ -123,7 +122,7 @@ serve(async (req) => {
           }
 
           // 4. Create initial products with minimal data
-          sendProgress("Found some matches! Creating initial entries...");
+          sendProgress("Found some gems! Let's doll them up with more details... 💎");
           
           // Create slug for original product
           const productSlug = slugify(`${initialDupes.originalBrand}-${initialDupes.originalName}`, { lower: true });
@@ -136,9 +135,9 @@ serve(async (req) => {
               brand: initialDupes.originalBrand,
               slug: productSlug,
               price: 0, // Will be updated later
-              loading_ingredients: true,
-              loading_reviews: true,
-              loading_resources: true
+              loading_ingredients: false, // Set to false since we'll wait for processing
+              loading_reviews: false,
+              loading_resources: false
             })
             .select()
             .single();
@@ -157,9 +156,9 @@ serve(async (req) => {
                   brand: dupe.brand,
                   slug: dupeSlug,
                   price: 0, // Will be updated later
-                  loading_ingredients: true,
-                  loading_reviews: true,
-                  loading_resources: true
+                  loading_ingredients: false, // Set to false since we'll wait for processing
+                  loading_reviews: false,
+                  loading_resources: false
                 })
                 .select()
                 .single();
@@ -180,8 +179,8 @@ serve(async (req) => {
             })
           );
 
-          // 5. Trigger parallel background processes
-          sendProgress("Gathering detailed information in the background...");
+          // 5. Run all background processes and wait for them to complete
+          sendProgress("Putting together your beauty dossier... 📋");
           
           // Background tasks data
           const backgroundData = {
@@ -192,45 +191,56 @@ serve(async (req) => {
             dupeInfo: initialDupes.dupes.map(dupe => ({ name: dupe.name, brand: dupe.brand }))
           };
           
-          // Trigger parallel background functions
           const supabaseUrl = Deno.env.get('SUPABASE_URL');
           const authKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
           
-          // Fire and forget - parallel background processing
-          Promise.all([
+          // Execute all background functions in parallel but wait for them to complete
+          const results = await Promise.all([
+            // Process brands
             fetch(`${supabaseUrl}/functions/v1/process-brands`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
               body: JSON.stringify(backgroundData)
-            }),
+            }).then(res => res.json()),
             
+            // Process ingredients
             fetch(`${supabaseUrl}/functions/v1/process-ingredients`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
               body: JSON.stringify(backgroundData)
-            }),
+            }).then(res => res.json()),
             
+            // Process reviews
             fetch(`${supabaseUrl}/functions/v1/process-reviews`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
               body: JSON.stringify(backgroundData)
-            }),
+            }).then(res => res.json()),
             
+            // Process resources
             fetch(`${supabaseUrl}/functions/v1/process-resources`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
               body: JSON.stringify(backgroundData)
-            }),
+            }).then(res => res.json()),
             
+            // Process detailed analysis (images, prices, etc.)
             fetch(`${supabaseUrl}/functions/v1/process-detailed-analysis`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
               body: JSON.stringify(backgroundData)
-            })
-          ]).catch(error => console.error("Error triggering background tasks:", error));
+            }).then(res => res.json())
+          ]);
+          
+          // Check for any failures in the results
+          const failures = results.filter(result => !result.success);
+          if (failures.length > 0) {
+            console.warn(`${failures.length} background processes failed:`, failures);
+            // Continue anyway - we'll still show what we have
+          }
 
-          // 6. Return results to frontend
-          sendProgress("Your dupes are ready! Loading details...");
+          // 6. Return results to frontend once all background tasks are complete
+          sendProgress("Ta-da! Your dupes are ready to shine! 🌟");
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({
             type: "result",
             data: {
