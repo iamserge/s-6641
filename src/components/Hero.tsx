@@ -20,6 +20,8 @@ const Hero = () => {
   const [showRecentProducts, setShowRecentProducts] = useState(false);
   const [tip, setTip] = useState("");
   const [searchTriggered, setSearchTriggered] = useState(false);
+  const [detectedProduct, setDetectedProduct] = useState<any>(null);
+  const [showProductConfirmation, setShowProductConfirmation] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -28,6 +30,16 @@ const Hero = () => {
 
   // **Message Variations**
   const messageVariations = {
+    "Analyzing your input...": [
+      "Reading your makeup vibes... 👀",
+      "Decoding your beauty DNA... 🔍",
+      "Translating your beauty language... 💬"
+    ],
+    "We detected: ": [
+      "Found your beauty match: ",
+      "I'm seeing: ",
+      "Got it, you're looking for: "
+    ],
     "Heyyy! We're on the hunt for the perfect dupes for you! 🎨": [
       "Obsessed with finding your makeup twin rn 💄",
       "BRB, snatching dupes that hit different ✨",
@@ -41,7 +53,7 @@ const Hero = () => {
       "First one to ask for this—we're on a whole journey rn 🏄‍♀️",
       "New to our algorithm—breaking the internet for you 🔥",
     ],
-    "Found some gems! Let's doll them up with more details... 💎": [
+    "Found some matches! Creating initial entries...": [
       "Caught some serious dupes—they ate 🔥",
       "These matches are so valid—just perfecting the vibe 💫",
     ],
@@ -49,6 +61,18 @@ const Hero = () => {
       "Manifest your new go-to's in 3, 2, 1... ✨",
       "Dropping your beauty rotation upgrade 💁‍♀️",
     ],
+    "Checking our database for existing dupes...": [
+      "Scouring our beauty vault for matches... 💼",
+      "Checking if we've already found this gem... 💎",
+    ],
+    "Gathering detailed information in the background...": [
+      "Summoning all the tea on these dupes... ☕",
+      "Deep diving for those hidden details... 🔍",
+    ],
+    "Your dupes are ready! Loading details...": [
+      "Dupes served hot and fresh! 🔥",
+      "Dupe mission accomplished! 🚀",
+    ]
   };
 
   // **Tips**
@@ -56,10 +80,27 @@ const Hero = () => {
     "Apply foundation with a damp sponge for a natural finish.",
     "Use lip liner to prevent lipstick bleeding.",
     "Set makeup with a light mist for longer wear.",
+    "Store mascara horizontally for better formula consistency.",
+    "When using cream products, apply before powder for better blending.",
+    "Concealer should be one shade lighter than your foundation for brightening.",
+    "Use a highlighter in the inner corners of eyes to look more awake.",
+    "Warm up your eyelash curler for 5 seconds with a hairdryer for better curl.",
+    "Powder your face before applying blush to help it last longer.",
+    "Use a setting spray to make your makeup last all day long."
   ];
 
   // **Utility Functions**
   const getRandomVariation = (serverMessage) => {
+    // Check for messages that are prefixes (like "We detected: ")
+    for (const prefix in messageVariations) {
+      if (serverMessage.startsWith(prefix) && messageVariations[prefix]) {
+        const variations = messageVariations[prefix];
+        const randomPrefix = variations[Math.floor(Math.random() * variations.length)];
+        return randomPrefix + serverMessage.substring(prefix.length);
+      }
+    }
+    
+    // Regular full message variations
     const variations = messageVariations[serverMessage];
     return variations?.length > 0
       ? variations[Math.floor(Math.random() * variations.length)]
@@ -122,11 +163,26 @@ const Hero = () => {
   }, [isProcessing]);
 
   // **Handle Search**
-  const handleSearch = async (e?: React.FormEvent, productName?: string) => {
+  const handleSearch = async (e?: React.FormEvent, productData?: any) => {
     if (e) e.preventDefault();
     
-    const textToSearch = productName || searchText.trim();
-    if (!textToSearch) {
+    let searchData = {};
+    let bodyMethod = 'GET';
+    const url = new URL(`${(supabase as any).supabaseUrl}/functions/v1/search-dupes`);
+    
+    if (productData) {
+      // Direct product data provided (from image analysis)
+      searchData = { searchText: `${productData.brand || ''} ${productData.name || ''}`.trim() };
+      url.searchParams.append("searchText", searchData.searchText);
+    } else if (previewImage) {
+      // Process image upload
+      searchData = { imageData: previewImage.replace(/^data:image\/\w+;base64,/, '') };
+      bodyMethod = 'POST';
+    } else if (searchText.trim()) {
+      // Process text input
+      searchData = { searchText: searchText.trim() };
+      url.searchParams.append("searchText", searchData.searchText);
+    } else {
       toast({
         variant: "destructive",
         title: "Error",
@@ -138,21 +194,40 @@ const Hero = () => {
     try {
       setIsProcessing(true);
       setSearchTriggered(true);
+      setShowProductConfirmation(false);
+      setDetectedProduct(null);
       setProgressMessage(getRandomVariation("Heyyy! We're on the hunt for the perfect dupes for you! 🎨"));
       
       const { data: { session } } = await supabase.auth.getSession();
       const apikey = (supabase as any).supabaseKey;
-      const baseUrl = `${(supabase as any).supabaseUrl}/functions/v1/search-dupes`;
-      const url = new URL(baseUrl);
-      url.searchParams.append("searchText", textToSearch);
+      
       url.searchParams.append("apikey", apikey);
       if (session?.access_token) url.searchParams.append("authorization", `Bearer ${session.access_token}`);
       
+      // Start EventSource for streaming updates
       const eventSource = new EventSource(url.toString());
+      
+      // For POST data, use a fetch first to start the process
+      if (bodyMethod === 'POST') {
+        fetch(url.toString(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(searchData)
+        }).catch(error => {
+          console.error("Error initiating search:", error);
+        });
+      }
       
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.type === "progress") {
+        
+        if (data.type === "productIdentified") {
+          // Set detected product info and show confirmation UI
+          setDetectedProduct(data.data);
+          setShowProductConfirmation(true);
+        } else if (data.type === "progress") {
           setProgressMessage(getRandomVariation(data.message));
           setOriginalProgressMessage(data.message);
         } else if (data.type === "result") {
@@ -165,6 +240,7 @@ const Hero = () => {
                 navigate(`/dupes/for/${data.data.data.slug}`);
                 setIsProcessing(false);
                 setSearchTriggered(false);
+                setShowProductConfirmation(false);
               }, 1000);
             }, 1500);
           } else {
@@ -179,6 +255,7 @@ const Hero = () => {
         eventSource.close();
         setIsProcessing(false);
         setSearchTriggered(false);
+        setShowProductConfirmation(false);
         toast({
           variant: "destructive",
           title: "Error",
@@ -195,6 +272,7 @@ const Hero = () => {
       });
       setIsProcessing(false);
       setSearchTriggered(false);
+      setShowProductConfirmation(false);
     }
   };
 
@@ -272,37 +350,8 @@ const Hero = () => {
     stopCamera();
 
     try {
-      // Add timeout to prevent hanging
-      const analyzeImage = async () => {
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Analysis timed out")), 10000)
-        );
-        const analysisPromise = supabase.functions.invoke("analyze-image", {
-          body: { image: imageDataUrl },
-        });
-        return Promise.race([analysisPromise, timeoutPromise]);
-      };
-
-      const response = await analyzeImage();
-      
-      // Properly type the response
-      interface AnalysisResponse {
-        data?: { product?: string };
-        error?: Error;
-      }
-      
-      const typedResponse = response as AnalysisResponse;
-      
-      if (typedResponse.error) throw typedResponse.error;
-      if (!typedResponse.data?.product) throw new Error("No product detected in image");
-
-      const cleanedProduct = typedResponse.data.product.replace(/["']/g, "").trim();
-      setSearchText(cleanedProduct);
-      toast({
-        title: "Product Detected!",
-        description: `Found: "${cleanedProduct}"`,
-      });
-      handleSearch(undefined, cleanedProduct); // Pass product directly
+      // Now use the unified search-dupes endpoint instead
+      handleSearch(undefined, undefined); // Will use previewImage
     } catch (error) {
       toast({
         variant: "destructive",
@@ -319,44 +368,15 @@ const Hero = () => {
 
     setIsProcessing(true);
     setProgressMessage("Analyzing your makeup muse... 📸");
-    const previewUrl = URL.createObjectURL(file);
-    setPreviewImage(previewUrl);
 
     try {
       const reader = new FileReader();
       reader.onload = async () => {
-        const base64Image = reader.result as string;
-
-        const analyzeImage = async () => {
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Analysis timed out")), 10000)
-          );
-          const analysisPromise = supabase.functions.invoke("analyze-image", {
-            body: { image: base64Image },
-          });
-          return Promise.race([analysisPromise, timeoutPromise]);
-        };
-
-        const response = await analyzeImage();
+        const imageDataUrl = reader.result as string;
+        setPreviewImage(imageDataUrl);
         
-        // Properly type the response
-        interface AnalysisResponse {
-          data?: { product?: string };
-          error?: Error;
-        }
-        
-        const typedResponse = response as AnalysisResponse;
-        
-        if (typedResponse.error) throw typedResponse.error;
-        if (!typedResponse.data?.product) throw new Error("No product detected in image");
-
-        const cleanedProduct = typedResponse.data.product.replace(/["']/g, "").trim();
-        setSearchText(cleanedProduct);
-        toast({
-          title: "Product Detected!",
-          description: `Found: "${cleanedProduct}"`,
-        });
-        handleSearch(undefined, cleanedProduct); // Pass product directly
+        // Now use the unified search-dupes endpoint
+        handleSearch(undefined, undefined); // Will use previewImage
       };
 
       reader.onerror = () => {
@@ -378,6 +398,15 @@ const Hero = () => {
   const clearPreview = () => {
     setPreviewImage(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const cancelSearch = () => {
+    setIsProcessing(false);
+    setPreviewImage(null);
+    setSearchText("");
+    setSearchTriggered(false);
+    setShowProductConfirmation(false);
+    setDetectedProduct(null);
   };
 
   // **JSX Rendering**
@@ -518,8 +547,50 @@ const Hero = () => {
             animate={{ scale: 1, opacity: 1 }}
             className="bg-white p-8 rounded-lg shadow-xl text-center max-h-[90vh] overflow-y-auto relative"
           >
-            {/* Header: Show only after product detection and search triggered */}
-            {previewImage && searchTriggered && searchText && (
+            {/* Product Confirmation UI */}
+            {showProductConfirmation && detectedProduct && (
+              <div className="mb-6 pb-4 border-b border-gray-100">
+                <div className="flex items-center justify-center gap-2">
+                  {previewImage && (
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-pink-100">
+                      <img
+                        src={previewImage}
+                        alt="Detected product"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="text-left">
+                    <p className="text-sm text-gray-500">We detected:</p>
+                    <p className="font-medium text-gray-800">
+                      {detectedProduct.brand ? `${detectedProduct.brand} ` : ''}
+                      {detectedProduct.name}
+                    </p>
+                    {detectedProduct.category && (
+                      <p className="text-xs text-gray-500">{detectedProduct.category}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-center space-x-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={cancelSearch}
+                  >
+                    Not what I'm looking for
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => setShowProductConfirmation(false)}
+                  >
+                    Yes, that's right
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Previous Header: Show only after product detection and search triggered */}
+            {!showProductConfirmation && previewImage && searchTriggered && searchText && (
               <div className="mb-4 pb-4 border-b border-gray-100 relative">
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-12 h-12 rounded-full overflow-hidden border border-pink-100">
@@ -535,12 +606,7 @@ const Hero = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => {
-                    setIsProcessing(false);
-                    setPreviewImage(null);
-                    setSearchText("");
-                    setSearchTriggered(false);
-                  }}
+                  onClick={cancelSearch}
                   className="absolute right-0 top-0 p-1 rounded-full hover:bg-gray-100 transition-colors"
                   aria-label="Cancel search"
                 >
