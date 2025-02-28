@@ -118,20 +118,6 @@ export async function searchAndProcessDupes(searchText: string, onProgress: (mes
   }
 }
 
-// Helper function to process and upload an image
-async function processAndUploadImage(imageUrl: string | undefined, fileName: string): Promise<string | undefined> {
-  if (!imageUrl) return undefined;
-  try {
-    const processedImageBase64 = await processProductImage(imageUrl);
-    if (processedImageBase64) {
-      return await uploadProcessedImageToSupabase(processedImageBase64, fileName);
-    }
-    return imageUrl; // Return original URL if processing fails
-  } catch (error) {
-    logError(`Error processing image for ${fileName}:`, error);
-    return imageUrl; // Return original URL on error
-  }
-}
 
 
 /**
