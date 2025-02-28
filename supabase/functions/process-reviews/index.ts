@@ -1,8 +1,14 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getProductReviewsAndResources, storeProductReviewsAndResources, supabase } from "../shared/db-client.ts";
+import { getBatchProductReviews } from "../services/perplexity.ts";
+import { processBatchReviews } from "../services/db-client.ts";
+import { supabase } from "../shared/db-client.ts";
+import { corsHeaders } from "../shared/utils.ts";
 
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
     const {
       originalProductId,
@@ -12,60 +18,44 @@ serve(async (req) => {
       dupeInfo
     } = await req.json();
 
-    console.log(`Processing reviews for product ${originalProductId}`);
+    console.log(`Processing reviews for product ${originalProductId} and ${dupeProductIds.length} dupes`);
 
-    // Get reviews for original product
-    const reviewsAndResources = await getProductReviewsAndResources(originalName, originalBrand);
-    
-    if (reviewsAndResources) {
-      await storeProductReviewsAndResources(
-        originalProductId,
-        reviewsAndResources.userReviews || [],
-        reviewsAndResources.productRating || { averageRating: null, totalReviews: 0, source: null },
-        {}, // Empty social media object - will be handled by resources function
-        [] // Empty articles - will be handled by resources function
-      );
-    }
-
-    // Mark reviews as loaded
+    // Mark all products as loading reviews
     await supabase
       .from('products')
-      .update({ loading_reviews: false })
+      .update({ loading_reviews: true })
       .eq('id', originalProductId);
-
-    // Process top dupe review only (to save API costs)
-    if (dupeProductIds.length > 0) {
-      const topDupeId = dupeProductIds[0];
-      const topDupeInfo = dupeInfo[0];
       
-      const dupeReviewsAndResources = await getProductReviewsAndResources(
-        topDupeInfo.name, 
-        topDupeInfo.brand
-      );
-      
-      if (dupeReviewsAndResources) {
-        await storeProductReviewsAndResources(
-          topDupeId,
-          dupeReviewsAndResources.userReviews || [],
-          dupeReviewsAndResources.productRating || { averageRating: null, totalReviews: 0, source: null },
-          {}, // Empty social media object
-          [] // Empty articles
-        );
-      }
-    }
-
-    // Mark all dupes as reviews loaded (even if we only processed the top one)
     if (dupeProductIds.length > 0) {
       await supabase
         .from('products')
-        .update({ loading_reviews: false })
+        .update({ loading_reviews: true })
         .in('id', dupeProductIds);
     }
 
-    console.log('Successfully processed reviews');
+    // Prepare products array for batch processing
+    const products = [
+      { id: originalProductId, name: originalName, brand: originalBrand },
+      ...dupeInfo.map((dupe, index) => ({
+        id: dupeProductIds[index],
+        name: dupe.name,
+        brand: dupe.brand
+      }))
+    ];
+
+    // Get reviews for all products in a single call
+    const batchReviewsData = await getBatchProductReviews(products);
+    
+    // Process and store all the reviews
+    await processBatchReviews(batchReviewsData);
+
+    console.log('Successfully processed reviews for all products');
     return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ 
+        success: true,
+        processed: Object.keys(batchReviewsData.products).length 
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error('Error in process-reviews:', error);
@@ -90,7 +80,7 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

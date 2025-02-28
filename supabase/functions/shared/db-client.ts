@@ -11,7 +11,6 @@ import {
   Resource,
   Database
 } from "./types.ts";
-import { PERPLEXITY_API_ENDPOINT, PERPLEXITY_API_KEY, REVIEWS_RESOURCES_SCHEMA } from "../shared/constants.ts";
 
 // Initialize Supabase Client
 export const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
@@ -588,103 +587,340 @@ export async function storeProductReviewsAndResources(
 
 
 /**
- * Fetches reviews, ratings, and social media content for a product
- * @param productName The name of the product
- * @param brand The brand of the product
- * @returns Structured data with reviews and resources
+ * Process and store reviews from a batch response
+ * @param batchReviewsData Batch review data with all products
+ * @returns Promise that resolves when processing is complete
  */
-export async function getProductReviewsAndResources(productName: string, brand: string): Promise<any> {
-  logInfo(`Fetching reviews and social media for: ${brand} ${productName}`);
-
+export async function processBatchReviews(batchReviewsData: any): Promise<void> {
   try {
-    const prompt = `
-    I need comprehensive information about the makeup product "${brand} ${productName}" including:
-
-    1. Overall product rating (out of 5 stars) from a reputable source 
-    2. 3-5 detailed user reviews with ratings from different platforms
-    3. Links to popular Instagram posts/reels featuring this product
-    4. Links to TikTok videos showcasing this product
-    5. Links to YouTube reviews or tutorials
-    6. Links to blog articles or reviews
-
-    Please find REAL content that actually exists online (not fabricated examples) and return the information in JSON format according to this exact schema:
-
-    ${REVIEWS_RESOURCES_SCHEMA}
-
-    For social media links, prioritize content from beauty influencers or makeup artists with good engagement.
-    For reviews, include a mix of positive and critical opinions for balance.
-    `;
-
-    const response = await fetch(PERPLEXITY_API_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${PERPLEXITY_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "sonar-pro",
-        messages: [
-          {
-            role: "system",
-            content: "You are a beauty research assistant who provides real, accurate data about makeup products including reviews and social media content. Your responses are thorough, factual, and structured in JSON format."
-          },
-          { role: "user", content: prompt }
-        ],
-        max_tokens: 4000,
-        temperature: 0.1,
-        search_recency_filter: "month",
-        stream: false,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Perplexity API error: ${await response.text()}`);
+    if (!batchReviewsData || !batchReviewsData.products) {
+      logError("Invalid batch reviews data format");
+      return;
     }
-
-    const data = await response.json();
-    const jsonContent = data.choices[0].message.content;
-
-    try {
-      // Clean the response and parse JSON
-      const cleanedContent = jsonContent.replace(/```json|```/g, '').trim();
-      const parsedData = JSON.parse(cleanedContent);
+    
+    const productIds = Object.keys(batchReviewsData.products);
+    logInfo(`Processing batch reviews for ${productIds.length} products`);
+    
+    // Process each product in parallel
+    await Promise.all(productIds.map(async (productId) => {
+      const productData = batchReviewsData.products[productId];
       
-      logInfo(`Successfully retrieved reviews and resources data for ${brand} ${productName}`);
-      return parsedData;
-    } catch (parseError) {
-      logError(`Error parsing reviews JSON:`, parseError);
       try {
-        // Second attempt - try to extract JSON from markdown format
-        const jsonMatch = jsonContent.match(/```(?:json)?([\s\S]*?)```/);
-        if (jsonMatch && jsonMatch[1]) {
-          const extractedJson = jsonMatch[1].trim();
-          return JSON.parse(extractedJson);
+        // Store product rating
+        if (productData.rating && productData.rating.averageRating) {
+          await supabase
+            .from("products")
+            .update({
+              rating: productData.rating.averageRating,
+              rating_count: productData.rating.totalReviews || 0,
+              rating_source: productData.rating.source || null
+            })
+            .eq("id", productId);
+            
+          logInfo(`Updated product ${productId} with rating: ${productData.rating.averageRating}`);
         }
         
-        // Third attempt - use regex to find anything that looks like JSON
-        const possibleJson = jsonContent.match(/{[\s\S]*}/);
-        if (possibleJson) {
-          return JSON.parse(possibleJson[0]);
+        // Store individual reviews
+        const reviews = productData.reviews || [];
+        if (reviews.length > 0) {
+          const insertedReviews = [];
+          const failedReviews = [];
+          
+          for (const review of reviews) {
+            try {
+              const { data, error } = await supabase
+                .from("reviews")
+                .insert({
+                  product_id: productId,
+                  rating: review.rating,
+                  author_name: review.author,
+                  author_avatar: review.avatar,
+                  review_text: review.text,
+                  source: review.source,
+                  source_url: review.sourceUrl,
+                  verified_purchase: review.verifiedPurchase,
+                  date: review.date,
+                  pros: review.pros,
+                  cons: review.cons
+                });
+                
+              if (error) {
+                logError(`Failed to insert review for product ${productId}:`, error);
+                failedReviews.push(review);
+              } else if (data) {
+                insertedReviews.push(data);
+              }
+            } catch (reviewError) {
+              logError(`Error inserting review for product ${productId}:`, reviewError);
+              failedReviews.push(review);
+            }
+          }
+          
+          logInfo(`Processed ${insertedReviews.length} reviews for product ${productId} (${failedReviews.length} failed)`);
+        } else {
+          logInfo(`No reviews found for product ${productId}`);
         }
-      } catch (secondError) {
-        logError(`Second parsing attempt failed:`, secondError);
+        
+        // Mark reviews as loaded
+        await supabase
+          .from("products")
+          .update({ loading_reviews: false })
+          .eq("id", productId);
+          
+      } catch (productError) {
+        logError(`Error processing reviews for product ${productId}:`, productError);
+        
+        // Ensure loading state is updated even on error
+        await supabase
+          .from("products")
+          .update({ loading_reviews: false })
+          .eq("id", productId);
       }
-      
-      // Return empty structure if all parsing fails
-      return {
-        productRating: { averageRating: null, totalReviews: 0, source: null },
-        userReviews: [],
-        socialMedia: { instagram: [], tiktok: [], youtube: [] },
-        articles: []
-      };
-    }
+    }));
+    
+    logInfo(`Completed batch reviews processing for ${productIds.length} products`);
   } catch (error) {
-    logError(`Error fetching reviews and resources:`, error);
-    return {
-      productRating: { averageRating: null, totalReviews: 0, source: null },
-      userReviews: [],
-      socialMedia: { instagram: [], tiktok: [], youtube: [] },
-      articles: []
-    };
+    logError(`Error in processBatchReviews:`, error);
+    
+    // Try to mark all products as not loading
+    if (batchReviewsData && batchReviewsData.products) {
+      const productIds = Object.keys(batchReviewsData.products);
+      try {
+        await supabase
+          .from("products")
+          .update({ loading_reviews: false })
+          .in("id", productIds);
+      } catch (updateError) {
+        logError(`Failed to update loading states for reviews:`, updateError);
+      }
+    }
+  }
+}
+
+/**
+ * Process and store resources from a batch response
+ * @param batchResourcesData Batch resources data with all products
+ * @returns Promise that resolves when processing is complete
+ */
+export async function processBatchResources(batchResourcesData: any): Promise<void> {
+  try {
+    if (!batchResourcesData || !batchResourcesData.products) {
+      logError("Invalid batch resources data format");
+      return;
+    }
+    
+    const productIds = Object.keys(batchResourcesData.products);
+    logInfo(`Processing batch resources for ${productIds.length} products`);
+    
+    // Process each product in parallel
+    await Promise.all(productIds.map(async (productId) => {
+      const productData = batchResourcesData.products[productId];
+      
+      try {
+        const allResources = [];
+        
+        // Process Instagram posts
+        if (productData.socialMedia?.instagram && productData.socialMedia.instagram.length > 0) {
+          for (const post of productData.socialMedia.instagram) {
+            try {
+              const { data: resource, error } = await supabase
+                .from("resources")
+                .insert({
+                  title: post.caption ? `Instagram: ${post.caption.substring(0, 50)}...` : `Instagram post by ${post.author}`,
+                  url: post.url,
+                  type: "Instagram",
+                  video_thumbnail: post.thumbnail,
+                  author_name: post.author,
+                  author_handle: post.authorHandle,
+                  views_count: post.views,
+                  likes_count: post.likes,
+                  caption: post.caption,
+                  content_type: post.type || "post"
+                })
+                .select()
+                .single();
+                
+              if (error) {
+                logError(`Failed to insert Instagram resource for product ${productId}:`, error);
+              } else if (resource) {
+                // Link resource to product
+                await supabase
+                  .from("product_resources")
+                  .insert({
+                    product_id: productId,
+                    resource_id: resource.id,
+                    is_featured: true // Mark Instagram content as featured
+                  });
+                  
+                allResources.push(resource);
+              }
+            } catch (resourceError) {
+              logError(`Error processing Instagram resource for product ${productId}:`, resourceError);
+            }
+          }
+          
+          logInfo(`Processed ${productData.socialMedia.instagram.length} Instagram resources for product ${productId}`);
+        }
+        
+        // Process TikTok videos
+        if (productData.socialMedia?.tiktok && productData.socialMedia.tiktok.length > 0) {
+          for (const video of productData.socialMedia.tiktok) {
+            try {
+              const { data: resource, error } = await supabase
+                .from("resources")
+                .insert({
+                  title: video.caption ? `TikTok: ${video.caption.substring(0, 50)}...` : `TikTok by ${video.author}`,
+                  url: video.url,
+                  type: "TikTok",
+                  video_thumbnail: video.thumbnail,
+                  author_name: video.author,
+                  author_handle: video.authorHandle,
+                  views_count: video.views,
+                  likes_count: video.likes,
+                  embed_code: video.embed,
+                  caption: video.caption
+                })
+                .select()
+                .single();
+                
+              if (error) {
+                logError(`Failed to insert TikTok resource for product ${productId}:`, error);
+              } else if (resource) {
+                // Link resource to product
+                await supabase
+                  .from("product_resources")
+                  .insert({
+                    product_id: productId,
+                    resource_id: resource.id,
+                    is_featured: true // Mark TikTok content as featured
+                  });
+                  
+                allResources.push(resource);
+              }
+            } catch (resourceError) {
+              logError(`Error processing TikTok resource for product ${productId}:`, resourceError);
+            }
+          }
+          
+          logInfo(`Processed ${productData.socialMedia.tiktok.length} TikTok resources for product ${productId}`);
+        }
+        
+        // Process YouTube videos
+        if (productData.socialMedia?.youtube && productData.socialMedia.youtube.length > 0) {
+          for (const video of productData.socialMedia.youtube) {
+            try {
+              const { data: resource, error } = await supabase
+                .from("resources")
+                .insert({
+                  title: video.title || `YouTube video by ${video.author}`,
+                  url: video.url,
+                  type: "YouTube",
+                  video_thumbnail: video.thumbnail,
+                  video_duration: video.duration,
+                  author_name: video.author,
+                  views_count: video.views,
+                  embed_code: video.embed,
+                  publish_date: video.publishDate,
+                  description: video.description
+                })
+                .select()
+                .single();
+                
+              if (error) {
+                logError(`Failed to insert YouTube resource for product ${productId}:`, error);
+              } else if (resource) {
+                // Link resource to product
+                await supabase
+                  .from("product_resources")
+                  .insert({
+                    product_id: productId,
+                    resource_id: resource.id,
+                    is_featured: true // Mark YouTube content as featured
+                  });
+                  
+                allResources.push(resource);
+              }
+            } catch (resourceError) {
+              logError(`Error processing YouTube resource for product ${productId}:`, resourceError);
+            }
+          }
+          
+          logInfo(`Processed ${productData.socialMedia.youtube.length} YouTube resources for product ${productId}`);
+        }
+        
+        // Process blog articles
+        if (productData.articles && productData.articles.length > 0) {
+          for (const article of productData.articles) {
+            try {
+              const { data: resource, error } = await supabase
+                .from("resources")
+                .insert({
+                  title: article.title || `Article from ${article.source}`,
+                  url: article.url,
+                  type: "Article",
+                  video_thumbnail: article.thumbnail,
+                  author_name: article.author || article.source,
+                  publish_date: article.publishDate,
+                  description: article.excerpt
+                })
+                .select()
+                .single();
+                
+              if (error) {
+                logError(`Failed to insert article resource for product ${productId}:`, error);
+              } else if (resource) {
+                // Link resource to product - articles are not featured by default
+                await supabase
+                  .from("product_resources")
+                  .insert({
+                    product_id: productId,
+                    resource_id: resource.id,
+                    is_featured: false
+                  });
+                  
+                allResources.push(resource);
+              }
+            } catch (resourceError) {
+              logError(`Error processing article resource for product ${productId}:`, resourceError);
+            }
+          }
+          
+          logInfo(`Processed ${productData.articles.length} article resources for product ${productId}`);
+        }
+        
+        // Mark resources as loaded
+        await supabase
+          .from("products")
+          .update({ loading_resources: false })
+          .eq("id", productId);
+          
+        logInfo(`Completed resources processing for product ${productId}, stored ${allResources.length} total resources`);
+      } catch (productError) {
+        logError(`Error processing resources for product ${productId}:`, productError);
+        
+        // Ensure loading state is updated even on error
+        await supabase
+          .from("products")
+          .update({ loading_resources: false })
+          .eq("id", productId);
+      }
+    }));
+    
+    logInfo(`Completed batch resources processing for ${productIds.length} products`);
+  } catch (error) {
+    logError(`Error in processBatchResources:`, error);
+    
+    // Try to mark all products as not loading
+    if (batchResourcesData && batchResourcesData.products) {
+      const productIds = Object.keys(batchResourcesData.products);
+      try {
+        await supabase
+          .from("products")
+          .update({ loading_resources: false })
+          .in("id", productIds);
+      } catch (updateError) {
+        logError(`Failed to update loading states for resources:`, updateError);
+      }
+    }
   }
 }

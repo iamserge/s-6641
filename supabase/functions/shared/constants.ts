@@ -43,6 +43,8 @@ export const INITIAL_DUPES_SCHEMA = {
   ]
 };
 
+
+
 // Schema for reviews and resources request
 export const REVIEWS_RESOURCES_SCHEMA = `{
   "productRating": {
