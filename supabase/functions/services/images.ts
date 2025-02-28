@@ -40,7 +40,7 @@ export async function uploadProcessedImageToSupabase(base64Image: string, fileNa
 }
 
 // Helper function to process and upload an image
-async function processAndUploadImage(imageUrl: string | undefined, fileName: string): Promise<string | undefined> {
+export async function processAndUploadImage(imageUrl: string | undefined, fileName: string): Promise<string | undefined> {
   if (!imageUrl) return undefined;
   try {
     const processedImageBase64 = await processProductImage(imageUrl);
