@@ -148,4 +148,3 @@ verify_jwt = false
 
 [functions.process-voice]
 verify_jwt = false
-
