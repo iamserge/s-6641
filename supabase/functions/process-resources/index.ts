@@ -4,7 +4,7 @@
 // Adding comment to trigger redeployment (timestamp: 2025-02-28 16:30:45)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getBatchProductResources } from "../services/perplexity.ts";
-import { processBatchResources } from "../services/db-client.ts";
+import { processBatchResources } from "../shared/db-client.ts";
 import { supabase } from "../shared/db-client.ts";
 import { corsHeaders } from "../shared/utils.ts";
 
