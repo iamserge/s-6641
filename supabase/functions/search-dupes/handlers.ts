@@ -3,7 +3,7 @@ import { storeProductOffers, supabase } from "../shared/db-client.ts";
 import { logInfo, logError } from "../shared/utils.ts";
 import { getInitialDupes, getDetailedDupeAnalysis } from "../services/perplexity.ts";
 import { processProductImage } from "../services/image-enhancement.ts";
-import { uploadProcessedImageToSupabase } from "../services/images.ts"
+import { uploadProcessedImageToSupabase, processAndUploadImage } from "../services/images.ts"
 import { cleanupAndStructureData } from "../services/openai.ts";
 import { DupeResponse } from "../shared/types.ts";
 import { fetchProductDataFromExternalDb } from "../services/external-db.ts";
