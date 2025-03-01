@@ -289,25 +289,7 @@ serve(async (req) => {
                   return { success: false, error: e.message };
                 }
               })(),
-              
-              // Process ingredients
-              (async () => {
-                logInfo(`[${requestId}] Starting process-ingredients task`);
-                try {
-                  const response = await fetch(`${supabaseUrl}/functions/v1/process-ingredients`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
-                    body: JSON.stringify(backgroundData)
-                  });
-                  const result = await response.json();
-                  logInfo(`[${requestId}] process-ingredients task completed: ${safeStringify(result)}`);
-                  return result;
-                } catch (e) {
-                  logError(`[${requestId}] process-ingredients task failed: ${safeStringify(e)}`);
-                  return { success: false, error: e.message };
-                }
-              })(),
-              
+            
               // Process reviews
               (async () => {
                 logInfo(`[${requestId}] Starting process-reviews task`);
