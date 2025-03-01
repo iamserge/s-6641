@@ -608,7 +608,6 @@ export async function getBatchProductReviews(products: ProductInfo[]): Promise<a
         top_p: 0.9,
         search_recency_filter: "month",
         stream: false,
-        response_format: { type: "json_object" },
       }),
     });
 
