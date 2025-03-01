@@ -2,6 +2,7 @@
 
 import { logInfo, logError, base64ToBlob } from "../shared/utils.ts";
 import { uploadImage, getPublicUrl } from "../shared/db-client.ts";
+import { processProductImage } from "../services/image-enhancement.ts";
 
 /**
  * Uploads a processed image (base64) to Supabase storage and returns the public URL
