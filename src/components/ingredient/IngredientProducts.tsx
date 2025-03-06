@@ -16,7 +16,12 @@ interface IngredientProductsProps {
   isKeyOnly?: boolean;
 }
 
-const ProductCard = memo(({ product, onClick }) => {
+interface ProductCardProps {
+  product: any;
+  onClick: () => void;
+}
+
+const ProductCard = memo(({ product, onClick }: ProductCardProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -118,7 +123,7 @@ const IngredientProductsComponent = ({ products, ingredientId, isKeyOnly = true 
     queryFn: () => fetchMoreProducts({ pageParam: page }),
     enabled: page > 1 || products.length === 0,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    keepPreviousData: true, // Keep previous data to prevent UI flashing
+    placeholderData: previous => previous, // Use placeholderData instead of keepPreviousData
   });
 
   // Optimize count query with separate query
@@ -179,7 +184,7 @@ const IngredientProductsComponent = ({ products, ingredientId, isKeyOnly = true 
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
           layout
         >
-          {displayProducts.map((product, index) => (
+          {displayProducts.map((product) => (
             <ProductCard 
               key={product.id} 
               product={product} 
