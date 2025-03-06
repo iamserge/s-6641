@@ -113,7 +113,9 @@ serve(async (req) => {
           brand: dupe.brand,
           ...(dupeData.verified ? dupeData : {})
         } as never);
+        console.log({dupeData})
       }
+      console.log(enrichedDupes)
 
       // Get detailed analysis from Perplexity
       const enrichedOriginal = {
