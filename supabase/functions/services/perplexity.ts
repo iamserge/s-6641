@@ -75,10 +75,10 @@ Return ONLY a valid JSON object that exactly follows the provided schema.
 const DETAILED_ANALYSIS_PROMPT = (originalProduct: any, dupes: any[]) => `
 I need a detailed analysis comparing this original product and its potential dupes.
 
-Original Product (with verified data):
+Original Product (with external data):
 ${JSON.stringify(originalProduct, null, 2)}
 
-Potential Dupes (with verified data):
+Potential Dupes (with external data - bear in mind we might have not been able to fetch all the data from external db, so some will just have name and brand - please try to find what you can for this):
 ${JSON.stringify(dupes, null, 2)}
 
 Please provide a comprehensive response following this EXACT schema:

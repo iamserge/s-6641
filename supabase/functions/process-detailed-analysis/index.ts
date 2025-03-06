@@ -111,7 +111,7 @@ serve(async (req) => {
         enrichedDupes.push({
           name: dupe.name,
           brand: dupe.brand,
-          ...(dupeData.verified ? dupeData : {})
+          ...(dupeData)
         } as never);
         console.log({dupeData})
       }
@@ -121,7 +121,7 @@ serve(async (req) => {
       const enrichedOriginal = {
         name: originalName,
         brand: originalBrand,
-        ...(originalProductData.verified ? originalProductData : {})
+        ...(originalProductData)
       };
 
       const detailedAnalysis = await getDetailedDupeAnalysis(
