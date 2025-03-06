@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -8,6 +7,7 @@ import { ArrowRight, Loader2, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
+import { memo } from "react";
 
 interface IngredientProductsProps {
   products: any[];
@@ -15,16 +15,15 @@ interface IngredientProductsProps {
   isKeyOnly?: boolean;
 }
 
-export const IngredientProducts = ({ products, ingredientId, isKeyOnly = true }: IngredientProductsProps) => {
+const IngredientProductsComponent = ({ products, ingredientId, isKeyOnly = true }: IngredientProductsProps) => {
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
   const pageSize = 6;
 
-  // Query to fetch more products for pagination
   const { data: paginatedProducts, isLoading, isFetching } = useQuery({
     queryKey: ["ingredientProducts", ingredientId, page, isKeyOnly],
     queryFn: async () => {
-      if (page === 1) return products; // Use initial products for first page
+      if (page === 1) return products;
       
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
@@ -44,13 +43,11 @@ export const IngredientProducts = ({ products, ingredientId, isKeyOnly = true }:
       
       if (error) throw error;
       
-      // Extract products from the nested structure
       return data?.map(item => item.products) || [];
     },
     enabled: page > 1 || products.length === 0
   });
 
-  // Calculate if there are more products to load
   const { data: totalCount } = useQuery({
     queryKey: ["ingredientProductsCount", ingredientId, isKeyOnly],
     queryFn: async () => {
@@ -73,15 +70,12 @@ export const IngredientProducts = ({ products, ingredientId, isKeyOnly = true }:
 
   const displayProducts = paginatedProducts || products;
 
-  // Toggle function to switch between key and all ingredients
   const toggleIsKeyOnly = () => {
-    setPage(1); // Reset to page 1 when toggling
-    // Handle toggling in a way that re-triggers the query
+    setPage(1);
   };
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Filter options */}
       <div className="flex justify-end mb-6">
         <div className="space-x-2">
           <Button 
@@ -141,7 +135,6 @@ export const IngredientProducts = ({ products, ingredientId, isKeyOnly = true }:
                 )}
               </div>
               
-              {/* Rating if available */}
               {product.rating && (
                 <div className="flex items-center gap-1 mb-3">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
@@ -154,7 +147,6 @@ export const IngredientProducts = ({ products, ingredientId, isKeyOnly = true }:
                 </div>
               )}
               
-              {/* Dupes badge */}
               {product.product_dupes && product.product_dupes.length > 0 ? (
                 <Badge variant="secondary" className="rounded-full px-3 py-1 bg-green-50 text-green-700">
                   Has {product.product_dupes.length} dupes
@@ -169,14 +161,12 @@ export const IngredientProducts = ({ products, ingredientId, isKeyOnly = true }:
         ))}
       </div>
 
-      {/* Loading indicator */}
       {isFetching && (
         <div className="flex justify-center mt-8">
           <Loader2 className="w-6 h-6 animate-spin text-[#5840c0]" />
         </div>
       )}
 
-      {/* Load more button */}
       {hasMore && !isFetching && (
         <div className="flex justify-center mt-8">
           <Button 
@@ -190,7 +180,6 @@ export const IngredientProducts = ({ products, ingredientId, isKeyOnly = true }:
         </div>
       )}
 
-      {/* Empty state */}
       {displayProducts.length === 0 && !isLoading && (
         <div className="text-center py-12 bg-white/50 backdrop-blur-sm rounded-xl">
           <p className="text-lg text-gray-600">No products found containing this ingredient.</p>
@@ -199,3 +188,5 @@ export const IngredientProducts = ({ products, ingredientId, isKeyOnly = true }:
     </div>
   );
 };
+
+export const IngredientProducts = memo(IngredientProductsComponent);

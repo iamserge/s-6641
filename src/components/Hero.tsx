@@ -1,5 +1,4 @@
-
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Camera, Loader2, Search, X } from "lucide-react";
@@ -28,8 +27,8 @@ const Hero = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
 
-  // **Message Variations**
-  const messageVariations = {
+  // Memoize message variations to prevent recreating on each render
+  const messageVariations = useMemo(() => ({
     "Analyzing your input...": [
       "Reading your makeup vibes... 👀",
       "Decoding your beauty DNA... 🔍",
@@ -73,10 +72,10 @@ const Hero = () => {
       "Dupes served hot and fresh! 🔥",
       "Dupe mission accomplished! 🚀",
     ]
-  };
+  }), []);
 
-  // **Tips**
-  const tips = [
+  // Memoize tips to prevent recreating on each render
+  const tips = useMemo(() => [
     "Apply foundation with a damp sponge for a natural finish.",
     "Use lip liner to prevent lipstick bleeding.",
     "Set makeup with a light mist for longer wear.",
@@ -87,10 +86,10 @@ const Hero = () => {
     "Warm up your eyelash curler for 5 seconds with a hairdryer for better curl.",
     "Powder your face before applying blush to help it last longer.",
     "Use a setting spray to make your makeup last all day long."
-  ];
+  ], []);
 
   // **Utility Functions**
-  const getRandomVariation = (serverMessage) => {
+  const getRandomVariation = useCallback((serverMessage) => {
     // Check for messages that are prefixes (like "We detected: ")
     for (const prefix in messageVariations) {
       if (serverMessage.startsWith(prefix) && messageVariations[prefix]) {
@@ -105,41 +104,52 @@ const Hero = () => {
     return variations?.length > 0
       ? variations[Math.floor(Math.random() * variations.length)]
       : serverMessage;
-  };
+  }, [messageVariations]);
 
-  const getRandomTip = () => tips[Math.floor(Math.random() * tips.length)];
+  const getRandomTip = useCallback(() => tips[Math.floor(Math.random() * tips.length)], [tips]);
 
-  // **Fetch Recent Products**
-  const fetchRecentProducts = async () => {
-    const { data: productsWithDupes } = await supabase
-      .from("product_dupes")
-      .select("original_product_id, savings_percentage")
-      .order("savings_percentage", { ascending: false })
-      .limit(3);
+  // **Fetch Recent Products with optimized query config**
+  const fetchRecentProducts = useCallback(async () => {
+    try {
+      const { data: productsWithDupes } = await supabase
+        .from("product_dupes")
+        .select("original_product_id, savings_percentage")
+        .order("savings_percentage", { ascending: false })
+        .limit(3);
 
-    const productIds = productsWithDupes.map((item) => item.original_product_id);
-    const { data: products } = await supabase
-      .from("products")
-      .select("id, name, brand, image_url, slug")
-      .in("id", productIds);
+      if (!productsWithDupes || productsWithDupes.length === 0) return [];
 
-    const productsWithDetails = await Promise.all(
-      products.map(async (product) => {
-        const { data: dupes, count } = await supabase
-          .from("product_dupes")
-          .select("savings_percentage", { count: "exact" })
-          .eq("original_product_id", product.id);
-        const maxSavings = Math.max(...dupes.map((d) => d.savings_percentage));
-        return { ...product, dupesCount: count, maxSavings };
-      })
-    );
-    return productsWithDetails;
-  };
+      const productIds = productsWithDupes.map((item) => item.original_product_id);
+      const { data: products } = await supabase
+        .from("products")
+        .select("id, name, brand, image_url, slug")
+        .in("id", productIds);
+
+      if (!products || products.length === 0) return [];
+
+      const productsWithDetails = await Promise.all(
+        products.map(async (product) => {
+          const { data: dupes, count } = await supabase
+            .from("product_dupes")
+            .select("savings_percentage", { count: "exact" })
+            .eq("original_product_id", product.id);
+          const maxSavings = Math.max(...(dupes?.map((d) => d.savings_percentage) || [0]));
+          return { ...product, dupesCount: count, maxSavings };
+        })
+      );
+      return productsWithDetails;
+    } catch (error) {
+      console.error("Error fetching recent products:", error);
+      return [];
+    }
+  }, []);
 
   const { data: recentProducts } = useQuery({
     queryKey: ["recentProductsForModal"],
     queryFn: fetchRecentProducts,
     enabled: showRecentProducts,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false, // Prevent refetching when window regains focus
   });
 
   // **Timers for Tips and Recent Products**
