@@ -1,9 +1,12 @@
+
 /// <reference lib="es2015" />
 
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
 import { logInfo, logError } from "../shared/utils.ts";
 import { getBrandByName, insertBrand } from "../shared/db-client.ts";
 import { getBrandInfo } from "./openai.ts";
+
+// Adding this comment to trigger redeployment (timestamp: 2025-02-28 16:30:45)
 
 /**
  * Process a brand and return its ID
