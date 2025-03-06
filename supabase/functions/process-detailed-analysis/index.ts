@@ -21,7 +21,7 @@ async function storeProductOffers(productId, offers) {
         .single();
       
       if (existingMerchant) {
-        merchantId = existingMerchant.id;
+        merchantId = existingMerchant?.id;
         
         // Update merchant if needed
         await supabase
@@ -43,7 +43,7 @@ async function storeProductOffers(productId, offers) {
           .select('id')
           .single();
         
-        merchantId = newMerchant.id;
+        merchantId = newMerchant?.id;
       }
     }
     
