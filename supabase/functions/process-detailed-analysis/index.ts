@@ -19,28 +19,28 @@ async function storeProductOffers(productId, offers) {
     processedOffers: 0,
     errors: []
   };
-  
+
   if (!productId) {
     logError(`Cannot store offers: Invalid product ID: ${productId}`);
     results.errors.push('Invalid product ID');
     return results;
   }
-  
+
   if (!offers || !Array.isArray(offers) || offers.length === 0) {
     logError(`Cannot store offers: Invalid or empty offers array for product ${productId}`);
     results.errors.push('Invalid or empty offers array');
     return results;
   }
-  
+
   logInfo(`Storing ${offers.length} offers for product ${productId}`);
   results.totalOffers = offers.length;
-  
+
   // Log first offer to help debugging
   if (offers.length > 0) {
     logInfo(`First offer sample: ${safeStringify(offers[0])}`);
   }
-  
-  // Store merchant information and offers
+
+  // Process each offer
   for (const offer of offers) {
     try {
       if (!offer) {
@@ -48,69 +48,71 @@ async function storeProductOffers(productId, offers) {
         results.errors.push('Null offer in array');
         continue;
       }
-      
+
       if (!offer.link) {
         logError(`Offer missing required 'link' field for product ${productId}: ${safeStringify(offer)}`);
         results.errors.push('Offer missing link field');
         continue;
       }
-      
+
       if (!offer.price && offer.price !== 0) {
         logError(`Offer missing required 'price' field for product ${productId}: ${safeStringify(offer)}`);
         results.errors.push('Offer missing price field');
         continue;
       }
-      
-      // First, store or update merchant
+
+      // Store or update merchant
       let merchantId = null;
-      
+
       if (offer.merchant) {
-        if (!offer.merchant.name) {
-          logError(`Merchant missing required 'name' field for product ${productId}: ${safeStringify(offer.merchant)}`);
-          results.errors.push('Merchant missing name field');
+        // Validate that merchant is a non-empty string
+        if (typeof offer.merchant !== 'string' || offer.merchant.trim() === '') {
+          logError(`Invalid merchant name for product ${productId}: ${safeStringify(offer.merchant)}`);
+          results.errors.push('Invalid merchant name');
           continue;
         }
-        
-        logInfo(`Processing merchant: ${offer.merchant.name} for product ${productId}`);
-        
+
+        const merchantName = offer.merchant.trim();
+        logInfo(`Processing merchant: ${merchantName} for product ${productId}`);
+
         try {
+          // Check if merchant already exists
           const { data: existingMerchant, error: merchantQueryError } = await supabase
             .from('merchants')
             .select('id')
-            .eq('name', offer.merchant.name)
+            .eq('name', merchantName)
             .single();
-          
+
           if (merchantQueryError && merchantQueryError.code !== 'PGRST116') { // Not found error is OK
-            logError(`Error fetching merchant ${offer.merchant.name}: ${safeStringify(merchantQueryError)}`);
+            logError(`Error fetching merchant ${merchantName}: ${safeStringify(merchantQueryError)}`);
             results.errors.push(`Error fetching merchant: ${merchantQueryError.message}`);
             continue;
           }
-          
+
           if (existingMerchant) {
             merchantId = existingMerchant.id;
-            logInfo(`Found existing merchant ${offer.merchant.name} with ID ${merchantId}`);
-            
-            // Update merchant if needed
-            try {
-              const { error: merchantUpdateError } = await supabase
-                .from('merchants')
-                .update({
-                  domain: offer.merchant.domain || null,
-                  logo_url: offer.merchant.logo_url || null
-                })
-                .eq('id', merchantId);
-              
-              if (merchantUpdateError) {
-                logError(`Error updating merchant ${offer.merchant.name}: ${safeStringify(merchantUpdateError)}`);
-                results.errors.push(`Error updating merchant: ${merchantUpdateError.message}`);
-                // Continue anyway, as we still have the merchant ID
-              } else {
-                logInfo(`Updated merchant ${offer.merchant.name} with ID ${merchantId}`);
+            logInfo(`Found existing merchant ${merchantName} with ID ${merchantId}`);
+
+            // Update domain if provided
+            if (offer.domain) {
+              try {
+                const { error: merchantUpdateError } = await supabase
+                  .from('merchants')
+                  .update({ domain: offer.domain })
+                  .eq('id', merchantId);
+
+                if (merchantUpdateError) {
+                  logError(`Error updating merchant ${merchantName}: ${safeStringify(merchantUpdateError)}`);
+                  results.errors.push(`Error updating merchant: ${merchantUpdateError.message}`);
+                  // Proceed with existing merchantId despite update error
+                } else {
+                  logInfo(`Updated merchant ${merchantName} with domain ${offer.domain}`);
+                }
+              } catch (merchantUpdateException) {
+                logError(`Exception updating merchant ${merchantName}: ${safeStringify(merchantUpdateException)}`);
+                results.errors.push(`Exception updating merchant: ${merchantUpdateException.message}`);
+                // Proceed with existing merchantId
               }
-            } catch (merchantUpdateException) {
-              logError(`Exception updating merchant ${offer.merchant.name}: ${safeStringify(merchantUpdateException)}`);
-              results.errors.push(`Exception updating merchant: ${merchantUpdateException.message}`);
-              // Continue anyway, as we still have the merchant ID
             }
           } else {
             // Create new merchant
@@ -118,46 +120,46 @@ async function storeProductOffers(productId, offers) {
               const { data: newMerchant, error: merchantInsertError } = await supabase
                 .from('merchants')
                 .insert({
-                  name: offer.merchant.name,
-                  domain: offer.merchant.domain || null,
-                  logo_url: offer.merchant.logo_url || null
+                  name: merchantName,
+                  domain: offer.domain || null,
+                  logo_url: null // No logo information available
                 })
                 .select('id')
                 .single();
-              
+
               if (merchantInsertError) {
-                logError(`Error creating merchant ${offer.merchant.name}: ${safeStringify(merchantInsertError)}`);
+                logError(`Error creating merchant ${merchantName}: ${safeStringify(merchantInsertError)}`);
                 results.errors.push(`Error creating merchant: ${merchantInsertError.message}`);
                 continue;
               }
-              
+
               if (!newMerchant || !newMerchant.id) {
-                logError(`Failed to get ID for newly created merchant ${offer.merchant.name}`);
+                logError(`Failed to get ID for newly created merchant ${merchantName}`);
                 results.errors.push('Failed to get new merchant ID');
                 continue;
               }
-              
+
               merchantId = newMerchant.id;
-              logInfo(`Created new merchant ${offer.merchant.name} with ID ${merchantId}`);
+              logInfo(`Created new merchant ${merchantName} with ID ${merchantId}`);
             } catch (merchantInsertException) {
-              logError(`Exception creating merchant ${offer.merchant.name}: ${safeStringify(merchantInsertException)}`);
+              logError(`Exception creating merchant ${merchantName}: ${safeStringify(merchantInsertException)}`);
               results.errors.push(`Exception creating merchant: ${merchantInsertException.message}`);
               continue;
             }
           }
         } catch (merchantException) {
-          logError(`Exception processing merchant ${offer.merchant.name}: ${safeStringify(merchantException)}`);
+          logError(`Exception processing merchant ${merchantName}: ${safeStringify(merchantException)}`);
           results.errors.push(`Exception processing merchant: ${merchantException.message}`);
           continue;
         }
       } else {
         logInfo(`No merchant information provided for offer on product ${productId}`);
       }
-      
-      // Store offer
+
+      // Store the offer
       try {
         const offerData = {
-          merchant_id: merchantId, // Will be null if no merchant
+          merchant_id: merchantId, // Null if no merchant
           title: offer.title || null,
           price: offer.price,
           list_price: offer.list_price || null,
@@ -168,29 +170,29 @@ async function storeProductOffers(productId, offers) {
           link: offer.link,
           updated_t: offer.updated_t || Math.floor(Date.now() / 1000)
         };
-        
+
         logInfo(`Inserting offer with data: ${safeStringify(offerData)}`);
-        
+
         const { data: newOffer, error: offerInsertError } = await supabase
           .from('offers')
           .insert(offerData)
           .select('id')
           .single();
-        
+
         if (offerInsertError) {
           logError(`Error creating offer for product ${productId}: ${safeStringify(offerInsertError)}`);
           results.errors.push(`Error creating offer: ${offerInsertError.message}`);
           continue;
         }
-        
+
         if (!newOffer || !newOffer.id) {
           logError(`Failed to get ID for newly created offer for product ${productId}`);
           results.errors.push('Failed to get new offer ID');
           continue;
         }
-        
+
         logInfo(`Created new offer with ID ${newOffer.id} for product ${productId}`);
-        
+
         // Link offer to product
         try {
           const { error: linkError } = await supabase
@@ -198,15 +200,15 @@ async function storeProductOffers(productId, offers) {
             .insert({
               product_id: productId,
               offer_id: newOffer.id,
-              is_best_price: true // Mark as best price (can be updated later with proper logic)
+              is_best_price: true // Placeholder; adjust logic as needed
             });
-          
+
           if (linkError) {
             logError(`Error linking offer ${newOffer.id} to product ${productId}: ${safeStringify(linkError)}`);
             results.errors.push(`Error linking offer to product: ${linkError.message}`);
             continue;
           }
-          
+
           logInfo(`Successfully linked offer ${newOffer.id} to product ${productId}`);
           results.processedOffers++;
         } catch (linkException) {
@@ -225,7 +227,7 @@ async function storeProductOffers(productId, offers) {
       continue;
     }
   }
-  
+
   results.success = results.processedOffers > 0;
   logInfo(`Completed storing offers for product ${productId}. Processed ${results.processedOffers}/${results.totalOffers} offers with ${results.errors.length} errors.`);
   return results;
