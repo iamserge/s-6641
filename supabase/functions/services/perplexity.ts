@@ -118,9 +118,8 @@ For each dupe, provide detailed comparison metrics:
 9. Confidence level (High/Medium/Low) based on validation quality and number of sources
 
 In the summary field, highlight:
-1. Which dupe is objectively closest to the original and why
-2. Notable differences in performance, ingredients, or ethical considerations
-3. Best value proposition among the dupes
+1.  MAKE SURE ONLY TO MENTION DUPES THAT WE FOUND
+2. One two lines, summarising product and dupes we found, but in a light, easy to read format, very simple, gen z fiendly, not cringe, add emojis
 
 
 Base your analysis on the verified data provided, plus your knowledge of these products.

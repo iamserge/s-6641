@@ -159,7 +159,7 @@ export const SCHEMA_DEFINITION = `{
     "freeOf": string[],              // Claims about excluded ingredients
     "crueltyFree": boolean,          // Cruelty-free status
     "vegan": boolean,                // Vegan status
-    "notes": string,                 // Additional observations, differences
+    "notes": string,                 // A one liner, summarising what this dupe is about in relation to main product
     
     // Dupe-specific comparison fields
     "savingsPercentage": number,     // Calculated savings vs original
@@ -172,6 +172,6 @@ export const SCHEMA_DEFINITION = `{
     "longevityComparison": string,   // How it compares to original
     "purchaseLink": string           // Where to buy the dupe
   }],
-  "summary": string,                 // Concise overview comparing original and dupes
+  "summary": string,                 // A short, one two lines about main product and dupes we found.very simple, gen z fiendly, not cringe, add emojis. MAKE SURE ONLY TO MENTION DUPES THAT WE FOUND.
   
 }`;
