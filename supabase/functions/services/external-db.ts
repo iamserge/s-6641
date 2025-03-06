@@ -5,7 +5,7 @@ import { logInfo, logError } from "../shared/utils.ts";
 // UPCItemDB API configuration
 const UPCITEMDB_API_BASE_URL = "https://api.upcitemdb.com/prod/v1";
 const UPCDB_API_KEY = Deno.env.get("UPCDB_API_KEY") || "23bc948d2588e5ea98fb4e0c5b47e6b9";
-const MIN_REQUEST_INTERVAL_MS = 10500; // 10.5 seconds between requests
+const MIN_REQUEST_INTERVAL_MS = 7000; // 10.5 seconds between requests
 
 // Simple in-memory key value storage
 // This is the simplest approach but won't persist between function invocations
