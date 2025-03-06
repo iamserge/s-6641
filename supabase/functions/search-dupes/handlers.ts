@@ -239,7 +239,7 @@ export async function storeDataInDatabase(data: DupeResponse) {
 
     // Store offers for original product if available
     if (data.original.offers && data.original.offers.length > 0) {
-      await storeProductOffers(originalProduct.id, data.original.offers);
+      await storeProductOffers(originalProduct?.id, data.original.offers);
     }
 
     // 4. Process and store dupes with images in main call
@@ -301,15 +301,15 @@ export async function storeDataInDatabase(data: DupeResponse) {
 
         // Store offers for dupe product if available
         if (dupe.offers && dupe.offers.length > 0) {
-          await storeProductOffers(dupeProduct.id, dupe.offers);
+          await storeProductOffers(dupeProduct?.id, dupe.offers);
         }
 
         // Create product_dupes relationship
         const { error: relationError } = await supabase
           .from('product_dupes')
           .insert({
-            original_product_id: originalProduct.id,
-            dupe_product_id: dupeProduct.id,
+            original_product_id: originalProduct?.id,
+            dupe_product_id: dupeProduct?.id,
             match_score: dupe.matchScore,
             savings_percentage: dupe.savingsPercentage
           });
@@ -319,7 +319,7 @@ export async function storeDataInDatabase(data: DupeResponse) {
           throw relationError;
         }
 
-        return dupeProduct.id;
+        return dupeProduct?.id;
       })
     );
 
@@ -328,13 +328,13 @@ export async function storeDataInDatabase(data: DupeResponse) {
       slug: productSlug,
       name: originalProduct.name,
       brand: originalProduct.brand,
-      originalProductId: originalProduct.id,
+      originalProductId: originalProduct?.id,
       dupeProductIds: dupeIds
     };
 
     // 7. Trigger background task for brands and ingredients
     const backgroundTaskData = {
-      originalProductId: originalProduct.id,
+      originalProductId: originalProduct?.id,
       dupeProductIds: dupeIds,
       originalBrand: data.original.brand,
       dupeBrands: data.dupes.map(dupe => dupe.brand),

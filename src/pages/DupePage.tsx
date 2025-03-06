@@ -70,9 +70,9 @@ const DupePage = () => {
 
         const reviews = product.reviews || [];
         const resources = product.product_resources?.map(pr => ({
-          id: pr.id,
-          product_id: product.id,
-          resource_id: pr.resources.id,
+          id: pr?.id,
+          product_id: product?.id,
+          resource_id: pr.resources?.id,
           is_featured: pr.is_featured,
           resource: pr.resources
         })) || [];
@@ -105,7 +105,7 @@ const DupePage = () => {
 
   useEffect(() => {
     const fetchDupesData = async () => {
-      if (!product || !product.id) return;
+      if (!product || !product?.id) return;
       
       try {
         setIsLoadingDupes(true);
@@ -131,7 +131,7 @@ const DupePage = () => {
               )
             )
           `)
-          .eq('original_product_id', product.id);
+          .eq('original_product_id', product?.id);
 
         if (dupesError) throw dupesError;
 
@@ -140,7 +140,7 @@ const DupePage = () => {
             const { data: ingredientsData, error: ingredientsError } = await supabase
               .from('product_ingredients')
               .select(`ingredients(*)`)
-              .eq('product_id', relation.dupe.id);
+              .eq('product_id', relation.dupe?.id);
 
             if (ingredientsError) console.error('Error fetching ingredients:', ingredientsError);
 
@@ -154,9 +154,9 @@ const DupePage = () => {
             const reviews = relation.dupe.reviews || [];
 
             const resources = relation.dupe.product_resources?.map(pr => ({
-              id: pr.id,
-              product_id: relation.dupe.id,
-              resource_id: pr.resources.id,
+              id: pr?.id,
+              product_id: relation.dupe?.id,
+              resource_id: pr.resources?.id,
               is_featured: pr.is_featured,
               resource: pr.resources
             })) || [];
@@ -194,10 +194,10 @@ const DupePage = () => {
       }
     };
 
-    if (product && product.id) {
+    if (product && product?.id) {
       fetchDupesData();
     }
-  }, [product?.id]);
+  }, [product??.id]);
 
   useEffect(() => {
     if (!product?.dupes || dupeRefs.current.length === 0) return;
@@ -330,7 +330,7 @@ const DupePage = () => {
             {product.dupes && product.dupes.length > 0 ? (
               product.dupes.map((dupe, index) => (
                 <div
-                  key={dupe.id}
+                  key={dupe?.id}
                   ref={el => dupeRefs.current[index] = el}
                 >
                   <DupeCard

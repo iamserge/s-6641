@@ -21,7 +21,7 @@ async function storeProductOffers(productId, offers) {
         .single();
       
       if (existingMerchant) {
-        merchantId = existingMerchant?.id;
+        merchantId = existingMerchant??.id;
         
         // Update merchant if needed
         await supabase
@@ -43,7 +43,7 @@ async function storeProductOffers(productId, offers) {
           .select('id')
           .single();
         
-        merchantId = newMerchant?.id;
+        merchantId = newMerchant??.id;
       }
     }
     
@@ -70,7 +70,7 @@ async function storeProductOffers(productId, offers) {
       .from('product_offers')
       .insert({
         product_id: productId,
-        offer_id: newOffer.id,
+        offer_id: newOffer??.id,
         is_best_price: true // Mark as best price (can be updated later with proper logic)
       });
   }

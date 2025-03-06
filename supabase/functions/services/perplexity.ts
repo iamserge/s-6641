@@ -522,7 +522,7 @@ const BATCH_REVIEWS_PROMPT = (products: ProductInfo[], schema: string) => `
 I need to efficiently gather authentic user reviews for multiple makeup products in a single request.
 Please find reviews for each of these products:
 
-${products.map((product, index) => `${index + 1}. ${product.brand} ${product.name} (ID: ${product.id})`).join('\n')}
+${products.map((product, index) => `${index + 1}. ${product.brand} ${product.name} (ID: ${product?.id})`).join('\n')}
 
 For EACH product, provide:
 1. The overall product rating (out of 5 stars) from a reputable source
@@ -549,7 +549,7 @@ const BATCH_RESOURCES_PROMPT = (products: ProductInfo[], schema: string) => `
 I need to efficiently gather social media content and articles for multiple makeup products in a single request.
 Please find resources for each of these products:
 
-${products.map((product, index) => `${index + 1}. ${product.brand} ${product.name} (ID: ${product.id})`).join('\n')}
+${products.map((product, index) => `${index + 1}. ${product.brand} ${product.name} (ID: ${product?.id})`).join('\n')}
 
 For EACH product aim to provide:
 1. 1-2 Instagram posts/reels showcasing or reviewing the product
@@ -630,9 +630,9 @@ export async function getBatchProductReviews(products: ProductInfo[]): Promise<a
       
       // Add missing products with empty data
       products.forEach(product => {
-        if (!parsedData.products[product.id]) {
+        if (!parsedData.products[product?.id]) {
           logInfo(`Adding empty review data for missing product: ${product.brand} ${product.name}`);
-          parsedData.products[product.id] = {
+          parsedData.products[product?.id] = {
             name: product.name,
             brand: product.brand,
             rating: {
@@ -652,7 +652,7 @@ export async function getBatchProductReviews(products: ProductInfo[]): Promise<a
       // Create default structure with empty data for all products
       const defaultResponse = { products: {} };
       products.forEach(product => {
-        defaultResponse.products[product.id] = {
+        defaultResponse.products[product?.id] = {
           name: product.name,
           brand: product.brand,
           rating: {
@@ -672,7 +672,7 @@ export async function getBatchProductReviews(products: ProductInfo[]): Promise<a
     // Create default structure with empty data for all products
     const defaultResponse = { products: {} };
     products.forEach(product => {
-      defaultResponse.products[product.id] = {
+      defaultResponse.products[product?.id] = {
         name: product.name,
         brand: product.brand,
         rating: {
@@ -747,9 +747,9 @@ export async function getBatchProductResources(products: ProductInfo[]): Promise
       
       // Add missing products with empty data
       products.forEach(product => {
-        if (!parsedData.products[product.id]) {
+        if (!parsedData.products[product?.id]) {
           logInfo(`Adding empty resource data for missing product: ${product.brand} ${product.name}`);
-          parsedData.products[product.id] = {
+          parsedData.products[product?.id] = {
             name: product.name,
             brand: product.brand,
             socialMedia: {
@@ -769,7 +769,7 @@ export async function getBatchProductResources(products: ProductInfo[]): Promise
       // Create default structure with empty data for all products
       const defaultResponse = { products: {} };
       products.forEach(product => {
-        defaultResponse.products[product.id] = {
+        defaultResponse.products[product?.id] = {
           name: product.name,
           brand: product.brand,
           socialMedia: {
@@ -789,7 +789,7 @@ export async function getBatchProductResources(products: ProductInfo[]): Promise
     // Create default structure with empty data for all products
     const defaultResponse = { products: {} };
     products.forEach(product => {
-      defaultResponse.products[product.id] = {
+      defaultResponse.products[product?.id] = {
         name: product.name,
         brand: product.brand,
         socialMedia: {

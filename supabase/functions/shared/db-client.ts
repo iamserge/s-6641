@@ -300,7 +300,7 @@ export async function storeProductOffers(productId: string, offers: any[]): Prom
       }
       
       if (existingMerchant) {
-        merchantId = existingMerchant.id;
+        merchantId = existingMerchant?.id;
       } else {
         // Create new merchant
         const { data: newMerchant, error: merchantInsertError } = await insertMerchant({
@@ -313,7 +313,7 @@ export async function storeProductOffers(productId: string, offers: any[]): Prom
           continue; // Skip this offer on error
         }
         
-        merchantId = newMerchant.id;
+        merchantId = newMerchant?.id;
       }
       
       // 2. Insert the offer
@@ -335,7 +335,7 @@ export async function storeProductOffers(productId: string, offers: any[]): Prom
       }
       
       // 3. Link offer to product
-      const { error: linkError } = await linkOfferToProduct(productId, newOffer.id);
+      const { error: linkError } = await linkOfferToProduct(productId, newOffer?.id);
       
       if (linkError) {
         logError(`Error linking offer to product:`, linkError);
@@ -496,7 +496,7 @@ export async function storeProductReviewsAndResources(
           });
           
           if (resource) {
-            await linkResourceToProduct(productId, resource.id, true);
+            await linkResourceToProduct(productId, resource?.id, true);
             allResources.push(resource);
           }
         } catch (error) {
@@ -522,7 +522,7 @@ export async function storeProductReviewsAndResources(
           });
           
           if (resource) {
-            await linkResourceToProduct(productId, resource.id, true);
+            await linkResourceToProduct(productId, resource?.id, true);
             allResources.push(resource);
           }
         } catch (error) {
@@ -547,7 +547,7 @@ export async function storeProductReviewsAndResources(
           });
           
           if (resource) {
-            await linkResourceToProduct(productId, resource.id, true);
+            await linkResourceToProduct(productId, resource?.id, true);
             allResources.push(resource);
           }
         } catch (error) {
@@ -569,7 +569,7 @@ export async function storeProductReviewsAndResources(
           });
           
           if (resource) {
-            await linkResourceToProduct(productId, resource.id);
+            await linkResourceToProduct(productId, resource?.id);
             allResources.push(resource);
           }
         } catch (error) {
@@ -745,7 +745,7 @@ export async function processBatchResources(batchResourcesData: any): Promise<vo
                   .from("product_resources")
                   .insert({
                     product_id: productId,
-                    resource_id: resource.id,
+                    resource_id: resource?.id,
                     is_featured: true // Mark Instagram content as featured
                   });
                   
@@ -788,7 +788,7 @@ export async function processBatchResources(batchResourcesData: any): Promise<vo
                   .from("product_resources")
                   .insert({
                     product_id: productId,
-                    resource_id: resource.id,
+                    resource_id: resource?.id,
                     is_featured: true // Mark TikTok content as featured
                   });
                   
@@ -831,7 +831,7 @@ export async function processBatchResources(batchResourcesData: any): Promise<vo
                   .from("product_resources")
                   .insert({
                     product_id: productId,
-                    resource_id: resource.id,
+                    resource_id: resource?.id,
                     is_featured: true // Mark YouTube content as featured
                   });
                   
@@ -871,7 +871,7 @@ export async function processBatchResources(batchResourcesData: any): Promise<vo
                   .from("product_resources")
                   .insert({
                     product_id: productId,
-                    resource_id: resource.id,
+                    resource_id: resource?.id,
                     is_featured: false
                   });
                   

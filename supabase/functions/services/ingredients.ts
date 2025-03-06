@@ -27,8 +27,8 @@ export async function processIngredient(ingredientName: string): Promise<string>
     }
     
     if (existingIngredient) {
-      logInfo(`Ingredient "${trimmedName}" already exists with ID: ${existingIngredient.id}`);
-      return existingIngredient.id;
+      logInfo(`Ingredient "${trimmedName}" already exists with ID: ${existingIngredient?.id}`);
+      return existingIngredient?.id;
     }
     
     // Ingredient doesn't exist, get information from OpenAI using structured format
@@ -56,8 +56,8 @@ export async function processIngredient(ingredientName: string): Promise<string>
       throw insertError;
     }
     
-    logInfo(`Created new ingredient: ${trimmedName} with ID: ${newIngredient.id}`);
-    return newIngredient.id;
+    logInfo(`Created new ingredient: ${trimmedName} with ID: ${newIngredient?.id}`);
+    return newIngredient?.id;
   } catch (error) {
     logError(`Error processing ingredient ${trimmedName}:`, error);
     throw error;

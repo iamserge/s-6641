@@ -52,7 +52,7 @@ const BrandPage = () => {
         const { count: productCount, error: productCountError } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true })
-          .eq('brand_id', brandData.id);
+          .eq('brand_id', brandData?.id);
 
         if (productCountError) throw productCountError;
 
@@ -61,14 +61,14 @@ const BrandPage = () => {
         const { data: productIds } = await supabase
           .from('products')
           .select('id')
-          .eq('brand_id', brandData.id);
+          .eq('brand_id', brandData?.id);
         
         // If there are no products, set dupes count to 0
         let dupesCount = 0;
         
         if (productIds && productIds.length > 0) {
           // Extract just the IDs into an array
-          const ids = productIds.map(p => p.id);
+          const ids = productIds.map(p => p?.id);
           
           // Use the array in the IN clause
           const { count, error: dupesCountError } = await supabase
@@ -87,7 +87,7 @@ const BrandPage = () => {
             id, name, slug, image_url, category, price,
             product_dupes!product_dupes_dupe_product_id_fkey(match_score)
           `)
-          .eq('brand_id', brandData.id)
+          .eq('brand_id', brandData?.id)
           .order('created_at', { ascending: false })
           .limit(6);
 
@@ -100,7 +100,7 @@ const BrandPage = () => {
             id, title, url, type, 
             created_at
           `)
-          .eq('brand_id', brandData.id)
+          .eq('brand_id', brandData?.id)
           .order('created_at', { ascending: false })
           .limit(8);
 
@@ -189,11 +189,11 @@ const BrandPage = () => {
           </div>
           
           <TabsContent value="products" className="mt-2">
-            <BrandProducts products={brand.top_products || []} brandId={brand.id} />
+            <BrandProducts products={brand.top_products || []} brandId={brand?.id} />
           </TabsContent>
           
           <TabsContent value="resources" className="mt-2">
-            <BrandResources resources={brand.resources || []} brandId={brand.id} />
+            <BrandResources resources={brand.resources || []} brandId={brand?.id} />
           </TabsContent>
         </Tabs>
       </div>

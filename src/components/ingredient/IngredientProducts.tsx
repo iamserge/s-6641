@@ -186,7 +186,7 @@ const IngredientProductsComponent = ({ products, ingredientId, isKeyOnly = true 
         >
           {displayProducts.map((product) => (
             <ProductCard 
-              key={product.id} 
+              key={product?.id} 
               product={product} 
               onClick={() => handleProductClick(product.slug)} 
             />

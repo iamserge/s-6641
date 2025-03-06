@@ -52,7 +52,7 @@ const IngredientPage = () => {
         const { count: productCount, error: productCountError } = await supabase
           .from('product_ingredients')
           .select('*', { count: 'exact', head: true })
-          .eq('ingredient_id', ingredientData.id);
+          .eq('ingredient_id', ingredientData?.id);
 
         if (productCountError) throw productCountError;
 
@@ -63,7 +63,7 @@ const IngredientPage = () => {
           const { data: similarData, error: similarIngredientsError } = await supabase
             .from('ingredients')
             .select('*')
-            .neq('id', ingredientData.id)
+            .neq('id', ingredientData?.id)
             .overlaps('skin_types', skinTypesArray)
             .limit(5);
 
@@ -80,7 +80,7 @@ const IngredientPage = () => {
               product_dupes!product_dupes_dupe_product_id_fkey(match_score)
             )
           `)
-          .eq('ingredient_id', ingredientData.id)
+          .eq('ingredient_id', ingredientData?.id)
           .eq('is_key_ingredient', true)
           .limit(6);
 
@@ -93,7 +93,7 @@ const IngredientPage = () => {
             id, title, url, type, 
             created_at
           `)
-          .eq('ingredient_id', ingredientData.id)
+          .eq('ingredient_id', ingredientData?.id)
           .order('created_at', { ascending: false })
           .limit(8);
 
@@ -191,7 +191,7 @@ const IngredientPage = () => {
           <TabsContent value="products" className="mt-2">
             <IngredientProducts 
               products={ingredient.top_products || []} 
-              ingredientId={ingredient.id} 
+              ingredientId={ingredient?.id} 
               isKeyOnly={isKeyOnly}
             />
           </TabsContent>
@@ -199,7 +199,7 @@ const IngredientPage = () => {
           <TabsContent value="resources" className="mt-2">
             <IngredientResources 
               resources={ingredient.resources || []} 
-              ingredientId={ingredient.id}
+              ingredientId={ingredient?.id}
             />
           </TabsContent>
         </Tabs>

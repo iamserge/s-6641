@@ -116,11 +116,11 @@ const RecentDupes = () => {
               category
             )
           `)
-          .eq('original_product_id', product.id)
+          .eq('original_product_id', product?.id)
           .order('savings_percentage', { ascending: false });
 
         if (relationsError) {
-          console.error(`Error fetching dupes for product ${product.id}:`, relationsError);
+          console.error(`Error fetching dupes for product ${product?.id}:`, relationsError);
           return {
             ...product,
             dupes: [],
@@ -141,7 +141,7 @@ const RecentDupes = () => {
           }
           
           return {
-            id: relation.dupe.id,
+            id: relation.dupe?.id,
             name: relation.dupe.name,
             brand: relation.dupe.brand, 
             image_url: relation.dupe.image_url,
@@ -169,7 +169,7 @@ const RecentDupes = () => {
         } : null;
         
         const recentDupe: RecentDupe = {
-          id: product.id,
+          id: product?.id,
           name: product.name,
           brand: product.brands?.name || product.brand,
           slug: product.slug,

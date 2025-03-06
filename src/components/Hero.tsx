@@ -132,7 +132,7 @@ const Hero = () => {
           const { data: dupes, count } = await supabase
             .from("product_dupes")
             .select("savings_percentage", { count: "exact" })
-            .eq("original_product_id", product.id);
+            .eq("original_product_id", product?.id);
           const maxSavings = Math.max(...(dupes?.map((d) => d.savings_percentage) || [0]));
           return { ...product, dupesCount: count, maxSavings };
         })
@@ -658,7 +658,7 @@ const Hero = () => {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {recentProducts.map((product) => (
-                    <div key={product.id} className="border rounded-lg p-2 bg-gray-50">
+                    <div key={product?.id} className="border rounded-lg p-2 bg-gray-50">
                       <img
                         src={product.image_url || "/placeholder-image.png"}
                         alt={product.name}

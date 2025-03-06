@@ -188,7 +188,7 @@ serve(async (req) => {
             throw productError;
           }
           
-          logInfo(`[${requestId}] Original product inserted successfully with ID: ${originalProduct.id}`);
+          logInfo(`[${requestId}] Original product inserted successfully with ID: ${originalProduct?.id}`);
 
           // Insert dupes with minimal data
           logInfo(`[${requestId}] Inserting ${initialDupes.dupes.length} dupes into database`);
@@ -217,15 +217,15 @@ serve(async (req) => {
                   throw dupeError;
                 }
                 
-                logInfo(`[${requestId}] Dupe #${index + 1} inserted with ID: ${dupeProduct.id}`);
+                logInfo(`[${requestId}] Dupe #${index + 1} inserted with ID: ${dupeProduct?.id}`);
 
                 // Create dupe relationship
-                logInfo(`[${requestId}] Creating relationship between ${originalProduct.id} and ${dupeProduct.id}`);
+                logInfo(`[${requestId}] Creating relationship between ${originalProduct?.id} and ${dupeProduct?.id}`);
                 const { error: relationError } = await supabase
                   .from('product_dupes')
                   .insert({
-                    original_product_id: originalProduct.id,
-                    dupe_product_id: dupeProduct.id,
+                    original_product_id: originalProduct?.id,
+                    dupe_product_id: dupeProduct?.id,
                     match_score: dupe.matchScore,
                     savings_percentage: 0 // Will be updated later
                   });
@@ -235,7 +235,7 @@ serve(async (req) => {
                   throw relationError;
                 }
 
-                return dupeProduct.id;
+                return dupeProduct?.id;
               } catch (dupeInsertError) {
                 logError(`[${requestId}] Failed to insert dupe #${index + 1}: ${safeStringify(dupeInsertError)}`);
                 throw dupeInsertError;
@@ -252,7 +252,7 @@ serve(async (req) => {
           
           // Background tasks data
           const backgroundData = {
-            originalProductId: originalProduct.id,
+            originalProductId: originalProduct?.id,
             dupeProductIds: dupeIds,
             originalBrand: initialDupes.originalBrand,
             originalName: initialDupes.originalName,

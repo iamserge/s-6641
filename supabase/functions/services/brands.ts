@@ -21,8 +21,8 @@ export async function processBrand(brandName: string): Promise<string> {
     }
     
     if (existingBrand) {
-      logInfo(`Brand "${brandName}" already exists with ID: ${existingBrand.id}`);
-      return existingBrand.id;
+      logInfo(`Brand "${brandName}" already exists with ID: ${existingBrand?.id}`);
+      return existingBrand?.id;
     }
     
     // Brand doesn't exist, get information from OpenAI using structured format
@@ -47,8 +47,8 @@ export async function processBrand(brandName: string): Promise<string> {
       throw insertError;
     }
     
-    logInfo(`Created new brand: ${brandName} with ID: ${newBrand.id}`);
-    return newBrand.id;
+    logInfo(`Created new brand: ${brandName} with ID: ${newBrand?.id}`);
+    return newBrand?.id;
   } catch (error) {
     logError(`Error processing brand ${brandName}:`, error);
     throw error;

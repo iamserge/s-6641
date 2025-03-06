@@ -120,7 +120,7 @@ const DupeProductCard = memo(({ product, onClick, index }: ProductCardProps) => 
             <TooltipProvider>
               <div className="flex -space-x-3 justify-center">
                 {product.dupes.slice(0, 5).map((dupe, index) => (
-                  <Tooltip key={dupe.id}>
+                  <Tooltip key={dupe?.id}>
                     <TooltipTrigger asChild>
                       <div 
                         className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white flex items-center justify-center"
