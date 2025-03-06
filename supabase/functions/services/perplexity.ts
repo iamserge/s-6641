@@ -510,14 +510,16 @@ Return ONLY a valid JSON object that exactly follows the provided schema.
 const BATCH_RESOURCES_SYSTEM_PROMPT = `
 You are a social media curator specializing in finding beauty content across platforms.
 Your task is to efficiently collect real social media content and articles for multiple beauty products at once.
-You ensure all content exists, is relevant, and includes accurate metadata.
-Return ONLY a valid JSON object that exactly follows the provided schema.
-`;
 
+CRITICAL: Return ONLY a JSON object with no explanations, comments, or text before or after.
+Do not include any markdown formatting, code block markers, or commentary.
+Ensure all keys and string values are in double quotes.
+Structure must match the schema exactly.
+`;
 /**
  * Batch reviews prompt template
  */
-const BATCH_REVIEWS_PROMPT = (products: ProductInfo[], schema: string) => `
+const BATCH_REVIEWS_PROMPT = (products: any, schema: string) => `
 I need to efficiently gather authentic user reviews for multiple makeup products in a single request.
 Please find reviews for each of these products:
 
@@ -544,7 +546,7 @@ Ensure your response is valid JSON that exactly matches the provided schema.
 /**
  * Batch resources prompt template
  */
-const BATCH_RESOURCES_PROMPT = (products: ProductInfo[], schema: string) => `
+const BATCH_RESOURCES_PROMPT = (products: any, schema: string) => `
 I need to efficiently gather social media content and articles for multiple makeup products in a single request.
 Please find resources for each of these products:
 
@@ -575,7 +577,7 @@ Ensure your response is valid JSON that exactly matches the provided schema.
  * @param products Array of products (original + dupes) to fetch reviews for
  * @returns Structured data with reviews for all products
  */
-export async function getBatchProductReviews(products: ProductInfo[]): Promise<any> {
+export async function getBatchProductReviews(products: any): Promise<any> {
   if (!products || products.length === 0) {
     logError("No products provided for batch reviews");
     return { products: {} };
@@ -692,7 +694,7 @@ export async function getBatchProductReviews(products: ProductInfo[]): Promise<a
  * @param products Array of products (original + dupes) to fetch resources for
  * @returns Structured data with resources for all products
  */
-export async function getBatchProductResources(products: ProductInfo[]): Promise<any> {
+export async function getBatchProductResources(products: any): Promise<any> {
   if (!products || products.length === 0) {
     logError("No products provided for batch resources");
     return { products: {} };
