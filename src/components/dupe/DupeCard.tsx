@@ -269,6 +269,14 @@ export const DupeCard = ({ dupe, index, originalIngredients, showBottomBar = fal
                 )}
               </div>
               
+              {/* Product Notes (NEW) */}
+              {dupe.notes && (
+                <div className="mb-5 bg-gray-50/30 p-3 rounded-lg">
+                  <p className="text-sm font-medium text-gray-700 mb-1">Notes:</p>
+                  <p className="text-sm text-gray-600">{dupe.notes}</p>
+                </div>
+              )}
+              
               {/* Description Snippet */}
               {dupe.description && !isExpanded && (
                 <p className="text-sm text-gray-600 mb-5 line-clamp-2 bg-gray-50/30 p-3 rounded-lg">
