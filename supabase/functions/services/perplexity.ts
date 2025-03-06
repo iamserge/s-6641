@@ -256,7 +256,7 @@ export async function getDetailedDupeAnalysis(
   originalProduct: any,
   dupes: any[]
 ): Promise<DupeResponse> {
-  logInfo(`Sending detailed analysis request to Perplexity for: ${originalProduct.name}`);
+  logInfo(`Sending detailed analysis request to Perplexity for: ${originalProduct.name} : ${originalProduct}, ${dupes}`);
 
   try {
     const response = await fetch(PERPLEXITY_API_ENDPOINT, {

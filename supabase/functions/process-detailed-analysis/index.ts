@@ -105,16 +105,15 @@ serve(async (req) => {
       // Fetch extended information from external DBs
       const originalProductData = await fetchProductDataFromExternalDb(originalName, originalBrand);
 
-      const enrichedDupes = await Promise.all(
-        dupeInfo.map(async (dupe) => {
-          const dupeData = await fetchProductDataFromExternalDb(dupe.name, dupe.brand);
-          return {
-            name: dupe.name,
-            brand: dupe.brand,
-            ...(dupeData.verified ? dupeData : {})
-          };
-        })
-      );
+      const enrichedDupes = [];
+      for (const dupe of dupeInfo) {
+        const dupeData = await fetchProductDataFromExternalDb(dupe.name, dupe.brand);
+        enrichedDupes.push({
+          name: dupe.name,
+          brand: dupe.brand,
+          ...(dupeData.verified ? dupeData : {})
+        } as never);
+      }
 
       // Get detailed analysis from Perplexity
       const enrichedOriginal = {
@@ -138,7 +137,7 @@ serve(async (req) => {
       const productSlug = originalProduct.slug;
       
       // Process original product image
-      let originalImageUrl = null;
+      let originalImageUrl;
       if (detailedAnalysis.original.imageUrl || (detailedAnalysis.original.images && detailedAnalysis.original.images.length > 0)) {
         const imageSource = detailedAnalysis.original.images?.[0] || detailedAnalysis.original.imageUrl;
         originalImageUrl = await processAndUploadImage(imageSource, `${productSlug}-original`);
@@ -190,7 +189,7 @@ serve(async (req) => {
           if (!dupe) return;
 
           // Process dupe image
-          let dupeImageUrl = null;
+          let dupeImageUrl;
           if (dupe.imageUrl || (dupe.images && dupe.images.length > 0)) {
             const imageSource = dupe.images?.[0] || dupe.imageUrl;
             dupeImageUrl = await processAndUploadImage(imageSource, `${productSlug}-dupe-${index + 1}`);
