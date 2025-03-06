@@ -8,6 +8,7 @@ import { logInfo, logError } from "../shared/utils.ts";
 
 // Function to store product offers
 async function storeProductOffers(productId, offers) {
+  console.log(`Storing offers for ${productId} ${offers}`)
   // Store merchant information and offers
   for (const offer of offers) {
     // First, store or update merchant
