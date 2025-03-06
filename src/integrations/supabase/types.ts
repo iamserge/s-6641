@@ -215,6 +215,7 @@ export type Database = {
           dupe_product_id: string
           id: string
           match_score: number
+          notes: string | null
           original_product_id: string
           savings_percentage: number
           updated_at: string
@@ -225,6 +226,7 @@ export type Database = {
           dupe_product_id: string
           id?: string
           match_score: number
+          notes?: string | null
           original_product_id: string
           savings_percentage: number
           updated_at?: string
@@ -235,6 +237,7 @@ export type Database = {
           dupe_product_id?: string
           id?: string
           match_score?: number
+          notes?: string | null
           original_product_id?: string
           savings_percentage?: number
           updated_at?: string

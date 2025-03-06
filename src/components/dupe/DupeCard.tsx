@@ -269,8 +269,6 @@ export const DupeCard = ({ dupe, index, originalIngredients, showBottomBar = fal
                 )}
               </div>
               
-              
-              
               {/* Description Snippet */}
               {dupe.description && !isExpanded && (
                 <p className="text-sm text-gray-600 mb-5 line-clamp-2 bg-gray-50/30 p-3 rounded-lg">

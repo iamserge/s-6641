@@ -302,6 +302,15 @@ const DupePage = () => {
         <HeroProduct product={product} />
       </div>
       
+      {product.summary && (
+        <div className="container mx-auto px-4 pt-4 pb-2">
+          <div className="max-w-4xl mx-auto bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-md">
+            <h3 className="text-xl font-medium mb-3 text-gray-800">Summary</h3>
+            <p className="text-lg text-gray-700">{product.summary}</p>
+          </div>
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-8 md:py-16">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
           {isLoadingDupes ? (
