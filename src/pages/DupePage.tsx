@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -197,7 +196,7 @@ const DupePage = () => {
     if (product && product?.id) {
       fetchDupesData();
     }
-  }, [product??.id]);
+  }, [product?.id]);
 
   useEffect(() => {
     if (!product?.dupes || dupeRefs.current.length === 0) return;
