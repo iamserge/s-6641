@@ -84,7 +84,7 @@ export async function fetchProductDataFromExternalDb(productName: string, brand:
       const item = data.items[0]
       
       if (item) {
-        logInfo(`Found external data for: ${brand} ${productName} ${item.images}`);
+        logInfo(`Found external data for: ${brand} ${productName} ${item.images} ${item.offers}`);
         return {
           name: item.title,
           upc: item.upc,

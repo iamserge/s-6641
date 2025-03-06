@@ -178,8 +178,8 @@ serve(async (req) => {
         .eq('id', originalProductId);
 
       // Store offers for original product if available
-      if (detailedAnalysis.original.offers && detailedAnalysis.original.offers.length > 0) {
-        await storeProductOffers(originalProductId, detailedAnalysis.original.offers);
+      if (originalProductData.offers && originalProductData.offers.length > 0) {
+        await storeProductOffers(originalProductId, originalProductData.offers);
       }
 
       // Process and update dupes with detailed info
@@ -228,8 +228,9 @@ serve(async (req) => {
             .eq('id', dupeId);
 
           // Store offers for dupe product if available
-          if (dupe.offers && dupe.offers.length > 0) {
-            await storeProductOffers(dupeId, dupe.offers);
+          const offers = enrichedDupes[index];
+          if (offers && offers.length > 0) {
+            await storeProductOffers(dupeId, offers);
           }
 
           // Update dupe relationship
