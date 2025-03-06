@@ -3,12 +3,13 @@ body {
   font-family: 'Urbanist', sans-serif;
 }
 
-/* Simplified and optimized styles */
+/* Optimize animations with GPU acceleration */
 .logo {
   height: 6em;
   padding: 1.5em;
-  will-change: filter;
+  will-change: transform;
   transition: filter 300ms;
+  transform: translateZ(0); /* Force GPU acceleration */
 }
 
 .logo:hover {
@@ -19,10 +20,11 @@ body {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-/* Use more efficient CSS properties for animations */
+/* Optimize animation performance with transform instead of other properties */
 @media (prefers-reduced-motion: no-preference) {
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
+    transform: translateZ(0); /* Force GPU acceleration */
   }
 }
 

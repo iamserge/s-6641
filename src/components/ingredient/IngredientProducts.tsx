@@ -1,6 +1,7 @@
-import { useState } from "react";
+
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Loader2, Star } from "lucide-react";
@@ -15,39 +16,112 @@ interface IngredientProductsProps {
   isKeyOnly?: boolean;
 }
 
+const ProductCard = memo(({ product, onClick }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="bg-white/70 backdrop-blur-sm rounded-2xl overflow-hidden shadow-sm border border-gray-100/50 hover:shadow-md transition-shadow cursor-pointer"
+      onClick={onClick}
+      layout
+    >
+      <div className="p-6 flex flex-col items-center">
+        <div className="w-28 h-28 rounded-full overflow-hidden bg-white shadow-sm mb-4 flex items-center justify-center">
+          <CategoryImage
+            category={product.category}
+            imageUrl={product.image_url}
+            name={product.name}
+            className="object-contain w-full h-full p-1"
+          />
+        </div>
+        
+        <h3 className="text-lg font-semibold text-gray-900 text-center line-clamp-2 mb-1">
+          {product.name}
+        </h3>
+        
+        <p className="text-sm text-gray-600 mb-3">by {product.brand}</p>
+        
+        <div className="flex justify-center items-center gap-2 mb-3">
+          <Badge variant="secondary" className="rounded-full bg-[#d2c9f9] text-[#5840c0]">
+            ${Math.round(product.price || 0)}
+          </Badge>
+          
+          {product.category && (
+            <Badge variant="outline" className="rounded-full">
+              {product.category}
+            </Badge>
+          )}
+        </div>
+        
+        {product.rating && (
+          <div className="flex items-center gap-1 mb-3">
+            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+            <span className="text-sm font-medium">
+              {product.rating.toFixed(1)}
+              {product.rating_count && (
+                <span className="text-xs text-gray-500"> ({product.rating_count})</span>
+              )}
+            </span>
+          </div>
+        )}
+        
+        {product.product_dupes && product.product_dupes.length > 0 ? (
+          <Badge variant="secondary" className="rounded-full px-3 py-1 bg-green-50 text-green-700">
+            Has {product.product_dupes.length} dupes
+          </Badge>
+        ) : (
+          <Badge variant="secondary" className="rounded-full px-3 py-1 bg-gray-50 text-gray-600">
+            No dupes yet
+          </Badge>
+        )}
+      </div>
+    </motion.div>
+  );
+});
+
 const IngredientProductsComponent = ({ products, ingredientId, isKeyOnly = true }: IngredientProductsProps) => {
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
-  const pageSize = 6;
+  
+  // Use memoized value for pageSize to prevent unnecessary recalculations
+  const pageSize = useMemo(() => 6, []);
 
+  // Memoize the query function to prevent unnecessary recreations
+  const fetchMoreProducts = useCallback(async ({ pageParam = 1 }) => {
+    if (pageParam === 1) return products;
+    
+    const from = (pageParam - 1) * pageSize;
+    const to = from + pageSize - 1;
+    
+    const { data, error } = await supabase
+      .from("product_ingredients")
+      .select(`
+        products:product_id(
+          id, name, brand, slug, image_url, category, price,
+          rating, rating_count,
+          product_dupes!product_dupes_dupe_product_id_fkey(match_score)
+        )
+      `)
+      .eq("ingredient_id", ingredientId)
+      .eq("is_key_ingredient", isKeyOnly)
+      .range(from, to);
+    
+    if (error) throw error;
+    
+    return data?.map(item => item.products) || [];
+  }, [ingredientId, isKeyOnly, pageSize, products]);
+
+  // Optimize query with better caching strategy
   const { data: paginatedProducts, isLoading, isFetching } = useQuery({
     queryKey: ["ingredientProducts", ingredientId, page, isKeyOnly],
-    queryFn: async () => {
-      if (page === 1) return products;
-      
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-      
-      const { data, error } = await supabase
-        .from("product_ingredients")
-        .select(`
-          products:product_id(
-            id, name, brand, slug, image_url, category, price,
-            rating, rating_count,
-            product_dupes!product_dupes_dupe_product_id_fkey(match_score)
-          )
-        `)
-        .eq("ingredient_id", ingredientId)
-        .eq("is_key_ingredient", isKeyOnly)
-        .range(from, to);
-      
-      if (error) throw error;
-      
-      return data?.map(item => item.products) || [];
-    },
-    enabled: page > 1 || products.length === 0
+    queryFn: () => fetchMoreProducts({ pageParam: page }),
+    enabled: page > 1 || products.length === 0,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    keepPreviousData: true, // Keep previous data to prevent UI flashing
   });
 
+  // Optimize count query with separate query
   const { data: totalCount } = useQuery({
     queryKey: ["ingredientProductsCount", ingredientId, isKeyOnly],
     queryFn: async () => {
@@ -59,20 +133,23 @@ const IngredientProductsComponent = ({ products, ingredientId, isKeyOnly = true 
       
       if (error) throw error;
       return count || 0;
-    }
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  const hasMore = totalCount ? page * pageSize < totalCount : false;
+  const hasMore = useMemo(() => 
+    totalCount ? page * pageSize < totalCount : false
+  , [totalCount, page, pageSize]);
 
-  const handleProductClick = (slug: string) => {
+  const handleProductClick = useCallback((slug: string) => {
     navigate(`/dupes/for/${slug}`);
-  };
+  }, [navigate]);
 
   const displayProducts = paginatedProducts || products;
 
-  const toggleIsKeyOnly = () => {
+  const toggleIsKeyOnly = useCallback(() => {
     setPage(1);
-  };
+  }, []);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -97,69 +174,20 @@ const IngredientProductsComponent = ({ products, ingredientId, isKeyOnly = true 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {displayProducts.map((product, index) => (
-          <motion.div
-            key={product.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 * index, duration: 0.4 }}
-            className="bg-white/70 backdrop-blur-sm rounded-2xl overflow-hidden shadow-sm border border-gray-100/50 hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => handleProductClick(product.slug)}
-          >
-            <div className="p-6 flex flex-col items-center">
-              <div className="w-28 h-28 rounded-full overflow-hidden bg-white shadow-sm mb-4 flex items-center justify-center">
-                <CategoryImage
-                  category={product.category}
-                  imageUrl={product.image_url}
-                  name={product.name}
-                  className="object-contain w-full h-full p-1"
-                />
-              </div>
-              
-              <h3 className="text-lg font-semibold text-gray-900 text-center line-clamp-2 mb-1">
-                {product.name}
-              </h3>
-              
-              <p className="text-sm text-gray-600 mb-3">by {product.brand}</p>
-              
-              <div className="flex justify-center items-center gap-2 mb-3">
-                <Badge variant="secondary" className="rounded-full bg-[#d2c9f9] text-[#5840c0]">
-                  ${Math.round(product.price || 0)}
-                </Badge>
-                
-                {product.category && (
-                  <Badge variant="outline" className="rounded-full">
-                    {product.category}
-                  </Badge>
-                )}
-              </div>
-              
-              {product.rating && (
-                <div className="flex items-center gap-1 mb-3">
-                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  <span className="text-sm font-medium">
-                    {product.rating.toFixed(1)}
-                    {product.rating_count && (
-                      <span className="text-xs text-gray-500"> ({product.rating_count})</span>
-                    )}
-                  </span>
-                </div>
-              )}
-              
-              {product.product_dupes && product.product_dupes.length > 0 ? (
-                <Badge variant="secondary" className="rounded-full px-3 py-1 bg-green-50 text-green-700">
-                  Has {product.product_dupes.length} dupes
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="rounded-full px-3 py-1 bg-gray-50 text-gray-600">
-                  No dupes yet
-                </Badge>
-              )}
-            </div>
-          </motion.div>
-        ))}
-      </div>
+      <AnimatePresence>
+        <motion.div 
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          layout
+        >
+          {displayProducts.map((product, index) => (
+            <ProductCard 
+              key={product.id} 
+              product={product} 
+              onClick={() => handleProductClick(product.slug)} 
+            />
+          ))}
+        </motion.div>
+      </AnimatePresence>
 
       {isFetching && (
         <div className="flex justify-center mt-8">
