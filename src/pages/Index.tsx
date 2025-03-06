@@ -3,6 +3,7 @@ import { lazy, Suspense, useState, useEffect } from 'react';
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Loader2 } from "lucide-react";
+import HowItWorks from "../components/HowItWorks";
 
 // Lazy load these components with better chunk naming
 const Hero = lazy(() => import("../components/Hero" /* webpackChunkName: "hero" */));
@@ -42,6 +43,9 @@ const Index = () => {
         <Suspense fallback={<LoadingFallback />}>
           <Hero />
         </Suspense>
+        
+        {/* Add HowItWorks section after Hero */}
+        <HowItWorks />
         
         {/* Only load RecentDupes when Hero is visible and page has loaded */}
         {isLoaded && (
