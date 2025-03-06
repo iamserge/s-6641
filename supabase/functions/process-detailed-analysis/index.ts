@@ -87,7 +87,7 @@ serve(async (req) => {
       dupeInfo
     } = await req.json();
 
-    logInfo(`Processing detailed analysis for product ${originalProductId}`);
+    logInfo(`Processing detailed analysis for product ${originalProductId} with ${dupeProductIds.length} dupes`);
 
     // Set loading_ingredients flag to true for the products
     await supabase
