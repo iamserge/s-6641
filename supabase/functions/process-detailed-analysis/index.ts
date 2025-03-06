@@ -21,7 +21,7 @@ async function storeProductOffers(productId, offers) {
         .single();
       
       if (existingMerchant) {
-        merchantId = existingMerchant??.id;
+        merchantId = existingMerchant?.id;
         
         // Update merchant if needed
         await supabase
@@ -43,7 +43,7 @@ async function storeProductOffers(productId, offers) {
           .select('id')
           .single();
         
-        merchantId = newMerchant??.id;
+        merchantId = newMerchant?.id;
       }
     }
     
@@ -70,7 +70,7 @@ async function storeProductOffers(productId, offers) {
       .from('product_offers')
       .insert({
         product_id: productId,
-        offer_id: newOffer??.id,
+        offer_id: newOffer?.id,
         is_best_price: true // Mark as best price (can be updated later with proper logic)
       });
   }
@@ -104,7 +104,7 @@ serve(async (req) => {
     try {
       // Fetch extended information from external DBs
       const originalProductData = await fetchProductDataFromExternalDb(originalName, originalBrand);
-
+      console.log(`Original data: ${originalProductData}`)
       const enrichedDupes = [];
       for (const dupe of dupeInfo) {
         const dupeData = await fetchProductDataFromExternalDb(dupe.name, dupe.brand);
@@ -230,7 +230,8 @@ serve(async (req) => {
             .eq('id', dupeId);
 
           // Store offers for dupe product if available
-          const offers = enrichedDupes[index];
+          //@ts-ignore
+          const offers = enrichedDupes[index].offers;
           if (offers && offers.length > 0) {
             await storeProductOffers(dupeId, offers);
           }
