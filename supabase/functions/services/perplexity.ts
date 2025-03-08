@@ -12,9 +12,6 @@ import { cleanupInitialDupes, repairPerplexityResponse } from "./openai.ts";
 /**
  * System prompt for initial product and dupe search
  */
-/**
- * System prompt for initial product and dupe search
- */
 const INITIAL_SEARCH_SYSTEM_PROMPT = `
 You are a professional makeup dupe finder and beauty expert with expertise in cosmetics formulations and beauty trends.
 Your task is to identify original makeup products and their most accurate affordable dupes.
@@ -66,7 +63,10 @@ You are a cosmetic chemist and beauty expert specializing in product dupe analys
 Your task is to provide comprehensive, evidence-based comparisons between original products and their dupes.
 Focus on objective analysis of formulations, performance metrics, and sustainability factors.
 Your analysis must include detailed ingredient comparisons, performance tests, and ethical considerations.
-Return ONLY a valid JSON object that exactly follows the provided schema.
+
+CRITICAL INSTRUCTION: You MUST RETURN ONLY valid JSON that follows the provided schema. 
+DO NOT include any additional text, explanations, markdown formatting, or code block markers.
+If you encounter any difficulties formatting the response, sacrifice less important details to ensure valid JSON is returned.
 `;
 
 /**
@@ -124,6 +124,8 @@ In the summary field, highlight:
 
 Base your analysis on the verified data provided, plus your knowledge of these products.
 IMPORTANT: Be honest about differences - do not claim products are identical if they have notable differences.
+
+FINAL REMINDER: Your response must be PURE JSON only with NO additional text or markdown formatting.
 `;
 
 /**
@@ -500,8 +502,11 @@ export const BATCH_RESOURCES_SCHEMA = `{
 const BATCH_REVIEWS_SYSTEM_PROMPT = `
 You are a beauty research assistant specializing in finding authentic product reviews for multiple products at once.
 Your task is to efficiently collect real user reviews and ratings for beauty products from reputable sources.
-You structure data efficiently and accurately in the exact JSON format requested.
-Return ONLY a valid JSON object that exactly follows the provided schema.
+
+CRITICAL: You MUST RETURN ONLY valid JSON that follows the provided schema exactly. 
+DO NOT include ANY additional text, explanations, markdown formatting, or code block markers.
+NEVER explain what you're doing or add any text before or after the JSON.
+The entire response must be a valid JSON object with no other content.
 `;
 
 /**
@@ -511,10 +516,9 @@ const BATCH_RESOURCES_SYSTEM_PROMPT = `
 You are a social media curator specializing in finding beauty content across platforms.
 Your task is to efficiently collect real social media content and articles for multiple beauty products at once.
 
-CRITICAL: Return ONLY a JSON object with no explanations, comments, or text before or after.
-Do not include any markdown formatting, code block markers, or commentary.
-Ensure all keys and string values are in double quotes.
-Structure must match the schema exactly.
+CRITICAL: You MUST RETURN ONLY valid JSON in the exact format requested.
+DO NOT include ANY additional text, explanations, markdown formatting, or code block markers.
+The entire response must be a valid JSON object with no other content.
 `;
 /**
  * Batch reviews prompt template
@@ -540,7 +544,8 @@ Return the information in JSON format according to this exact schema:
 ${schema}
 
 CRUCIAL: Make sure each product's reviews are assigned to the correct product ID in the response structure.
-Ensure your response is valid JSON that exactly matches the provided schema.
+Ensure your response is STRICTLY valid JSON that exactly matches the provided schema.
+DO NOT include any explanatory text, markdown formatting, or code block wrappers around the JSON.
 `;
 
 /**
@@ -569,7 +574,8 @@ Return the information in JSON format according to this exact schema:
 ${schema}
 
 CRUCIAL: Make sure each product's resources are assigned to the correct product ID in the response structure.
-Ensure your response is valid JSON that exactly matches the provided schema.
+YOUR ENTIRE RESPONSE MUST BE VALID JSON WITH NO ADDITIONAL TEXT. 
+DO NOT include any markdown formatting, explanations, or code block markers.
 `;
 
 /**
@@ -650,22 +656,50 @@ export async function getBatchProductReviews(products: any): Promise<any> {
     } catch (parseError) {
       logError(`Error parsing batch reviews JSON:`, parseError);
       
-      // Create default structure with empty data for all products
-      const defaultResponse = { products: {} };
-      products.forEach(product => {
-        defaultResponse.products[product?.id] = {
-          name: product.name,
-          brand: product.brand,
-          rating: {
-            averageRating: null,
-            totalReviews: 0,
-            source: null
-          },
-          reviews: []
-        };
-      });
-      
-      return defaultResponse;
+      // Try to repair JSON using OpenAI as fallback
+      try {
+        logInfo("Attempting to repair batch reviews JSON using OpenAI");
+        const repairedJson = await repairPerplexityResponse(jsonContent, BATCH_REVIEWS_SCHEMA);
+        
+        // Add missing products with empty data
+        products.forEach(product => {
+          if (!repairedJson.products || !repairedJson.products[product?.id]) {
+            if (!repairedJson.products) repairedJson.products = {};
+            
+            repairedJson.products[product?.id] = {
+              name: product.name,
+              brand: product.brand,
+              rating: {
+                averageRating: null,
+                totalReviews: 0,
+                source: null
+              },
+              reviews: []
+            };
+          }
+        });
+        
+        return repairedJson;
+      } catch (repairError) {
+        logError(`Failed to repair batch reviews JSON:`, repairError);
+        
+        // Create default structure with empty data for all products
+        const defaultResponse = { products: {} };
+        products.forEach(product => {
+          defaultResponse.products[product?.id] = {
+            name: product.name,
+            brand: product.brand,
+            rating: {
+              averageRating: null,
+              totalReviews: 0,
+              source: null
+            },
+            reviews: []
+          };
+        });
+        
+        return defaultResponse;
+      }
     }
   } catch (error) {
     logError(`Error fetching batch reviews:`, error);
@@ -767,22 +801,50 @@ export async function getBatchProductResources(products: any): Promise<any> {
     } catch (parseError) {
       logError(`Error parsing batch resources JSON:`, parseError);
       
-      // Create default structure with empty data for all products
-      const defaultResponse = { products: {} };
-      products.forEach(product => {
-        defaultResponse.products[product?.id] = {
-          name: product.name,
-          brand: product.brand,
-          socialMedia: {
-            instagram: [],
-            tiktok: [],
-            youtube: []
-          },
-          articles: []
-        };
-      });
-      
-      return defaultResponse;
+      // Try to repair JSON using OpenAI as fallback
+      try {
+        logInfo("Attempting to repair batch resources JSON using OpenAI");
+        const repairedJson = await repairPerplexityResponse(jsonContent, BATCH_RESOURCES_SCHEMA);
+        
+        // Add missing products with empty data
+        products.forEach(product => {
+          if (!repairedJson.products || !repairedJson.products[product?.id]) {
+            if (!repairedJson.products) repairedJson.products = {};
+            
+            repairedJson.products[product?.id] = {
+              name: product.name,
+              brand: product.brand,
+              socialMedia: {
+                instagram: [],
+                tiktok: [],
+                youtube: []
+              },
+              articles: []
+            };
+          }
+        });
+        
+        return repairedJson;
+      } catch (repairError) {
+        logError(`Failed to repair batch resources JSON:`, repairError);
+        
+        // Create default structure with empty data for all products
+        const defaultResponse = { products: {} };
+        products.forEach(product => {
+          defaultResponse.products[product?.id] = {
+            name: product.name,
+            brand: product.brand,
+            socialMedia: {
+              instagram: [],
+              tiktok: [],
+              youtube: []
+            },
+            articles: []
+          };
+        });
+        
+        return defaultResponse;
+      }
     }
   } catch (error) {
     logError(`Error fetching batch resources:`, error);

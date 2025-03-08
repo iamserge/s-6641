@@ -6,6 +6,7 @@ import { OPENAI_API_KEY, OPENAI_API_ENDPOINT, SCHEMA_DEFINITION, INITIAL_DUPES_S
 
 /**
  * Generic function to get structured data from OpenAI
+ * Enhanced with stronger JSON-only output requirements and error handling
  */
 async function getStructuredData<T>(
   prompt: string, 
@@ -22,10 +23,16 @@ async function getStructuredData<T>(
       body: JSON.stringify({
         model: "o3-mini", // Verify this is a valid model (e.g., "gpt-4o-mini" might be intended)
         messages: [
-          { role: "system", content: systemRole },
-          { role: "user", content: prompt + "\n\nPlease provide the response in JSON format." }
+          { 
+            role: "system", 
+            content: systemRole + "\n\nIMPORTANT: You MUST return VALID JSON ONLY. Do not include any additional text, explanations, markdown formatting, or code block markers. The response should be pure JSON."
+          },
+          { 
+            role: "user", 
+            content: prompt 
+          }
         ],
-        response_format: { type: "json_object" },
+        response_format: { type: "json_object" }, // Enforce JSON format
       }),
     });
     
@@ -74,6 +81,8 @@ export async function getBrandInfo(brandName: string): Promise<BrandInfo> {
   - country_of_origin: Country where the brand is based (null if unknown)
   - sustainable_packaging: Boolean indicating if the brand uses sustainable packaging (null if unknown)
   - parent_company: Name of the parent company if the brand is owned by a larger corporation (null if independent or unknown)
+  
+  Return ONLY the JSON object.
   `;
   
   try {
@@ -124,6 +133,8 @@ export async function getIngredientInfo(ingredientName: string): Promise<Ingredi
   - ethically_sourced: Boolean indicating if there are ethical sourcing concerns (null if unknown)
   - is_controversial: Boolean indicating if this ingredient is considered controversial
   - restricted_in: Array of regions where this ingredient is restricted or banned (empty if none)
+  
+  Return ONLY the JSON object.
   `;
   
   try {
@@ -175,6 +186,8 @@ export async function getProductEnrichmentData(productName: string, brand: strin
   - best_for: Array of conditions this product works well with (e.g., "oily skin", "humid climate")
   - country_of_origin: Country where the product is manufactured
   - free_of: Array of ingredients this product claims to be free from
+  
+  Return ONLY the JSON object.
   `;
   
   try {
@@ -205,12 +218,30 @@ export async function getProductEnrichmentData(productName: string, brand: strin
 
 /**
  * Repairs invalid JSON from Perplexity API using OpenAI's structured format
+ * Enhanced with stronger error handling and validation
  */
 export async function repairPerplexityResponse(perplexityContent: string, schemaDefinition: string): Promise<DupeResponse> {
   logInfo("Repairing invalid JSON from Perplexity using OpenAI structured format");
   
+  // First, try to clean up common JSON formatting issues
+  let cleanedContent = perplexityContent
+    .replace(/^```json\s*|\s*```$/g, '') // Remove Markdown code blocks
+    .replace(/\/\/.*$/gm, '') // Remove JavaScript-style comments
+    .replace(/[""]/g, '"') // Replace fancy quotes with regular quotes
+    .replace(/\\n/g, ' ') // Replace newlines in strings with spaces
+    .trim();
+  
+  // Try parsing the cleaned content directly first
+  try {
+    const parsedData = JSON.parse(cleanedContent);
+    logInfo("Successfully parsed JSON after basic cleaning");
+    return parsedData;
+  } catch (parseError) {
+    logInfo(`Basic cleaning insufficient, using OpenAI to repair: ${parseError.message}`);
+  }
+  
   const prompt = `
-  The following text is supposed to be a JSON object but may have formatting issues.
+  The following text is supposed to be a JSON object but has formatting issues.
   Please convert it to a valid JSON object that follows this schema:
   
   ${schemaDefinition}
@@ -218,15 +249,27 @@ export async function repairPerplexityResponse(perplexityContent: string, schema
   Here is the text to fix:
   
   ${perplexityContent}
+  
+  Return ONLY the fixed JSON object with no explanations or additional text.
   `;
   
   try {
-    return await getStructuredData<DupeResponse>(
+    const repairedJson = await getStructuredData<DupeResponse>(
       prompt,
       "You are a JSON repair service. Convert the provided text to valid JSON that matches the specified schema.",
       // We don't need to specify the schema here as it's included in the prompt
       {}
     );
+    
+    // Validate the repaired JSON has the required structure
+    if (!repairedJson || 
+        !repairedJson.original || 
+        !repairedJson.dupes || 
+        !Array.isArray(repairedJson.dupes)) {
+      throw new Error("Repaired JSON is missing required fields");
+    }
+    
+    return repairedJson;
   } catch (error) {
     logError("Failed to repair Perplexity response with OpenAI:", error);
     throw new Error("Could not repair the JSON response from Perplexity");
@@ -254,6 +297,8 @@ export async function cleanupAndStructureData(dupeAnalysis: any): Promise<DupeRe
   3. Calculations like savings_percentage and match_score are accurate
   4. Any missing information is set to null or empty arrays
   5. All URLs are properly formatted
+  
+  Return ONLY the cleaned JSON object with no explanations or additional text.
   `;
   
   try {
@@ -276,6 +321,7 @@ export async function cleanupAndStructureData(dupeAnalysis: any): Promise<DupeRe
 
 /**
  * Cleans up and structures the initial dupes response from Perplexity using OpenAI
+ * Enhanced with better error handling and validation
  */
 export async function cleanupInitialDupes(perplexityContent: string): Promise<{
   originalName: string;
@@ -284,6 +330,26 @@ export async function cleanupInitialDupes(perplexityContent: string): Promise<{
   dupes: Array<{ name: string; brand: string; matchScore: number}>;
 }> {
   logInfo("Cleaning up initial dupes response with OpenAI");
+
+  // First, try to clean up common JSON formatting issues
+  let cleanedContent = perplexityContent
+    .replace(/^```json\s*|\s*```$/g, '') // Remove Markdown code blocks
+    .replace(/\/\/.*$/gm, '') // Remove JavaScript-style comments
+    .replace(/[""]/g, '"') // Replace fancy quotes with regular quotes
+    .replace(/\\n/g, ' ') // Replace newlines in strings with spaces
+    .trim();
+  
+  // Try parsing the cleaned content directly first
+  try {
+    const parsedData = JSON.parse(cleanedContent);
+    // Verify it has the required structure
+    if (parsedData.originalName && parsedData.originalBrand && Array.isArray(parsedData.dupes)) {
+      logInfo("Successfully parsed initial dupes JSON after basic cleaning");
+      return parsedData;
+    }
+  } catch (parseError) {
+    logInfo(`Basic cleaning insufficient for initial dupes, using OpenAI to repair: ${parseError.message}`);
+  }
 
   const prompt = `
   The following text is supposed to be a JSON object but may have formatting issues.
@@ -305,10 +371,12 @@ export async function cleanupInitialDupes(perplexityContent: string): Promise<{
   Here is the text to fix:
 
   ${perplexityContent}
+  
+  Return ONLY the valid JSON with no explanations or additional text.
   `;
 
   try {
-    return await getStructuredData<{
+    const result = await getStructuredData<{
       originalName: string;
       originalBrand: string;
       originalCategory: string;
@@ -318,6 +386,22 @@ export async function cleanupInitialDupes(perplexityContent: string): Promise<{
       "You are a JSON repair service. Convert the provided text to valid JSON that matches the specified schema.",
       INITIAL_DUPES_SCHEMA // Pass the schema for validation
     );
+    
+    // Validate the result has the required structure
+    if (!result || !result.originalName || !result.originalBrand || !Array.isArray(result.dupes)) {
+      throw new Error("Repaired initial dupes JSON is missing required fields");
+    }
+    
+    // Validate dupes array structure
+    if (result.dupes.length > 0) {
+      for (const dupe of result.dupes) {
+        if (!dupe.name || !dupe.brand || typeof dupe.matchScore !== 'number') {
+          throw new Error("Repaired initial dupes JSON has invalid dupe entries");
+        }
+      }
+    }
+    
+    return result;
   } catch (error) {
     logError("Failed to clean up initial dupes response with OpenAI:", error);
     throw new Error("Could not clean up the initial dupes response from Perplexity");

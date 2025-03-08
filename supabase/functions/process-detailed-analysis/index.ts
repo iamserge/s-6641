@@ -7,6 +7,49 @@ import { processProductIngredients, processDupeIngredients } from "../services/i
 import { logInfo, logError, safeStringify } from "../shared/utils.ts";
 
 /**
+ * Clean up product data to only include essential fields for Perplexity analysis
+ * This reduces payload size and prevents hitting API limits
+ */
+function cleanProductDataForAnalysis(product: any): any {
+  if (!product) return null;
+  
+  // Keep only fields needed for the detailed analysis
+  return {
+    name: product.name,
+    brand: product.brand,
+    price: product.price || 0,
+    category: product.category,
+    description: product.description,
+    ean: product.ean,
+    upc: product.upc,
+    gtin: product.gtin,
+    asin: product.asin,
+    model: product.model,
+    image_url: product.image_url,
+    images: Array.isArray(product.images) ? product.images.slice(0, 2) : undefined, // Limit to 2 images
+    keyIngredients: product.keyIngredients || [],
+    texture: product.texture,
+    finish: product.finish,
+    coverage: product.coverage,
+    spf: product.spf,
+    skinTypes: product.skinTypes,
+    attributes: product.attributes,
+    countryOfOrigin: product.countryOfOrigin,
+    longevityRating: product.longevityRating,
+    oxidationTendency: product.oxidationTendency,
+    bestFor: product.bestFor,
+    freeOf: product.freeOf,
+    crueltyFree: product.crueltyFree,
+    vegan: product.vegan,
+    // Explicitly exclude offers and other large objects
+    // offers: undefined,
+    // ingredients: undefined,
+    // reviews: undefined,
+    // resources: undefined
+  };
+}
+
+/**
  * Store product offers and handle merchant relationships
  * @param productId The product ID to associate offers with
  * @param offers Array of offer objects
@@ -371,13 +414,17 @@ serve(async (req) => {
         ...originalProductData
       };
 
-      logInfo(`[${requestId}] Sending data to Perplexity for detailed analysis`);
-      logInfo(`[${requestId}] Original data: ${safeStringify(enrichedOriginal)}`);
-      logInfo(`[${requestId}] Dupes data: ${safeStringify(enrichedDupes)}`);
+      // Clean up data before sending to Perplexity to reduce payload size
+      const cleanedOriginal = cleanProductDataForAnalysis(enrichedOriginal);
+      const cleanedDupes = enrichedDupes.map(dupe => cleanProductDataForAnalysis(dupe));
+
+      logInfo(`[${requestId}] Sending cleaned data to Perplexity for detailed analysis`);
+      logInfo(`[${requestId}] Cleaned original data size: ${JSON.stringify(cleanedOriginal).length} bytes`);
+      logInfo(`[${requestId}] Cleaned dupes data size: ${JSON.stringify(cleanedDupes).length} bytes`);
       
       const detailedAnalysis = await getDetailedDupeAnalysis(
-        enrichedOriginal,
-        enrichedDupes
+        cleanedOriginal,
+        cleanedDupes
       );
       
       logInfo(`[${requestId}] Received detailed analysis from Perplexity`);
