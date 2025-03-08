@@ -64,38 +64,48 @@ async function safelyFetchImage(imageUrl: string): Promise<ArrayBuffer | null> {
       return null;
     }
 
-    // Add timeout to prevent hanging on problematic URLs
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
-
     // Fetch with retry
     const response = await withRetry(async () => {
-      const fetchResponse = await fetch(imageUrl, { 
-        signal: controller.signal,
-        headers: {
-          // Common headers for image requests
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+      // Create a new controller for each retry attempt
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+
+      try {
+        const fetchResponse = await fetch(imageUrl, { 
+          signal: controller.signal,
+          headers: {
+            // Common headers for image requests
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!fetchResponse.ok) {
+          throw new Error(`HTTP error fetching image: ${fetchResponse.status} ${fetchResponse.statusText}`);
         }
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error fetching image: ${response.status} ${response.statusText}`);
+        
+        // Check if content type is image
+        const contentType = fetchResponse.headers.get('content-type');
+        if (contentType && !contentType.includes('image/')) {
+          throw new Error(`Invalid content type: ${contentType}`);
+        }
+        
+        return fetchResponse;
+      } catch (error) {
+        clearTimeout(timeoutId); // Clear timeout in case of error
+        throw error; // Re-throw to let withRetry handle it
       }
-      
-      // Check if content type is image
-      const contentType = response.headers.get('content-type');
-      if (contentType && !contentType.includes('image/')) {
-        throw new Error(`Invalid content type: ${contentType}`);
-      }
-      
-      return response;
     }, 3, 1000);
+
+    // Ensure response is not null before accessing it
+    if (!response) {
+      throw new Error('No response received from fetch');
+    }
 
     // Get array buffer from response
     return await response.arrayBuffer();
