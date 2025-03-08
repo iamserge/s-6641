@@ -76,10 +76,10 @@ const DETAILED_ANALYSIS_PROMPT = (originalProduct: any, dupes: any[]) => `
 I need a detailed analysis comparing this original product and its potential dupes.
 
 Original Product (with external data):
-${JSON.stringify(originalProduct, null, 2)}
+${JSON.stringify(originalProduct)}
 
 Potential Dupes (with external data - bear in mind we might have not been able to fetch all the data from external db, so some will just have name and brand - please try to find what you can for this):
-${JSON.stringify(dupes, null, 2)}
+${JSON.stringify(dupes)}
 
 Please provide a comprehensive response following this EXACT schema:
 ${SCHEMA_DEFINITION}
@@ -114,11 +114,10 @@ For each dupe, provide detailed comparison metrics:
 5. Exact savings percentage compared to original
 6. Dupe type classification (Shade Match, Formula Match, Exact Dupe, etc.)
 7. Longevity comparison with original (e.g., "Lasts 2 hours less" or "Comparable wear time")
-8. Validation source (e.g., "Verified by Temptalia", "Reddit consensus", "Multiple beauty bloggers")
-9. Confidence level (High/Medium/Low) based on validation quality and number of sources
+8. Confidence level (High/Medium/Low) based on validation quality and number of sources
 
 In the summary field, highlight:
-1.  MAKE SURE ONLY TO MENTION DUPES THAT WE FOUND
+1.  MAKE SURE YOU RETURN INFORMATION FOR ALL THE DUPES WE SENT: ${dupes.map(dupe => `'${dupe.name}'`).join(', ')})
 2. One two lines, summarising product and dupes we found, but in a light, easy to read format, very simple, gen z fiendly, not cringe, add emojis
 
 
@@ -275,10 +274,9 @@ export async function getDetailedDupeAnalysis(
           },
           { role: "user", content: DETAILED_ANALYSIS_PROMPT(originalProduct, dupes) },
         ],
-        max_tokens: 20000,
+        max_tokens: 60000,
         temperature: 0.2,
         top_p: 0.9,
-        search_recency_filter: "month",
         stream: false,
       }),
     });
@@ -507,6 +505,8 @@ CRITICAL: You MUST RETURN ONLY valid JSON that follows the provided schema exact
 DO NOT include ANY additional text, explanations, markdown formatting, or code block markers.
 NEVER explain what you're doing or add any text before or after the JSON.
 The entire response must be a valid JSON object with no other content.
+FINAL REMINDER: Your response must be PURE JSON only with NO additional text or markdown formatting.
+
 `;
 
 /**
@@ -546,6 +546,8 @@ ${schema}
 CRUCIAL: Make sure each product's reviews are assigned to the correct product ID in the response structure.
 Ensure your response is STRICTLY valid JSON that exactly matches the provided schema.
 DO NOT include any explanatory text, markdown formatting, or code block wrappers around the JSON.
+FINAL REMINDER: Your response must be PURE JSON only with NO additional text or markdown formatting.
+
 `;
 
 /**
