@@ -325,7 +325,7 @@ export async function enrichProductData(productName: string, brand: string): Pro
           },
           { role: "user", content: PRODUCT_ENRICHMENT_PROMPT(productName, brand) },
         ],
-        max_tokens: 4000,
+        max_tokens: 40000,
         temperature: 0.2,
       }),
     });
@@ -612,7 +612,7 @@ export async function getBatchProductReviews(products: any): Promise<any> {
             content: BATCH_REVIEWS_PROMPT(products, BATCH_REVIEWS_SCHEMA) 
           }
         ],
-        max_tokens: 4000,
+        max_tokens: 20000,
         temperature: 0.2,
         top_p: 0.9,
         search_recency_filter: "month",
@@ -757,7 +757,7 @@ export async function getBatchProductResources(products: any): Promise<any> {
             content: BATCH_RESOURCES_PROMPT(products, BATCH_RESOURCES_SCHEMA) 
           }
         ],
-        max_tokens: 4000,
+        max_tokens: 40000,
         temperature: 0.2,
         top_p: 0.9,
         search_recency_filter: "month",
