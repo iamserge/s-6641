@@ -387,19 +387,37 @@ serve(async (req) => {
       
       // Process original product image
       let originalImageUrl = null;
-      if (detailedAnalysis.original.imageUrl || (detailedAnalysis.original.images && detailedAnalysis.original.images.length > 0)) {
-        const imageSource = detailedAnalysis.original.images?.[0] || detailedAnalysis.original.imageUrl;
-        logInfo(`[${requestId}] Processing image for original product: ${imageSource}`);
+      const imageSourcesToTry = [];
+      
+      // Add imageUrl if available
+      if (detailedAnalysis.original.imageUrl) {
+        imageSourcesToTry.push(detailedAnalysis.original.imageUrl);
+      }
+      
+      // Add all images from the array if available
+      if (detailedAnalysis.original.images && Array.isArray(detailedAnalysis.original.images)) {
+        imageSourcesToTry.push(...detailedAnalysis.original.images);
+      }
+      
+      // Try each image source until one works
+      if (imageSourcesToTry.length > 0) {
+        for (const imageSource of imageSourcesToTry) {
+          logInfo(`[${requestId}] Trying image source for original product: ${imageSource}`);
+          try {
+            originalImageUrl = await processAndUploadImage(imageSource, `${productSlug}-original`);
+            logInfo(`[${requestId}] Successfully processed original product image: ${originalImageUrl}`);
+            break; // Exit the loop once we have a successful image
+          } catch (imageProcessingError) {
+            logError(`[${requestId}] Failed to process image source: ${safeStringify(imageProcessingError)}`);
+            // Continue to the next image source
+          }
+        }
         
-        try {
-          originalImageUrl = await processAndUploadImage(imageSource, `${productSlug}-original`);
-          logInfo(`[${requestId}] Processed original product image. Result: ${originalImageUrl}`);
-        } catch (imageProcessingError) {
-          logError(`[${requestId}] Error processing original product image: ${safeStringify(imageProcessingError)}`);
-          // Continue without image if processing fails
+        if (!originalImageUrl) {
+          logError(`[${requestId}] All image sources failed for original product`);
         }
       } else {
-        logInfo(`[${requestId}] No image URL found for original product`);
+        logInfo(`[${requestId}] No image sources available for original product`);
       }
       
       // Update original product with detailed info
@@ -521,21 +539,39 @@ serve(async (req) => {
           return { success: false, error: 'No mapped dupe data available' };
         }
 
-        // Process dupe image
+        // Process dupe image using the same approach as for original product
         let dupeImageUrl = null;
-        if (dupe.imageUrl || (dupe.images && dupe.images.length > 0)) {
-          const imageSource = dupe.images?.[0] || dupe.imageUrl;
-          logInfo(`[${requestId}][DUPE-${dupeIndex}] Processing image for dupe: ${imageSource}`);
+        const dupeImageSourcesToTry = [];
+        
+        // Add imageUrl if available
+        if (dupe.imageUrl) {
+          dupeImageSourcesToTry.push(dupe.imageUrl);
+        }
+        
+        // Add all images from the array if available
+        if (dupe.images && Array.isArray(dupe.images)) {
+          dupeImageSourcesToTry.push(...dupe.images);
+        }
+        
+        // Try each image source until one works
+        if (dupeImageSourcesToTry.length > 0) {
+          for (const imageSource of dupeImageSourcesToTry) {
+            logInfo(`[${requestId}][DUPE-${dupeIndex}] Trying image source for dupe: ${imageSource}`);
+            try {
+              dupeImageUrl = await processAndUploadImage(imageSource, `${productSlug}-dupe-${index + 1}`);
+              logInfo(`[${requestId}][DUPE-${dupeIndex}] Successfully processed dupe image: ${dupeImageUrl}`);
+              break; // Exit the loop once we have a successful image
+            } catch (imageProcessingError) {
+              logError(`[${requestId}][DUPE-${dupeIndex}] Failed to process image source: ${safeStringify(imageProcessingError)}`);
+              // Continue to the next image source
+            }
+          }
           
-          try {
-            dupeImageUrl = await processAndUploadImage(imageSource, `${productSlug}-dupe-${index + 1}`);
-            logInfo(`[${requestId}][DUPE-${dupeIndex}] Processed dupe image. Result: ${dupeImageUrl}`);
-          } catch (imageProcessingError) {
-            logError(`[${requestId}][DUPE-${dupeIndex}] Error processing dupe image: ${safeStringify(imageProcessingError)}`);
-            // Continue without image if processing fails
+          if (!dupeImageUrl) {
+            logError(`[${requestId}][DUPE-${dupeIndex}] All image sources failed for dupe`);
           }
         } else {
-          logInfo(`[${requestId}][DUPE-${dupeIndex}] No image URL found for dupe`);
+          logInfo(`[${requestId}][DUPE-${dupeIndex}] No image sources available for dupe`);
         }
 
         // Update dupe product
