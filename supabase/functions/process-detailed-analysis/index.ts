@@ -243,6 +243,7 @@ serve(async (req) => {
           }
           
           const enrichedDupe = {
+            id: dupe.id,
             name: dupe.name,
             brand: dupe.brand,
             ...dupeData
