@@ -407,3 +407,69 @@ export async function processAndUploadImage(imageUrl: string | undefined, fileNa
     return undefined;
   }
 }
+
+
+
+/**
+ * Process product images with prioritized sources
+ * @param externalDbImages Array of image URLs from external database
+ * @param perplexityData Perplexity response with imageUrl and images array
+ * @param fileName Base filename for the processed image
+ * @returns URL of processed image or null if all sources failed
+ */
+export async function processProductImagesWithPriority(
+  externalDbImages: string[] | undefined,
+  perplexityData: { imageUrl?: string; images?: string[] },
+  fileName: string
+): Promise<string | null> {
+  const requestId = crypto.randomUUID(); // For logging
+  const imageSourcesToTry: string[] = [];
+  
+  // 1. First priority: External DB images
+  if (externalDbImages && Array.isArray(externalDbImages) && externalDbImages.length > 0) {
+    logInfo(`[${requestId}] Adding ${externalDbImages.length} external DB images to processing queue`);
+    imageSourcesToTry.push(...externalDbImages.filter(Boolean));
+  }
+  
+  // 2. Second priority: Perplexity imageUrl
+  if (perplexityData.imageUrl) {
+    logInfo(`[${requestId}] Adding Perplexity imageUrl to processing queue`);
+    imageSourcesToTry.push(perplexityData.imageUrl);
+  }
+  
+  // 3. Third priority: Perplexity images array
+  if (perplexityData.images && Array.isArray(perplexityData.images) && perplexityData.images.length > 0) {
+    logInfo(`[${requestId}] Adding ${perplexityData.images.length} Perplexity images to processing queue`);
+    imageSourcesToTry.push(...perplexityData.images.filter(Boolean));
+  }
+  
+  // Remove duplicates
+  const uniqueImageSources = [...new Set(imageSourcesToTry)];
+  
+  // If we have no image sources, return null
+  if (uniqueImageSources.length === 0) {
+    logInfo(`[${requestId}] No image sources available for ${fileName}`);
+    return null;
+  }
+  
+  logInfo(`[${requestId}] Processing ${uniqueImageSources.length} unique image sources for ${fileName}`);
+  
+  // Try each image source until one works
+  for (const imageSource of uniqueImageSources) {
+    try {
+      logInfo(`[${requestId}] Trying image source: ${imageSource}`);
+      const processedImageUrl = await processAndUploadImage(imageSource, fileName);
+      
+      if (processedImageUrl) {
+        logInfo(`[${requestId}] Successfully processed image: ${processedImageUrl}`);
+        return processedImageUrl;
+      }
+    } catch (imageProcessingError) {
+      logError(`[${requestId}] Failed to process image source: ${safeStringify(imageProcessingError)}`);
+      // Continue to the next image source
+    }
+  }
+  
+  logError(`[${requestId}] All image sources failed for ${fileName}`);
+  return null;
+}
