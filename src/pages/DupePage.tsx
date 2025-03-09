@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ExternalLink, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Loader2, ExternalLink, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { Product, ProductCategory } from "@/types/dupe";
 import { HeroProduct } from "@/components/dupe/HeroProduct";
@@ -18,14 +18,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger 
-} from "@/components/ui/tooltip";
-import { getFlagEmoji } from "@/lib/utils";
-
 
 const DupePage = () => {
   const { slug } = useParams();
@@ -178,6 +170,9 @@ const DupePage = () => {
           })
         );
 
+        // Sort dupes by match score in descending order
+        processedDupes.sort((a, b) => b.match_score - a.match_score);
+
         setProduct(prevProduct => {
           if (!prevProduct) return null;
           return {
@@ -257,10 +252,6 @@ const DupePage = () => {
     activeDupeIndex >= 0 && product?.dupes ? 
     product.dupes[activeDupeIndex] : null, 
   [activeDupeIndex, product?.dupes]);
-
-  const problematicIngredients = useMemo(() => 
-    activeDupe?.ingredients?.filter(i => i.is_controversial) || [],
-  [activeDupe]);
   
   const scrollToTop = () => {
     window.scrollTo({
@@ -271,11 +262,11 @@ const DupePage = () => {
 
   if (isLoadingProduct) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-violet-50 to-pink-50">
         <AnimatedBackground />
         <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-[#9b87f5] mb-4 mx-auto" />
-          <p className="text-gray-600">Loading product details...</p>
+          <Loader2 className="w-12 h-12 animate-spin text-violet-600 mb-4 mx-auto" />
+          <p className="text-xl text-gray-700">Loading product details...</p>
         </div>
       </div>
     );
@@ -283,40 +274,42 @@ const DupePage = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-violet-50 to-pink-50">
         <AnimatedBackground />
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h1>
-          <p className="text-gray-600">{error || "Product could not be loaded"}</p>
+        <div className="text-center max-w-lg p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Oops!</h1>
+          <p className="text-xl text-gray-700 mb-2">{error || "Product could not be loaded"}</p>
+          <p className="text-gray-500">Please try searching for a different product</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen font-urbanist">
+    <div className="min-h-screen font-urbanist bg-gradient-to-b from-violet-50 to-pink-50">
       <AnimatedBackground />
       <Navbar />
       
-      <div ref={heroRef} className="hero-product">
+      <div ref={heroRef} className="pt-8">
         <HeroProduct product={product} />
       </div>
       
       {product.summary && (
-        <div className="container mx-auto px-4 pt-4 pb-2">
-          <div className="max-w-4xl mx-auto bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-md">
-            <h3 className="text-xl font-medium mb-3 text-gray-800">Summary</h3>
-            <p className="text-lg text-gray-700">{product.summary}</p>
+        <div className="container mx-auto px-4 pb-8">
+          <div className="max-w-4xl mx-auto">
+            <p className="text-xl text-gray-700 leading-relaxed">
+              {product.summary}
+            </p>
           </div>
         </div>
       )}
       
       <div className="container mx-auto px-4 py-8 md:py-16">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 text-gray-800">
           {isLoadingDupes ? (
             <div className="flex items-center justify-center gap-2">
               <span>Finding Dupes</span>
-              <Loader2 className="w-5 h-5 animate-spin text-[#9b87f5]" />
+              <Loader2 className="w-6 h-6 animate-spin text-violet-600" />
             </div>
           ) : (
             product.dupes.length > 0 
@@ -326,15 +319,15 @@ const DupePage = () => {
         </h2>
         
         {isLoadingDupes ? (
-          <div className="max-w-2xl mx-auto bg-white/50 backdrop-blur-sm rounded-3xl p-8 shadow-lg flex items-center justify-center">
+          <div className="max-w-2xl mx-auto bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-pink-100/30 flex items-center justify-center">
             <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-[#9b87f5] mb-4 mx-auto" />
-              <p className="text-lg text-gray-600">Searching for perfect dupes...</p>
-              <p className="text-sm text-gray-500 mt-2">This may take a moment</p>
+              <Loader2 className="w-10 h-10 animate-spin text-violet-600 mb-4 mx-auto" />
+              <p className="text-xl text-gray-700 mb-2">Searching for perfect dupes...</p>
+              <p className="text-gray-500">This may take a moment</p>
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {product.dupes && product.dupes.length > 0 ? (
               product.dupes.map((dupe, index) => (
                 <div
@@ -350,9 +343,9 @@ const DupePage = () => {
                 </div>
               ))
             ) : (
-              <div className="max-w-2xl mx-auto bg-white/50 backdrop-blur-sm rounded-3xl p-8 shadow-lg text-center">
-                <p className="text-lg text-gray-600">No dupes found for this product.</p>
-                <p className="text-sm text-gray-500 mt-2">Try searching for a different product.</p>
+              <div className="max-w-2xl mx-auto bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-pink-100/30 text-center">
+                <p className="text-xl text-gray-700 mb-2">No dupes found for this product.</p>
+                <p className="text-gray-500">Try searching for a different product.</p>
               </div>
             )}
           </div>
@@ -365,10 +358,11 @@ const DupePage = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="fixed right-4 bottom-24 md:bottom-20 z-40 p-3 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-gray-200"
+            className="fixed right-4 bottom-24 md:bottom-20 z-40 p-3 rounded-full bg-white/80 backdrop-blur-sm shadow-md border border-pink-200"
             onClick={scrollToTop}
+            aria-label="Scroll to top"
           >
-            <ChevronUp className="w-5 h-5 text-gray-600" />
+            <ChevronUp className="w-5 h-5 text-pink-700" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -380,38 +374,38 @@ const DupePage = () => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-200 px-4 py-3 z-50 shadow-lg"
+            className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-pink-200 px-4 py-3 z-50 shadow-lg"
           >
             <div className="container mx-auto">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center gap-2">
-                    <Badge variant="pastelPurple" className="rounded-full px-3 py-1.5 font-medium text-sm">
+                    <Badge className="bg-violet-100 text-violet-700 px-3 py-1.5 font-medium text-sm rounded-full">
                       {Math.round(activeDupe.match_score)}% Match
                     </Badge>
                     
-                    {activeDupe.savings_percentage && (
-                      <Badge variant="pastelGreen" className="rounded-full px-3 py-1.5 font-medium text-sm">
+                    {activeDupe.savings_percentage > 0 && (
+                      <Badge className="bg-green-100 text-green-700 px-3 py-1.5 font-medium text-sm rounded-full">
                         Save {Math.round(activeDupe.savings_percentage)}%
                       </Badge>
                     )}
                   </div>
                   
                   <p className="text-sm text-gray-700 font-medium">
-                    {activeDupe.brand} <span className="font-semibold">{activeDupe.name}</span>
+                    {activeDupe.brand} <span className="font-semibold text-violet-700">{activeDupe.name}</span>
                   </p>
                 </div>
                 
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="default" className="bg-[#E5DEFF] text-purple-700 hover:bg-[#E5DEFF]/90 rounded-full">
+                    <Button variant="default" className="bg-violet-600 hover:bg-violet-700 text-white rounded-full">
                       Buy Now
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="bottom" className="px-4 sm:px-6 rounded-t-3xl">
+                  <SheetContent side="bottom" className="px-4 sm:px-6 rounded-t-3xl bg-white/95 backdrop-blur-md">
                     <SheetHeader>
-                      <SheetTitle>Shop {activeDupe.brand} {activeDupe.name}</SheetTitle>
-                      <SheetDescription>
+                      <SheetTitle className="text-2xl text-violet-700">Shop {activeDupe.brand} {activeDupe.name}</SheetTitle>
+                      <SheetDescription className="text-gray-600 text-base">
                         Choose where to purchase this dupe
                       </SheetDescription>
                     </SheetHeader>
@@ -423,13 +417,13 @@ const DupePage = () => {
                             href={offer.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                            className="flex items-center justify-between p-4 rounded-xl border border-pink-200 bg-white hover:bg-pink-50 transition-colors"
                           >
                             <div>
-                              <p className="font-medium">{offer.merchant?.name || "Retailer"}</p>
-                              <p className="text-sm text-gray-500">~${Math.round(offer.price)} - {offer.condition || 'New'}</p>
+                              <p className="font-medium text-lg">{offer.merchant?.name || "Retailer"}</p>
+                              <p className="text-gray-500">~${Math.round(offer.price)} - {offer.condition || 'New'}</p>
                             </div>
-                            <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
+                            <ExternalLink className="h-5 w-5 text-violet-600" />
                           </a>
                         ))
                       ) : activeDupe.purchase_link ? (
@@ -437,16 +431,19 @@ const DupePage = () => {
                           href={activeDupe.purchase_link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                          className="flex items-center justify-between p-4 rounded-xl border border-pink-200 bg-white hover:bg-pink-50 transition-colors"
                         >
                           <div>
-                            <p className="font-medium">Shop Now</p>
-                            <p className="text-sm text-gray-500">~${Math.round(activeDupe.price)}</p>
+                            <p className="font-medium text-lg">Shop Now</p>
+                            <p className="text-gray-500">~${Math.round(activeDupe.price)}</p>
                           </div>
-                          <ExternalLink className="h-5 w-5 text-[#0EA5E9]" />
+                          <ExternalLink className="h-5 w-5 text-violet-600" />
                         </a>
                       ) : (
-                        <p className="text-center text-gray-500 py-6">No purchasing options available</p>
+                        <div className="text-center py-6 bg-white/70 rounded-xl">
+                          <p className="text-gray-600 text-lg">No purchasing options available</p>
+                          <p className="text-gray-500 text-sm mt-2">Try searching online retailers</p>
+                        </div>
                       )}
                     </div>
                   </SheetContent>
