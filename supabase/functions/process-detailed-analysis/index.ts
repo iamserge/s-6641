@@ -30,18 +30,21 @@ function cleanProductDataForAnalysis(product: any): any {
   };
 }
 
+
 /**
  * Maps the detailed analysis results from Perplexity to the original dupe product IDs
  * Uses direct ID matching and removes missing dupes from the database
  * @param detailedAnalysis The detailed analysis response from Perplexity
  * @param dupeProductIds Array of dupe product IDs in our database
  * @param originalProductId The ID of the original product
+ * @param dupeInfo Array of dupe info objects with name and brand
  * @returns Map of dupeProductId to detailedAnalysis dupe object
  */
 async function mapDetailedAnalysisResultsToDupes(
   detailedAnalysis: any, 
   dupeProductIds: string[],
-  originalProductId: string
+  originalProductId: string,
+  dupeInfo: Array<{ id: string; name: string; brand: string }>
 ): Promise<Map<string, any>> {
   const dupeMap = new Map<string, any>();
   const detailedDupes = detailedAnalysis.dupes || [];
@@ -421,7 +424,13 @@ serve(async (req) => {
       }
 
       // Map detailed analysis dupes to product IDs
-      const dupeMap = mapDetailedAnalysisResultsToDupes(detailedAnalysis, dupeProductIds, dupeInfo);
+      // With this correct one:
+      const dupeMap = await mapDetailedAnalysisResultsToDupes(
+        detailedAnalysis, 
+        dupeProductIds, 
+        originalProductId,
+        dupeInfo
+      );
       
       // Optional: Filter out dupes with very low match scores
       const validDupeIds = Array.from(dupeMap.entries())
