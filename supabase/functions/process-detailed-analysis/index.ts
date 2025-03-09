@@ -139,9 +139,8 @@ async function mapDetailedAnalysisResultsToDupes(
  * @param offers Array of offer objects
  * @returns Object with success status and counts
  */
+
 async function storeProductOffers(productId, offers) {
-  // [Your existing storeProductOffers implementation]
-  // Keeping this unchanged as it's not related to the mapping issue
 }
 
 serve(async (req) => {
