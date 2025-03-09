@@ -15,6 +15,7 @@ function cleanProductDataForAnalysis(product: any): any {
   
   // Keep only fields needed for the detailed analysis
   return {
+    id: product.id,
     name: product.name,
     brand: product.brand,
     price: product.price || 0,
@@ -25,174 +26,106 @@ function cleanProductDataForAnalysis(product: any): any {
     gtin: product.gtin,
     asin: product.asin,
     model: product.model,
-    image_url: product.image_url,
-    images: Array.isArray(product.images) ? product.images.slice(0, 2) : undefined, // Limit to 2 images
-    keyIngredients: product.keyIngredients || [],
-    texture: product.texture,
-    finish: product.finish,
-    coverage: product.coverage,
-    spf: product.spf,
-    skinTypes: product.skinTypes,
-    attributes: product.attributes,
-    countryOfOrigin: product.countryOfOrigin,
-    longevityRating: product.longevityRating,
-    oxidationTendency: product.oxidationTendency,
-    bestFor: product.bestFor,
-    freeOf: product.freeOf,
-    crueltyFree: product.crueltyFree,
-    vegan: product.vegan,
   };
 }
 
 /**
  * Maps the detailed analysis results from Perplexity to the original dupe product IDs
- * Uses intelligent name/brand matching to handle ordering differences
+ * Uses direct ID matching and removes missing dupes from the database
  * @param detailedAnalysis The detailed analysis response from Perplexity
  * @param dupeProductIds Array of dupe product IDs in our database
- * @param dupeInfo Array of dupe info objects with name/brand that were sent to Perplexity
+ * @param originalProductId The ID of the original product
  * @returns Map of dupeProductId to detailedAnalysis dupe object
  */
-function mapDetailedAnalysisResultsToDupes(
+async function mapDetailedAnalysisResultsToDupes(
   detailedAnalysis: any, 
-  dupeProductIds: string[], 
-  dupeInfo: Array<{ name: string, brand: string }>
-): Map<string, any> {
+  dupeProductIds: string[],
+  originalProductId: string
+): Promise<Map<string, any>> {
   const dupeMap = new Map<string, any>();
   const detailedDupes = detailedAnalysis.dupes || [];
+  const requestId = crypto.randomUUID(); // For logging
   
-  logInfo(`Mapping ${detailedDupes.length} detailed dupes to ${dupeProductIds.length} product IDs`);
+  logInfo(`[${requestId}] Mapping ${detailedDupes.length} detailed dupes using direct ID matching`);
   
-  // For each of our original dupes that we sent to Perplexity
-  dupeProductIds.forEach((dupeId, index) => {
-    const originalDupeInfo = dupeInfo[index];
-    
-    // Skip if we don't have the basic info
-    if (!originalDupeInfo || !originalDupeInfo.name || !originalDupeInfo.brand) {
-      logError(`Missing original dupe info for index ${index}, dupeId: ${dupeId}`);
-      return;
+  // Create a map using the ID field from the detailed analysis
+  for (const dupe of detailedDupes) {
+    if (dupe.id && dupeProductIds.includes(dupe.id)) {
+      dupeMap.set(dupe.id, dupe);
+      logInfo(`[${requestId}] Mapped dupe ID ${dupe.id} to detailed analysis dupe: ${dupe.brand} ${dupe.name}`);
+    } else if (!dupe.id) {
+      logError(`[${requestId}] Dupe is missing ID field: ${dupe.brand} ${dupe.name}`);
+    } else if (!dupeProductIds.includes(dupe.id)) {
+      logError(`[${requestId}] Dupe ID ${dupe.id} from response not found in dupeProductIds array`);
     }
+  }
+  
+  // Check for missing dupes (dupes that were in our DB but not in the response)
+  const missingIds = dupeProductIds.filter(id => !dupeMap.has(id));
+  if (missingIds.length > 0) {
+    logInfo(`[${requestId}] Found ${missingIds.length} dupes missing from Perplexity response: ${missingIds.join(', ')}`);
     
-    // Normalize original dupe name/brand for comparison
-    const originalName = originalDupeInfo.name.toLowerCase().trim();
-    const originalBrand = originalDupeInfo.brand.toLowerCase().trim();
-    
-    // Try to find a matching dupe in the detailed analysis results
-    let matchedDupe = null;
-    
-    // First try for exact match on both name and brand
-    matchedDupe = detailedDupes.find(dupe => 
-      dupe.name.toLowerCase().trim() === originalName && 
-      dupe.brand.toLowerCase().trim() === originalBrand
-    );
-    
-    // If no exact match, try partial name matching with exact brand match
-    if (!matchedDupe) {
-      matchedDupe = detailedDupes.find(dupe => 
-        dupe.brand.toLowerCase().trim() === originalBrand &&
-        (dupe.name.toLowerCase().trim().includes(originalName) || 
-         originalName.includes(dupe.name.toLowerCase().trim()))
-      );
-    }
-    
-    // If still no match, try exact name matching with any brand
-    if (!matchedDupe) {
-      matchedDupe = detailedDupes.find(dupe => 
-        dupe.name.toLowerCase().trim() === originalName
-      );
-    }
-    
-    // Last resort - fuzzy match based on name similarity
-    if (!matchedDupe && detailedDupes.length > 0) {
-      // Find the best match based on name similarity
-      let bestMatchScore = 0;
-      let bestMatchIndex = -1;
+    try {
+      // Get the details of the missing dupes before deletion (for logging)
+      const { data: missingDupes } = await supabase
+        .from('products')
+        .select('id, name, brand')
+        .in('id', missingIds);
       
-      detailedDupes.forEach((dupe, dupeIndex) => {
-        // Skip dupes that have already been matched and mapped
-        if (Array.from(dupeMap.values()).includes(dupe)) {
-          return;
-        }
-        
-        const detailedName = dupe.name.toLowerCase().trim();
-        const detailedBrand = dupe.brand.toLowerCase().trim();
-        
-        // Calculate a match score based on name and brand similarity
-        let similarityScore = 0;
-        
-        // Check for brand similarity
-        if (detailedBrand === originalBrand) {
-          similarityScore += 50; // High weight for brand match
-        } else if (detailedBrand.includes(originalBrand) || originalBrand.includes(detailedBrand)) {
-          similarityScore += 30; // Partial brand match
-        }
-        
-        // Check for name similarity
-        if (detailedName === originalName) {
-          similarityScore += 50; // High weight for exact name match
-        } else if (detailedName.includes(originalName) || originalName.includes(detailedName)) {
-          similarityScore += 30; // Partial name match
-        }
-        
-        // If this is the best match so far, store it
-        if (similarityScore > bestMatchScore) {
-          bestMatchScore = similarityScore;
-          bestMatchIndex = dupeIndex;
-        }
-      });
-      
-      // If we found a decent match, use it
-      if (bestMatchScore >= 30 && bestMatchIndex >= 0) {
-        matchedDupe = detailedDupes[bestMatchIndex];
-        logInfo(`Using fuzzy match for ${originalBrand} ${originalName} with score ${bestMatchScore}`);
+      if (missingDupes && missingDupes.length > 0) {
+        logInfo(`[${requestId}] About to remove these dupes: ${missingDupes.map(d => `${d.brand} ${d.name} (${d.id})`).join(', ')}`);
       }
-    }
-    
-    if (matchedDupe) {
-      // We found a matching dupe in the detailed analysis
-      dupeMap.set(dupeId, matchedDupe);
-      logInfo(`Mapped dupe ID ${dupeId} to detailed analysis dupe: ${matchedDupe.brand} ${matchedDupe.name}`);
-    } else {
-      // No matching dupe found in the detailed analysis
-      logError(`No detailed analysis match found for dupe ID ${dupeId}: ${originalBrand} ${originalName}`);
       
-      // We'll use default values with very low match score to indicate it's not a good dupe
-      const defaultDupe = {
-        name: originalDupeInfo.name,
-        brand: originalDupeInfo.brand,
-        price: 0,
-        category: detailedAnalysis.original.category || "Other",
-        keyIngredients: [],
-        imageUrl: "",
-        texture: "",
-        finish: "",
-        coverage: "",
-        spf: 0,
-        skinTypes: [],
-        attributes: [],
-        countryOfOrigin: "",
-        longevityRating: 0,
-        bestFor: [],
-        freeOf: [],
-        crueltyFree: false,
-        vegan: false,
-        notes: "Insufficient data available for detailed comparison",
-        savingsPercentage: 0,
-        matchScore: 0,
-        colorMatchScore: 0,
-        formulaMatchScore: 0,
-        dupeType: "Not a Dupe",
-        validationSource: "N/A",
-        confidenceLevel: "Low",
-        longevityComparison: "N/A"
-      };
+      // First, delete the product_dupes relationships
+      const { error: relationshipError } = await supabase
+        .from('product_dupes')
+        .delete()
+        .eq('original_product_id', originalProductId)
+        .in('dupe_product_id', missingIds);
       
-      dupeMap.set(dupeId, defaultDupe);
+      if (relationshipError) {
+        logError(`[${requestId}] Error deleting dupe relationships: ${safeStringify(relationshipError)}`);
+      } else {
+        logInfo(`[${requestId}] Successfully deleted dupe relationships for ${missingIds.length} missing dupes`);
+        
+        // Now that relationships are removed, delete product ingredients associations
+        const { error: ingredientsError } = await supabase
+          .from('product_ingredients')
+          .delete()
+          .in('product_id', missingIds);
+        
+        if (ingredientsError) {
+          logError(`[${requestId}] Error deleting dupe ingredients: ${safeStringify(ingredientsError)}`);
+        }
+        
+        // Delete product_resources associations
+        const { error: resourcesError } = await supabase
+          .from('product_resources')
+          .delete()
+          .in('product_id', missingIds);
+        
+        if (resourcesError) {
+          logError(`[${requestId}] Error deleting dupe resources: ${safeStringify(resourcesError)}`);
+        }
+        
+        // Finally delete the product entries themselves
+        const { error: productsError } = await supabase
+          .from('products')
+          .delete()
+          .in('id', missingIds);
+        
+        if (productsError) {
+          logError(`[${requestId}] Error deleting dupe products: ${safeStringify(productsError)}`);
+        } else {
+          logInfo(`[${requestId}] Successfully deleted ${missingIds.length} dupe products from database`);
+        }
+      }
+    } catch (error) {
+      logError(`[${requestId}] Error removing missing dupes from database: ${safeStringify(error)}`);
     }
-  });
+  }
   
-  // Log statistics about the mapping
-  logInfo(`Successfully mapped ${dupeMap.size} out of ${dupeProductIds.length} dupes`);
-  
+  logInfo(`[${requestId}] Successfully mapped ${dupeMap.size} out of ${dupeProductIds.length} dupes after removing missing ones`);
   return dupeMap;
 }
 
@@ -351,8 +284,7 @@ serve(async (req) => {
       const cleanedDupes = enrichedDupes.map(dupe => cleanProductDataForAnalysis(dupe));
 
       logInfo(`[${requestId}] Sending cleaned data to Perplexity for detailed analysis`);
-      logInfo(`[${requestId}] Cleaned original data size: ${JSON.stringify(cleanedOriginal).length} bytes`);
-      logInfo(`[${requestId}] Cleaned dupes data size: ${JSON.stringify(cleanedDupes).length} bytes`);
+  
       
       const detailedAnalysis = await getDetailedDupeAnalysis(
         cleanedOriginal,

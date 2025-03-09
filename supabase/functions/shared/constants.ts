@@ -119,6 +119,7 @@ export const REVIEWS_RESOURCES_SCHEMA = `{
 // Schema Definition for API Responses
 export const SCHEMA_DEFINITION = `{
   "original": {
+    "id": string,                    // Our internal id to be preserved exactly as is
     "name": string,                  // Full product name including shade if applicable
     "brand": string,                 // Brand name only
     "price": number,                 // Current retail price in USD
@@ -141,6 +142,7 @@ export const SCHEMA_DEFINITION = `{
     "notes": string                  // Additional product information
   },
   "dupes": [{
+     "id": string,                   // Our internal id to be preserved exactly as is
     "name": string,                  // Full product name including shade
     "brand": string,                 // Brand name only
     "price": number,                 // Current retail price in USD

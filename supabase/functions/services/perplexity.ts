@@ -84,6 +84,10 @@ ${JSON.stringify(dupes)}
 Please provide a comprehensive response following this EXACT schema:
 ${SCHEMA_DEFINITION}
 
+CRITICAL: You MUST preserve and return all "id" fields EXACTLY as provided. 
+Do not modify, reformat, or omit the "id" values. These IDs are essential for 
+our internal tracking system and must be returned precisely as submitted.
+
 For each product (original and dupes), analyze and include all of these fields:
 1. Full product name and brand
 2. Exact product category (must be one of the following: ${PRODUCT_CATEGORIES.map(cat => `'${cat}'`).join(', ')})
@@ -106,6 +110,9 @@ For each product (original and dupes), analyze and include all of these fields:
    - Known allergens or sensitizing ingredients
    - Whether it contains PFAS, microplastics, or controversial ingredients
 
+10. The exact "id" value provided (this is essential)
+
+
 For each dupe, provide detailed comparison metrics:
 1. Overall match score (0-100 scale)
 2. Color/shade match score (0-100 scale)
@@ -117,7 +124,7 @@ For each dupe, provide detailed comparison metrics:
 8. Confidence level (High/Medium/Low) based on validation quality and number of sources
 
 In the summary field, highlight:
-1.  MAKE SURE YOU RETURN INFORMATION FOR ALL THE DUPES WE SENT: ${dupes.map(dupe => `'${dupe.name}'`).join(', ')})
+1.  MAKE SURE YOU RETURN INFORMATION FOR ALL THE DUPES WE SENT: ${dupes.map(dupe => `'Name: ${dupe.name} ID: ${dupe.id} | '`).join(', ')})
 2. One two lines, summarising product and dupes we found, but in a light, easy to read format, very simple, gen z fiendly, not cringe, add emojis
 
 
