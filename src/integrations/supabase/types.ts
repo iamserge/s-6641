@@ -534,7 +534,9 @@ export type Database = {
           author_handle: string | null
           author_name: string | null
           brand_id: string | null
+          caption: string | null
           created_at: string
+          desription: string | null
           embed_code: string | null
           id: string
           ingredient_id: string | null
@@ -552,7 +554,9 @@ export type Database = {
           author_handle?: string | null
           author_name?: string | null
           brand_id?: string | null
+          caption?: string | null
           created_at?: string
+          desription?: string | null
           embed_code?: string | null
           id?: string
           ingredient_id?: string | null
@@ -570,7 +574,9 @@ export type Database = {
           author_handle?: string | null
           author_name?: string | null
           brand_id?: string | null
+          caption?: string | null
           created_at?: string
+          desription?: string | null
           embed_code?: string | null
           id?: string
           ingredient_id?: string | null
