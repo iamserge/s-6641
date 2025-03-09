@@ -256,7 +256,7 @@ serve(async (req) => {
             dupeProductIds: dupeIds,
             originalBrand: initialDupes.originalBrand,
             originalName: initialDupes.originalName,
-            dupeInfo: initialDupes.dupes.map(dupe => ({ name: dupe.name, brand: dupe.brand }))
+            dupeInfo: initialDupes.dupes.map((dupe, index) => ({ id: dupeIds[index], name: dupe.name, brand: dupe.brand }))
           };
           
           const supabaseUrl = Deno.env.get('SUPABASE_URL');

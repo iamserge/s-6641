@@ -202,21 +202,7 @@ serve(async (req) => {
       logError(`[${requestId}] Exception setting loading state for original product: ${safeStringify(updateOriginalException)}`);
     }
 
-    if (dupeProductIds.length > 0) {
-      logInfo(`[${requestId}] Setting loading_ingredients=true for ${dupeProductIds.length} dupe products`);
-      try {
-        const { error: updateDupesError } = await supabase
-          .from('products')
-          .update({ loading_ingredients: true })
-          .in('id', dupeProductIds);
-          
-        if (updateDupesError) {
-          logError(`[${requestId}] Error setting loading state for dupe products: ${safeStringify(updateDupesError)}`);
-        }
-      } catch (updateDupesException) {
-        logError(`[${requestId}] Exception setting loading state for dupe products: ${safeStringify(updateDupesException)}`);
-      }
-    }
+  
 
     try {
       // Fetch extended information from external DBs
@@ -278,6 +264,7 @@ serve(async (req) => {
 
       // Get detailed analysis from Perplexity
       const enrichedOriginal = {
+        id: originalProductId,
         name: originalName,
         brand: originalBrand,
         ...originalProductData
