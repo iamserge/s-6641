@@ -409,9 +409,71 @@ export async function processAndUploadImage(imageUrl: string | undefined, fileNa
 }
 
 
+import { logInfo, logError, withRetry } from "../shared/utils.ts";
 
 /**
- * Process product images with prioritized sources
+ * Validates if a URL points to an accessible image by making a HEAD request
+ * @param imageUrl URL to validate
+ * @returns Promise resolving to boolean indicating if URL is a valid image
+ */
+async function validateImageUrl(imageUrl: string): Promise<boolean> {
+  try {
+    // Basic URL validation first to avoid unnecessary network requests
+    if (!imageUrl || typeof imageUrl !== 'string') return false;
+    
+    try {
+      new URL(imageUrl); // Will throw if URL is invalid
+    } catch {
+      return false; // Invalid URL format
+    }
+
+    // Use HEAD request to check status and content type without downloading the image
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    try {
+      const response = await fetch(imageUrl, { 
+        method: 'HEAD',
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Check status code
+      if (!response.ok) {
+        logInfo(`Image URL validation failed: ${imageUrl} returned status ${response.status}`);
+        return false;
+      }
+      
+      // Check content type
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.startsWith('image/')) {
+        logInfo(`Image URL validation failed: ${imageUrl} is not an image (${contentType})`);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      // If we got an abort error, the request timed out
+      if (error.name === 'AbortError') {
+        logInfo(`Image URL validation timed out for ${imageUrl}`);
+      } else {
+        logInfo(`Image URL validation request failed for ${imageUrl}: ${error.message}`);
+      }
+      return false;
+    }
+  } catch (error) {
+    logInfo(`Image URL validation error for ${imageUrl}: ${error.message}`);
+    return false;
+  }
+}
+
+/**
+ * Process product images with prioritized sources, validating URLs before processing
  * @param externalDbImages Array of image URLs from external database
  * @param perplexityData Perplexity response with imageUrl and images array
  * @param fileName Base filename for the processed image
@@ -452,24 +514,57 @@ export async function processProductImagesWithPriority(
     return null;
   }
   
-  logInfo(`[${requestId}] Processing ${uniqueImageSources.length} unique image sources for ${fileName}`);
+  logInfo(`[${requestId}] Found ${uniqueImageSources.length} unique image sources for ${fileName}`);
   
-  // Try each image source until one works
-  for (const imageSource of uniqueImageSources) {
+  // Validate all image URLs in parallel
+  const validationResults = await Promise.all(
+    uniqueImageSources.map(async url => ({
+      url,
+      isValid: await validateImageUrl(url)
+    }))
+  );
+  
+  // Filter to valid URLs only, maintaining priority order
+  const validImageSources = validationResults
+    .filter(result => result.isValid)
+    .map(result => result.url);
+  
+  logInfo(`[${requestId}] Validated ${validImageSources.length} valid image sources out of ${uniqueImageSources.length}`);
+  
+  if (validImageSources.length === 0) {
+    logInfo(`[${requestId}] No valid image sources found for ${fileName}`);
+    return null;
+  }
+  
+  // Try each valid image source until one works
+  for (const imageSource of validImageSources) {
     try {
-      logInfo(`[${requestId}] Trying image source: ${imageSource}`);
-      const processedImageUrl = await processAndUploadImage(imageSource, fileName);
+      logInfo(`[${requestId}] Processing valid image source: ${imageSource}`);
+      
+      // Use withRetry to handle transient errors
+      const processedImageUrl = await withRetry(
+        () => processAndUploadImage(imageSource, fileName),
+        2,  // 2 retry attempts
+        1000 // 1 second delay between retries
+      );
       
       if (processedImageUrl) {
         logInfo(`[${requestId}] Successfully processed image: ${processedImageUrl}`);
         return processedImageUrl;
       }
     } catch (imageProcessingError) {
-      logError(`[${requestId}] Failed to process image source: ${safeStringify(imageProcessingError)}`);
+      // Safe error logging
+      const errorMessage = typeof imageProcessingError === 'object' ?
+        (imageProcessingError instanceof Error ? 
+          imageProcessingError.message : 
+          JSON.stringify(imageProcessingError)) :
+        String(imageProcessingError);
+        
+      logError(`[${requestId}] Failed to process image source: ${errorMessage}`);
       // Continue to the next image source
     }
   }
   
-  logError(`[${requestId}] All image sources failed for ${fileName}`);
+  logError(`[${requestId}] All valid image sources failed processing for ${fileName}`);
   return null;
 }
