@@ -47,7 +47,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
   const [showAllResources, setShowAllResources] = useState(false);
 
   // Get featured resources
-  const featuredResources = product.resources?.filter(r => r.is_featured && r.resource) || [];
+  const featuredResources = product.resources;
 
   // Group ingredients by importance and sensitivity
   const notableIngredients = product.ingredients?.filter(i => i.is_controversial || i.benefits?.length > 0) || [];
@@ -55,7 +55,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
 
   return (
     <div className="container mx-auto px-4 pt-16 pb-12 md:pt-24 md:pb-16 relative">
-      <div className="max-w-4xl mx-auto bg-white/30 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-pink-100/30">
+      <div className="max-w-4xl mx-auto">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -109,13 +109,14 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 />
               </div>
               
-              {/* Price Badge */}
-              {product.price && (
-                <div className="absolute -right-2 -bottom-2 bg-pink-100 text-pink-800 px-4 py-2 rounded-full font-medium shadow-sm border border-pink-200">
+             
+            </div>
+             {/* Price Badge - Positioned on top right of the image but OUTSIDE the overflow hidden container */}
+             {product.price && (
+                <div className="absolute -top-3 -right-3 bg-white text-gray-800 px-4 py-2 rounded-full font-bold shadow-md border border-gray-100 z-10 hover:shadow-lg transition-all duration-200">
                   ~${Math.round(product.price)}
                 </div>
               )}
-            </div>
           </motion.div>
 
           {/* Main Info Badges */}
@@ -126,29 +127,29 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             className="flex flex-wrap justify-center gap-3 mb-8"
           >
             {product.category && (
-              <Badge className="bg-violet-50 text-violet-700 px-4 py-2 text-sm rounded-full hover:bg-violet-100 transition-all">
+              <Badge className="bg-white text-gray-700 px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 {product.category}
               </Badge>
             )}
             
             {product.country_of_origin && (
-              <Badge className="bg-blue-50 text-blue-700 px-4 py-2 text-sm flex items-center gap-1 rounded-full hover:bg-blue-100 transition-all">
-                <MapPin className="w-3.5 h-3.5" />
+              <Badge className="bg-white text-gray-700 px-5 py-2.5 text-base flex items-center gap-2 rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
+                <MapPin className="w-4 h-4 text-gray-500" />
                 <span>{getFlagEmoji(product.country_of_origin)}</span>
                 {product.country_of_origin}
               </Badge>
             )}
             
             {product.cruelty_free && (
-              <Badge className="bg-purple-50 text-purple-700 flex gap-1 items-center px-4 py-2 text-sm rounded-full hover:bg-purple-100 transition-all">
-                <Heart className="w-3.5 h-3.5" />
+              <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
+                <Heart className="w-4 h-4 text-gray-500" />
                 Cruelty-Free
               </Badge>
             )}
             
             {product.vegan && (
-              <Badge className="bg-green-50 text-green-700 flex gap-1 items-center px-4 py-2 text-sm rounded-full hover:bg-green-100 transition-all">
-                <Leaf className="w-3.5 h-3.5" />
+              <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
+                <Leaf className="w-4 h-4 text-gray-500" />
                 Vegan
               </Badge>
             )}
@@ -161,34 +162,35 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             transition={{ delay: 0.5 }}
             className="w-full mb-8"
           >
-            <h3 className="text-xl font-medium mb-4 text-gray-800">Key Ingredients</h3>
+                <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Key Ingredients</h3>
             
-            <div className="bg-white/70 rounded-xl p-6 shadow-sm mb-2">
+            <div className="backdrop-blur-sm">
               {product.loading_ingredients ? (
                 <div className="flex justify-center py-4">
-                  <div className="animate-pulse rounded-md bg-gray-200 h-8 w-32"></div>
+                  <div className="animate-pulse rounded-full bg-gray-200 h-10 w-40"></div>
                 </div>
               ) : notableIngredients.length > 0 ? (
-                <div className="flex flex-wrap justify-center gap-2 mb-4">
-                  <TooltipProvider>
+                <div className="flex flex-wrap justify-center gap-3 mb-4 relative">
+                  <TooltipProvider delayDuration={100}>
                     {notableIngredients.map((ingredient, index) => (
-                      <IngredientPill 
-                        key={`notable-${index}`} 
-                        ingredient={ingredient} 
-                        className="text-sm px-3 py-1.5"
-                      />
+                      <div key={`notable-${index}`} className="z-20 relative">
+                        <IngredientPill 
+                          ingredient={ingredient} 
+                          className="text-base px-5 py-2.5 shadow-sm transition-all duration-200 hover:shadow-md"
+                        />
+                      </div>
                     ))}
                   </TooltipProvider>
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-2">No key ingredients information available</p>
+                <p className="text-gray-500 text-center py-2 text-base">No key ingredients information available</p>
               )}
               
               {allIngredients.length > notableIngredients.length && (
                 <Button 
-                  variant="ghost" 
+                  variant="outline" 
                   onClick={() => setShowAllIngredients(!showAllIngredients)}
-                  className="text-pink-600 hover:text-pink-700 hover:bg-pink-50 rounded-full mt-2 mx-auto flex items-center gap-1"
+                  className="bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-full mt-4 mx-auto flex items-center gap-2 transition-all duration-300 px-6 py-2 font-medium shadow-sm hover:shadow-md border border-gray-200"
                 >
                   {showAllIngredients ? "Show Less" : "Show All Ingredients"}
                   {showAllIngredients ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -199,17 +201,18 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
-                  className="mt-4 pt-4 border-t border-gray-100"
+                  className="mt-6 pt-4"
                 >
-                  <h4 className="text-base font-medium mb-3 text-gray-700">All Ingredients</h4>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <TooltipProvider>
+                  <h4 className="text-lg font-medium mb-4 text-gray-700 text-center">All Ingredients</h4>
+                  <div className="flex flex-wrap justify-center gap-3 relative">
+                    <TooltipProvider delayDuration={100}>
                       {allIngredients.map((ingredient, index) => (
-                        <IngredientPill 
-                          key={`all-${index}`} 
-                          ingredient={ingredient} 
-                          className="text-sm"
-                        />
+                        <div key={`all-${index}`} className="z-20 relative">
+                          <IngredientPill 
+                            ingredient={ingredient} 
+                            className="text-base px-5 py-2.5 shadow-sm transition-all duration-200 hover:shadow-md"
+                          />
+                        </div>
                       ))}
                     </TooltipProvider>
                   </div>
@@ -218,120 +221,100 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             </div>
           </motion.div>
 
-          {/* Product Details Section (combined) */}
+          {/* Product Details, Suitability, and Free Of Sections in 3 Columns */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
             className="w-full mb-8"
           >
-            <div className="bg-white/70 rounded-xl p-6 shadow-sm mb-4">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Left Column */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3 text-gray-800">Product Details</h3>
-                  <div className="space-y-2">
-                    {product.texture && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Texture:</span>
-                        <span className="font-medium text-gray-800">{product.texture}</span>
-                      </div>
-                    )}
-                    {product.finish && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Finish:</span>
-                        <span className="font-medium text-gray-800">{product.finish}</span>
-                      </div>
-                    )}
-                    {product.coverage && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Coverage:</span>
-                        <span className="font-medium text-gray-800">{product.coverage}</span>
-                      </div>
-                    )}
-                    {product.spf && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">SPF:</span>
-                        <span className="font-medium text-gray-800">{product.spf}</span>
-                      </div>
-                    )}
-                    {product.longevity_rating && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Longevity:</span>
-                        <span className="font-medium text-gray-800 flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-amber-500" />
-                          {product.longevity_rating}/10
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Right Column */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3 text-gray-800">Suitability</h3>
-                  
-                  {/* Skin Types */}
-                  {product.skin_types && product.skin_types.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-600 mb-2">Skin Types:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {product.skin_types.map((type, index) => (
-                          <Badge 
-                            key={`skin-${index}`} 
-                            variant="outline" 
-                            className="bg-white text-gray-700 rounded-full"
-                          >
-                            {type}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Best For */}
-                  {product.best_for && product.best_for.length > 0 && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-2">Best For:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {product.best_for.map((item, index) => (
-                          <Badge 
-                            key={`best-${index}`} 
-                            variant="outline" 
-                            className="bg-white text-gray-700 rounded-full"
-                          >
-                            {item}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+              {/* Product Details Column */}
+              <div className="p-6 backdrop-blur-sm">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Product Details</h3>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {product.texture ? (
+                    <Badge className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200">
+                      Texture: {product.texture}
+                    </Badge>
+                  ):null}
+                  {product.finish ? (
+                    <Badge className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200">
+                      Finish: {product.finish}
+                    </Badge>
+                  ): null}
+                  {product.coverage ? (
+                    <Badge className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200">
+                      Coverage: {product.coverage}
+                    </Badge>
+                  ): null}
+                  {product.spf ? (
+                    <Badge className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200">
+                      SPF: {product.spf}
+                    </Badge>
+                  ): null}
+                  {product.longevity_rating ? (
+                    <Badge className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-gray-500" />
+                      Longevity: {product.longevity_rating}/10
+                    </Badge>
+                  ) : null }
                 </div>
               </div>
               
-              {/* Free Of Section */}
-              {product.free_of && product.free_of.length > 0 && (
-                <div className="mt-6 pt-6 border-t border-gray-100">
-                  <h3 className="text-lg font-medium mb-3 text-gray-800">Free Of</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {product.free_of.map((item, index) => (
+              {/* Suitability Column */}
+              <div className="p-6 backdrop-blur-sm">
+                <h3 className="text-xl font-semibold mb-4 font-[500] text-gray-800 text-center">Suitability</h3>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {product.skin_types && product.skin_types.length > 0 ? (
+                    product.skin_types.map((type, index) => (
                       <Badge 
-                        key={index} 
-                        variant="outline" 
-                        className="bg-white/70 text-gray-700 rounded-full hover:bg-white transition-all"
+                        key={`skin-${index}`} 
+                        className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
+                      >
+                        {type}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-base">No skin type information</p>
+                  )}
+                  
+                  {product.best_for && product.best_for.length > 0 && 
+                    product.best_for.map((item, index) => (
+                      <Badge 
+                        key={`best-${index}`} 
+                        className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
                       >
                         {item}
                       </Badge>
-                    ))}
-                  </div>
+                    ))
+                  }
                 </div>
-              )}
-            </div>
+              </div>
+              
+              {/* Free Of Column */}
+              <div className="p-6 backdrop-blur-sm">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Free Of</h3>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {product.free_of && product.free_of.length > 0 ? (
+                    product.free_of.map((item, index) => (
+                      <Badge 
+                        key={`free-${index}`} 
+                        className="bg-white font-[500] text-gray-700 px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
+                      >
+                        {item}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-base">No free-of information</p>
+                  )}
+                </div>
+              </div>
+           
             
             {/* Description */}
             {product.description && (
-              <div className="bg-white/70 rounded-xl p-6 shadow-sm">
-                <h3 className="text-lg font-medium mb-3 text-gray-800">Description</h3>
+              <div className="p-6 backdrop-blur-sm mt-6">
+                <h3 className="text-xl font-semibold mb-3 text-gray-800">Description</h3>
                 <p className="text-gray-700">
                   {product.description}
                 </p>
@@ -339,7 +322,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             )}
           </motion.div>
 
-          {/* Reviews Section */}
+          {/* Reviews Section
           {product.reviews && product.reviews.length > 0 && (
             <motion.div 
               initial={{ opacity: 0 }}
@@ -347,25 +330,28 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               transition={{ delay: 0.7 }}
               className="w-full mb-8"
             >
-              <h3 className="text-xl font-medium mb-4 text-gray-800">Reviews</h3>
+              <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Reviews</h3>
               
-              <div className="bg-white/70 rounded-xl p-6 shadow-sm mb-2">
+              <div className="p-6 backdrop-blur-sm">
                 {product.loading_reviews ? (
                   <div className="flex justify-center py-4">
-                    <div className="animate-pulse rounded-md bg-gray-200 h-40 w-full"></div>
+                    <div className="animate-pulse rounded-xl bg-gray-200 h-40 w-full"></div>
                   </div>
                 ) : (
                   <>
-                    <ReviewCard 
-                      review={product.reviews[0]} 
-                      index={0} 
-                    />
+                    <div className="text-3xl md:text-4xl text-gray-700 font-light leading-relaxed text-center px-6 mb-4">
+                      "{product.reviews[0].review_text}"
+                    </div>
+                    <div className="flex justify-center">
+                      <StarRating rating={product.reviews[0].rating} />
+                    </div>
+                    <p className="text-center text-gray-500 mt-2">{product.reviews[0].author_name}</p>
                     
                     {product.reviews.length > 1 && (
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         onClick={() => setShowAllReviews(!showAllReviews)}
-                        className="text-pink-600 hover:text-pink-700 hover:bg-pink-50 rounded-full mt-4 mx-auto flex items-center gap-1"
+                        className="bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-full mt-6 mx-auto flex items-center gap-2 transition-all duration-300 px-6 py-2 font-medium shadow-sm hover:shadow-md border border-gray-200"
                       >
                         {showAllReviews ? "Show Less" : `View All ${product.reviews.length} Reviews`}
                         {showAllReviews ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -376,7 +362,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                       <motion.div 
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
-                        className="mt-6 pt-6 space-y-6 border-t border-gray-100"
+                        className="mt-6 pt-6 space-y-6"
                       >
                         {product.reviews.slice(1).map((review, index) => (
                           <ReviewCard 
@@ -391,9 +377,9 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 )}
               </div>
             </motion.div>
-          )}
+          )} */}
 
-          {/* Resources Section */}
+          {/* Resources Section
           {featuredResources.length > 0 && (
             <motion.div 
               initial={{ opacity: 0 }}
@@ -401,16 +387,16 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               transition={{ delay: 0.8 }}
               className="w-full mb-8"
             >
-              <h3 className="text-xl font-medium mb-4 text-gray-800">Content</h3>
+              <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Content</h3>
               
-              <div className="bg-white/70 rounded-xl p-6 shadow-sm mb-2">
+              <div className="p-6 backdrop-blur-sm">
                 {product.loading_resources ? (
                   <div className="flex justify-center py-4">
-                    <div className="animate-pulse rounded-md bg-gray-200 h-60 w-full"></div>
+                    <div className="animate-pulse rounded-xl bg-gray-200 h-60 w-full"></div>
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       {featuredResources.slice(0, 2).map((resourceItem, index) => (
                         <SocialMediaResource 
                           key={index} 
@@ -422,9 +408,9 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                     
                     {featuredResources.length > 2 && (
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         onClick={() => setShowAllResources(!showAllResources)}
-                        className="text-pink-600 hover:text-pink-700 hover:bg-pink-50 rounded-full mt-4 mx-auto flex items-center gap-1"
+                        className="bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-full mt-6 mx-auto flex items-center gap-2 transition-all duration-300 px-6 py-2 font-medium shadow-sm hover:shadow-md border border-gray-200"
                       >
                         {showAllResources ? "Show Less" : `View All ${featuredResources.length} Resources`}
                         {showAllResources ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -435,9 +421,9 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                       <motion.div 
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
-                        className="mt-6 pt-6 border-t border-gray-100"
+                        className="mt-6 pt-6"
                       >
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                           {featuredResources.slice(2).map((resourceItem, index) => (
                             <SocialMediaResource 
                               key={index + 2} 
@@ -452,7 +438,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 )}
               </div>
             </motion.div>
-          )}
+          )} */}
 
           {/* Summary */}
           {product.summary && (
@@ -462,10 +448,12 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               transition={{ delay: 0.9 }}
               className="w-full"
             >
-              <h3 className="text-xl font-medium mb-3 text-gray-800">Summary</h3>
-              <p className="text-lg text-gray-700 leading-relaxed">
-                {product.summary}
-              </p>
+              <h3 className="text-xl font-semibold mb-3 text-gray-800 text-center">Summary</h3>
+              <div className="p-6 backdrop-blur-sm">
+                <p className="text-lg text-gray-700 leading-relaxed font-light text-[24px]">
+                  {product.summary}
+                </p>
+              </div>
             </motion.div>
           )}
         </motion.div>

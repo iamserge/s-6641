@@ -294,15 +294,7 @@ const DupePage = () => {
         <HeroProduct product={product} />
       </div>
       
-      {product.summary && (
-        <div className="container mx-auto px-4 pb-8">
-          <div className="max-w-4xl mx-auto">
-            <p className="text-xl text-gray-700 leading-relaxed">
-              {product.summary}
-            </p>
-          </div>
-        </div>
-      )}
+      
       
       <div className="container mx-auto px-4 py-8 md:py-16">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 text-gray-800">
@@ -339,6 +331,8 @@ const DupePage = () => {
                     index={index}
                     originalIngredients={product.ingredients?.map(i => i.name) || []}
                     showBottomBar={showBottomBar && activeDupeIndex === index}
+                    originalPrice={product.price} 
+
                   />
                 </div>
               ))

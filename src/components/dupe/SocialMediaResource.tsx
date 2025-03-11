@@ -58,17 +58,9 @@ export const SocialMediaResource = ({ resource, index = 0 }: SocialMediaResource
       return (
         <div className="relative rounded-xl overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"/>
-          {resource.video_thumbnail ? (
-            <img 
-              src={resource.video_thumbnail} 
-              alt={resource.title} 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-60 bg-gray-100 flex items-center justify-center">
+          <div className="w-full h-60 bg-gray-100 flex items-center justify-center">
               <Play className="w-12 h-12 text-gray-400" />
             </div>
-          )}
           <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-20">
             <h3 className="font-medium line-clamp-2">{resource.title}</h3>
             <p className="text-xs text-white/80 mt-1">{resource.author_name || 'TikTok'}</p>
