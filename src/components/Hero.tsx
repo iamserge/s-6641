@@ -420,7 +420,7 @@ const Hero = () => {
           animate={{ scale: 1 }}
           transition={{ duration: 0.6, ease: [0.6, -0.05, 0.01, 0.99], delay: 0.2 }}
         />
-        <h1 className="text-3xl md:text-4xl text-gray-800 font-medium mb-4">
+        <h1 className="text-2xl md:text-3xl text-gray-800 font-light mb-4 tracking-wide">
           Outsmart the Beauty Industry, One Dupe at a Time 🧠
         </h1>
       </motion.div>
