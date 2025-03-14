@@ -81,13 +81,13 @@ export const IngredientPill = ({ ingredient, className }: IngredientPillProps) =
             <div className="flex justify-between items-center pt-1">
               <div className="flex flex-wrap gap-1">
                 {ingredient.vegan && (
-                  <Badge variant="outline" className="text-xs border-green-100 text-green-700">Vegan</Badge>
+                  <Badge variant="outline" className="text-xs border-green-100 text-green-700 bg-white">Vegan</Badge>
                 )}
                 {ingredient.ethically_sourced && (
-                  <Badge variant="outline" className="text-xs border-blue-100 text-blue-700">Ethically Sourced</Badge>
+                  <Badge variant="outline" className="text-xs border-blue-100 text-blue-700 bg-white">Ethically Sourced</Badge>
                 )}
                 {ingredient.comedogenic_rating !== undefined && ingredient.comedogenic_rating > 0 && (
-                  <Badge variant="outline" className="text-xs border-amber-100 text-amber-700">
+                  <Badge variant="outline" className="text-xs border-amber-100 text-amber-700 bg-white">
                     Comedogenic: {ingredient.comedogenic_rating}/5
                   </Badge>
                 )}

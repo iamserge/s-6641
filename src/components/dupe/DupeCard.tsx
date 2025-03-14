@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, Leaf, Check, DollarSign, Star, ExternalLink, ChevronDown, ChevronUp, MapPin, Droplet, Layout, Layers, Shield, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -90,16 +91,16 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
     >
       <Card className="w-full backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200 relative bg-white/50 my-6">
         <div className="flex justify-between items-center p-5">
-          <Badge variant="outline" className="text-gray-700 font-medium px-4 py-1.5 text-sm rounded-full border-gray-200">
+          <Badge variant="outline" className="bg-white text-gray-700 font-medium px-4 py-1.5 text-sm rounded-full border-gray-200">
             {Math.round(dupe.match_score)}% Match
           </Badge>
           
           {dupe.price ? (
-            <Badge variant="outline" className="text-gray-700 font-medium px-4 py-1.5 text-sm rounded-full border-gray-200">
+            <Badge variant="outline" className="bg-white text-gray-700 font-medium px-4 py-1.5 text-sm rounded-full border-gray-200">
               ~${Math.round(dupe.price)}
-              {calculatedSavingsPercentage > 0 && (
+              {calculatedSavingsPercentage > 0 ? (
                 <span className="ml-2 text-green-600">(-{calculatedSavingsPercentage}%)</span>
-              )}
+              ) : null}
             </Badge>
           ) : null}
         </div>
@@ -140,7 +141,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
               <div className="mb-4">
                 <div className="flex flex-wrap gap-2.5">
                   {dupe.country_of_origin ? (
-                    <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
+                    <Badge variant="outline" className="bg-white text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <MapPin className="w-3 h-3 text-gray-500" />
                       <span>{getFlagEmoji(dupe.country_of_origin)}</span>
                       {dupe.country_of_origin}
@@ -148,49 +149,49 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                   ) : null}
                 
                   {dupe.texture ? (
-                    <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
+                    <Badge variant="outline" className="bg-white text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Droplet className="w-3 h-3 text-blue-500" />
                       Texture: {dupe.texture}
                     </Badge>
                   ) : null}
                   
                   {dupe.finish ? (
-                    <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
+                    <Badge variant="outline" className="bg-white text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Layout className="w-3 h-3 text-purple-500" />
                       Finish: {dupe.finish}
                     </Badge>
                   ) : null}
                   
                   {dupe.coverage ? (
-                    <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
+                    <Badge variant="outline" className="bg-white text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Layers className="w-3 h-3 text-amber-500" />
                       Coverage: {dupe.coverage}
                     </Badge>
                   ) : null}
                   
                   {dupe.spf && dupe.spf > 0 ? (
-                    <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
+                    <Badge variant="outline" className="bg-white text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Shield className="w-3 h-3 text-orange-500" />
                       SPF {dupe.spf}
                     </Badge>
                   ) : null}
                   
                   {dupe.longevity_rating && dupe.longevity_rating > 0 ? (
-                    <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
+                    <Badge variant="outline" className="bg-white text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Clock className="w-3 h-3 text-teal-500" />
                       Longevity: {dupe.longevity_rating}/10
                     </Badge>
                   ) : null}
                   
                   {dupe.cruelty_free ? (
-                    <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
+                    <Badge variant="outline" className="bg-white text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Heart className="w-3 h-3 text-pink-500" />
                       Cruelty-Free
                     </Badge>
                   ) : null}
                   
                   {dupe.vegan ? (
-                    <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
+                    <Badge variant="outline" className="bg-white text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Leaf className="w-3 h-3 text-green-500" />
                       Vegan
                     </Badge>
@@ -208,7 +209,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                       <Badge
                         key={i}
                         variant="outline"
-                        className="text-gray-700 px-3 py-1.5 text-sm rounded-full border-gray-200 flex items-center gap-1"
+                        className="bg-white text-gray-700 px-3 py-1.5 text-sm rounded-full border-gray-200 flex items-center gap-1"
                       >
                         <Check className="w-3 h-3 text-green-500" />
                         {ingredient}
@@ -243,7 +244,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
 
               <div className="grid md:grid-cols-2 gap-4 mt-5">
                 {(dupe.skin_types?.length > 0 || dupe.best_for?.length > 0) ? (
-                  <div className="rounded-xl border border-gray-100 p-4">
+                  <div>
                     <h4 className="text-base font-medium mb-2 text-gray-800">Best For</h4>
                     <div className="flex flex-wrap gap-2">
                       {dupe.skin_types && dupe.skin_types.length > 0 ? 
@@ -251,7 +252,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                           <Badge 
                             key={`skin-${index}`} 
                             variant="outline" 
-                            className="rounded-full text-gray-700 border-gray-200 px-3 py-1"
+                            className="bg-white rounded-full text-gray-700 border-gray-200 px-3 py-1"
                           >
                             {type}
                           </Badge>
@@ -263,7 +264,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                           <Badge 
                             key={`best-${index}`} 
                             variant="outline" 
-                            className="rounded-full text-gray-700 border-gray-200 px-3 py-1"
+                            className="bg-white rounded-full text-gray-700 border-gray-200 px-3 py-1"
                           >
                             {item}
                           </Badge>
@@ -274,14 +275,14 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                 ) : null}
                 
                 {dupe.free_of && dupe.free_of.length > 0 ? (
-                  <div className="rounded-xl border border-gray-100 p-4">
+                  <div>
                     <h4 className="text-base font-medium mb-2 text-gray-800">Free Of</h4>
                     <div className="flex flex-wrap gap-2">
                       {dupe.free_of.map((item, index) => (
                         <Badge 
                           key={`free-${index}`} 
                           variant="outline" 
-                          className="rounded-full text-gray-700 border-gray-200 px-3 py-1"
+                          className="bg-white rounded-full text-gray-700 border-gray-200 px-3 py-1"
                         >
                           {item}
                         </Badge>

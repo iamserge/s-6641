@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -189,7 +190,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
           >
             <h3 className="text-xl font-semibold text-gray-800 text-center mb-4">Key Ingredients</h3>
             
-            <div className="backdrop-blur-sm rounded-xl   ">
+            <div className="backdrop-blur-sm rounded-xl">
               {product.loading_ingredients ? (
                 <div className="flex justify-center py-4">
                   <div className="animate-pulse rounded-full bg-gray-200 h-10 w-40"></div>
@@ -210,10 +211,6 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               ) : (
                 <p className="text-gray-500 text-center py-2 text-base">No key ingredients information available</p>
               )}
-              
-            
-              
-        
             </div>
           </motion.div>
 
@@ -230,7 +227,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                   product.skin_types.map((type, index) => (
                     <Badge 
                       key={`skin-${index}`} 
-                      className="bg-white text-gray-700 font-[500] px- py-2 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
+                      className="bg-white text-gray-700 font-[500] px-3 py-2 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
                     >
                       {type}
                     </Badge>
@@ -252,7 +249,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               </div>
             </div>
             
-            <div >
+            <div>
               <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Free Of</h3>
               <div className="flex flex-wrap justify-center gap-3">
                 {product.free_of && product.free_of.length > 0 ? (

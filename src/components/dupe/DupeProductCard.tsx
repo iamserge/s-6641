@@ -68,18 +68,18 @@ const DupeProductCard = memo(({ product, onClick, index }: ProductCardProps) => 
       {/* Top badges row */}
       <div className="flex justify-between items-center p-3 bg-gradient-to-r from-slate-50 to-zinc-50 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          {product.highest_match && (
+          {product.highest_match ? (
             <Badge variant="pastelPurple" className="rounded-full text-xs font-medium px-2 py-0.5">
               {Math.round(product.highest_match)}% Match
             </Badge>
-          )}
+          ) : null}
           
-          {product.highest_savings && product.highest_savings > 0 && (
+          {product.highest_savings && product.highest_savings > 0 ? (
             <Badge variant="pastelGreen" className="rounded-full text-xs font-medium px-2 py-0.5 flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
               Save {Math.round(product.highest_savings)}%
             </Badge>
-          )}
+          ) : null}
         </div>
         
         <Badge className="bg-[#5840c0] text-white text-xs rounded-full px-2 py-0.5">
@@ -105,17 +105,17 @@ const DupeProductCard = memo(({ product, onClick, index }: ProductCardProps) => 
           <p className="text-sm text-gray-600">by {product.brand}</p>
           
           {/* Country badge if available */}
-          {product.country_of_origin && (
+          {product.country_of_origin ? (
             <div className="flex items-center gap-1 mt-1 justify-center">
               <span className="text-sm text-gray-500">
                 {getFlagEmoji(product.country_of_origin)} {product.country_of_origin}
               </span>
             </div>
-          )}
+          ) : null}
         </div>
         
         {/* Dupe image stack with tooltips */}
-        {product.dupes.length > 0 && (
+        {product.dupes.length > 0 ? (
           <div className="mb-4">
             <TooltipProvider>
               <div className="flex -space-x-3 justify-center">
@@ -141,63 +141,63 @@ const DupeProductCard = memo(({ product, onClick, index }: ProductCardProps) => 
                         <Badge variant="pastelBlue" className="text-xs px-1.5 py-0.5">
                           {Math.round(dupe.match_score)}% Match
                         </Badge>
-                        {dupe.savings_percentage > 0 && (
+                        {dupe.savings_percentage > 0 ? (
                           <Badge variant="pastelGreen" className="text-xs px-1.5 py-0.5">
                             Save {Math.round(dupe.savings_percentage)}%
                           </Badge>
-                        )}
+                        ) : null}
                       </div>
                     </TooltipContent>
                   </Tooltip>
                 ))}
-                {product.dupes.length > 5 && (
+                {product.dupes.length > 5 ? (
                   <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm flex items-center justify-center bg-gray-50 text-xs font-medium text-gray-600">
                     +{product.dupes.length - 5}
                   </div>
-                )}
+                ) : null}
               </div>
             </TooltipProvider>
           </div>
-        )}
+        ) : null}
       </div>
       
       {/* Feature badges at bottom */}
       <div className="bg-gray-50/50 p-3 mt-auto">
         <div className="flex flex-wrap gap-2 justify-center">
-          {product.dupeInfo?.coverage && (
+          {product.dupeInfo?.coverage ? (
             <Badge variant="secondary" className="bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 text-xs hover:bg-blue-100 transition-all">
               <Droplet className="w-3 h-3 mr-1" />
-              {product.dupeInfo.coverage}
+              Coverage: {product.dupeInfo.coverage}
             </Badge>
-          )}
+          ) : null}
           
-          {product.dupeInfo?.confidence_level && (
+          {product.dupeInfo?.confidence_level ? (
             <Badge variant="secondary" className="bg-yellow-50 text-yellow-700 rounded-full px-2 py-0.5 text-xs hover:bg-yellow-100 transition-all">
               <Check className="w-3 h-3 mr-1" />
-              {product.dupeInfo.confidence_level}
+              Confidence: {product.dupeInfo.confidence_level}
             </Badge>
-          )}
+          ) : null}
           
-          {(product.dupeInfo?.cruelty_free || product.brandInfo?.cruelty_free) && (
+          {(product.dupeInfo?.cruelty_free || product.brandInfo?.cruelty_free) ? (
             <Badge variant="secondary" className="bg-purple-50 text-purple-700 rounded-full px-2 py-0.5 text-xs hover:bg-purple-100 transition-all">
               <Heart className="w-3 h-3 mr-1" />
               Cruelty-Free
             </Badge>
-          )}
+          ) : null}
           
-          {(product.dupeInfo?.vegan || product.brandInfo?.vegan) && (
+          {(product.dupeInfo?.vegan || product.brandInfo?.vegan) ? (
             <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5 text-xs hover:bg-emerald-100 transition-all">
               <Leaf className="w-3 h-3 mr-1" />
               Vegan
             </Badge>
-          )}
+          ) : null}
           
-          {product.brandInfo?.sustainable_packaging && (
+          {product.brandInfo?.sustainable_packaging ? (
             <Badge variant="secondary" className="bg-green-50 text-green-700 rounded-full px-2 py-0.5 text-xs hover:bg-green-100 transition-all">
               <Shield className="w-3 h-3 mr-1" />
               Sustainable
             </Badge>
-          )}
+          ) : null}
         </div>
       </div>
     </motion.div>
