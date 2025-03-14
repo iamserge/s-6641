@@ -1,7 +1,8 @@
+
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Camera, Loader2, Search, X } from "lucide-react";
+import { Camera, Loader2, Search, X, DollarSign, Timer, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -523,6 +524,48 @@ const Hero = () => {
           className="hidden"
         />
       </motion.form>
+
+      {/* New: How It Works - Compact Version */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.8, duration: 0.8 }}
+        className="w-full max-w-3xl mt-6 mb-12"
+      >
+        <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-4 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-pink-500" />
+              </div>
+              <div>
+                <div className="text-xs text-pink-500 font-medium">Step 1</div>
+                <p className="text-sm text-gray-700">Frustrated by expensive makeup? We get it.</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <Timer className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <div className="text-xs text-purple-500 font-medium">Step 2</div>
+                <p className="text-sm text-gray-700">Search & we'll find dupes (first search takes ~1min)</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
+                <Gift className="w-5 h-5 text-pink-500" />
+              </div>
+              <div>
+                <div className="text-xs text-pink-500 font-medium">Step 3</div>
+                <p className="text-sm text-gray-700">Save money & spend it on something fun instead!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Camera Modal */}
       {isCameraOpen && (

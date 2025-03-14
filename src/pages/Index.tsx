@@ -3,7 +3,6 @@ import { lazy, Suspense, useState, useEffect } from 'react';
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Loader2 } from "lucide-react";
-import HowItWorks from "../components/HowItWorks";
 import Features from "../components/Features";
 import PopularCategories from "../components/PopularCategories";
 import Testimonials from "../components/Testimonials";
@@ -47,8 +46,6 @@ const Index = () => {
         <Suspense fallback={<LoadingFallback />}>
           <Hero />
         </Suspense>
-        
-        <HowItWorks />
         
         <PopularCategories />
         
