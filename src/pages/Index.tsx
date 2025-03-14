@@ -4,6 +4,10 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Loader2 } from "lucide-react";
 import HowItWorks from "../components/HowItWorks";
+import Features from "../components/Features";
+import PopularCategories from "../components/PopularCategories";
+import Testimonials from "../components/Testimonials";
+import NewsletterCTA from "../components/NewsletterCTA";
 
 // Lazy load these components with better chunk naming
 const Hero = lazy(() => import("../components/Hero" /* webpackChunkName: "hero" */));
@@ -44,10 +48,11 @@ const Index = () => {
           <Hero />
         </Suspense>
         
-        {/* Add HowItWorks section after Hero */}
         <HowItWorks />
         
-        {/* Only load RecentDupes when Hero is visible and page has loaded */}
+        <PopularCategories />
+        
+        {/* Only load RecentDupes when page has loaded */}
         {isLoaded && (
           <section className="container mx-auto px-4 py-12">
             <Suspense fallback={<LoadingFallback />}>
@@ -55,6 +60,12 @@ const Index = () => {
             </Suspense>
           </section>
         )}
+        
+        <Features />
+        
+        <Testimonials />
+        
+        <NewsletterCTA />
       </div>
 
       <Footer />

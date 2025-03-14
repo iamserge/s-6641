@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import DupePage from "./pages/DupePage";
 import BrandPage from "./pages/BrandPage";
 import IngredientPage from "./pages/IngredientPage";
+import BrandsDirectory from "./pages/BrandsDirectory";
+import IngredientsDirectory from "./pages/IngredientsDirectory";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +24,8 @@ const App = () => (
           <Route path="/dupes/for/:slug" element={<DupePage />} />
           <Route path="/brands/:slug" element={<BrandPage />} />
           <Route path="/ingredients/:slug" element={<IngredientPage />} />
+          <Route path="/brands" element={<BrandsDirectory />} />
+          <Route path="/ingredients" element={<IngredientsDirectory />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
