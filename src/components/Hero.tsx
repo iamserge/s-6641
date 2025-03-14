@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -28,7 +27,6 @@ const Hero = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
 
-  // Memoize message variations to prevent recreating on each render
   const messageVariations = useMemo(() => ({
     "Analyzing your input...": [
       "Reading your makeup vibes... 👀",
@@ -75,7 +73,6 @@ const Hero = () => {
     ]
   }), []);
 
-  // Memoize tips to prevent recreating on each render
   const tips = useMemo(() => [
     "Apply foundation with a damp sponge for a natural finish.",
     "Use lip liner to prevent lipstick bleeding.",
@@ -89,9 +86,7 @@ const Hero = () => {
     "Use a setting spray to make your makeup last all day long."
   ], []);
 
-  // **Utility Functions**
   const getRandomVariation = useCallback((serverMessage) => {
-    // Check for messages that are prefixes (like "We detected: ")
     for (const prefix in messageVariations) {
       if (serverMessage.startsWith(prefix) && messageVariations[prefix]) {
         const variations = messageVariations[prefix];
@@ -100,7 +95,6 @@ const Hero = () => {
       }
     }
     
-    // Regular full message variations
     const variations = messageVariations[serverMessage];
     return variations?.length > 0
       ? variations[Math.floor(Math.random() * variations.length)]
@@ -109,7 +103,6 @@ const Hero = () => {
 
   const getRandomTip = useCallback(() => tips[Math.floor(Math.random() * tips.length)], [tips]);
 
-  // **Fetch Recent Products with optimized query config**
   const fetchRecentProducts = useCallback(async () => {
     try {
       const { data: productsWithDupes } = await supabase
@@ -149,19 +142,18 @@ const Hero = () => {
     queryKey: ["recentProductsForModal"],
     queryFn: fetchRecentProducts,
     enabled: showRecentProducts,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    refetchOnWindowFocus: false, // Prevent refetching when window regains focus
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  // **Timers for Tips and Recent Products**
   useEffect(() => {
     let tipTimer, productsTimer;
     if (isProcessing) {
       tipTimer = setTimeout(() => {
         setShowTip(true);
         setTip(getRandomTip());
-      }, 10000); // 10s
-      productsTimer = setTimeout(() => setShowRecentProducts(true), 20000); // 20s
+      }, 10000);
+      productsTimer = setTimeout(() => setShowRecentProducts(true), 20000);
     }
     return () => {
       clearTimeout(tipTimer);
@@ -173,7 +165,6 @@ const Hero = () => {
     };
   }, [isProcessing]);
 
-  // **Handle Search**
   const handleSearch = async (e?: React.FormEvent, productData?: any) => {
     if (e) e.preventDefault();
     
@@ -182,16 +173,13 @@ const Hero = () => {
     const url = new URL(`${(supabase as any).supabaseUrl}/functions/v1/search-dupes`);
     
     if (productData) {
-      // Direct product data provided (from image analysis)
       const formattedText = `${productData.brand || ''} ${productData.name || ''}`.trim();
       searchData = { searchText: formattedText };
       url.searchParams.append("searchText", formattedText);
     } else if (previewImage) {
-      // Process image upload
       searchData = { imageData: previewImage.replace(/^data:image\/\w+;base64,/, '') };
       bodyMethod = 'POST';
     } else if (searchText.trim()) {
-      // Process text input
       searchData = { searchText: searchText.trim() };
       url.searchParams.append("searchText", searchText.trim());
     } else {
@@ -216,10 +204,8 @@ const Hero = () => {
       url.searchParams.append("apikey", apikey);
       if (session?.access_token) url.searchParams.append("authorization", `Bearer ${session.access_token}`);
       
-      // Start EventSource for streaming updates
       const eventSource = new EventSource(url.toString());
       
-      // For POST data, use a fetch first to start the process
       if (bodyMethod === 'POST') {
         fetch(url.toString(), {
           method: 'POST',
@@ -236,7 +222,6 @@ const Hero = () => {
         const data = JSON.parse(event.data);
         
         if (data.type === "productIdentified") {
-          // Set detected product info and show confirmation UI
           setDetectedProduct(data.data);
           setShowProductConfirmation(true);
         } else if (data.type === "progress") {
@@ -288,7 +273,6 @@ const Hero = () => {
     }
   };
 
-  // **Camera and Image Handling**
   const startCamera = useCallback(async () => {
     try {
       setIsCameraOpen(true);
@@ -362,8 +346,7 @@ const Hero = () => {
     stopCamera();
 
     try {
-      // Now use the unified search-dupes endpoint instead
-      handleSearch(undefined, undefined); // Will use previewImage
+      handleSearch(undefined, undefined);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -387,8 +370,7 @@ const Hero = () => {
         const imageDataUrl = reader.result as string;
         setPreviewImage(imageDataUrl);
         
-        // Now use the unified search-dupes endpoint
-        handleSearch(undefined, undefined); // Will use previewImage
+        handleSearch(undefined, undefined);
       };
 
       reader.onerror = () => {
@@ -421,10 +403,8 @@ const Hero = () => {
     setDetectedProduct(null);
   };
 
-  // **JSX Rendering**
   return (
     <section className="container mx-auto px-4 min-h-screen flex flex-col items-center justify-center font-urbanist">
-      {/* Logo and Tagline */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -442,21 +422,8 @@ const Hero = () => {
         <h1 className="text-3xl md:text-4xl text-gray-800 font-medium mb-4">
           Outsmart the Beauty Industry, One Dupe at a Time 🧠
         </h1>
-        <div className="text-2xl md:text-3xl text-gray-600 font-extralight flex justify-center gap-2 md:gap-3">
-          {["Smart", "Dupes,", "Stunning", "You"].map((word, index) => (
-            <motion.span
-              key={word}
-              initial={{ opacity: 0, scale: 1.1, filter: "blur(5px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              transition={{ duration: 0.5, delay: 0.8 + index * 0.15, ease: [0.6, -0.05, 0.01, 0.99] }}
-            >
-              {word}
-            </motion.span>
-          ))}
-        </div>
       </motion.div>
 
-      {/* Search Form */}
       <motion.form
         className="relative w-full max-w-3xl hero-search-section"
         initial={{ opacity: 0, y: 20 }}
@@ -528,7 +495,6 @@ const Hero = () => {
         />
       </motion.form>
 
-      {/* How It Works - Compact Version */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -543,7 +509,7 @@ const Hero = () => {
               </div>
               <div>
                 <div className="text-xs text-pink-500 font-medium">Step 1</div>
-                <p className="text-sm text-gray-700">Frustrated by expensive makeup? We get it.</p>
+                <p className="text-sm text-gray-700">Get makeup price shock 😱 (we've all been there)</p>
               </div>
             </div>
             
@@ -553,7 +519,7 @@ const Hero = () => {
               </div>
               <div>
                 <div className="text-xs text-purple-500 font-medium">Step 2</div>
-                <p className="text-sm text-gray-700">Search & we'll find dupes (first search takes ~1min)</p>
+                <p className="text-sm text-gray-700">Sit pretty while we find your affordable twins 👯‍♀️ (new products need ~1min for our beauty AI to perfect-match)</p>
               </div>
             </div>
             
@@ -562,15 +528,14 @@ const Hero = () => {
                 <Gift className="w-5 h-5 text-pink-500" />
               </div>
               <div>
-                <div className="text-xs text-pink-500 font-medium">Step 3</div>
-                <p className="text-sm text-gray-700">Save money & spend it on something fun instead!</p>
+                <div className="text-xs text-pink-500 font-medium">Finally</div>
+                <p className="text-sm text-gray-700">Keep your look, lose the cost, win at life 🏆</p>
               </div>
             </div>
           </div>
         </div>
       </motion.div>
 
-      {/* Camera Modal */}
       {isCameraOpen && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -592,7 +557,6 @@ const Hero = () => {
         </motion.div>
       )}
 
-      {/* Processing Modal */}
       {isProcessing && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -604,7 +568,6 @@ const Hero = () => {
             animate={{ scale: 1, opacity: 1 }}
             className="bg-white p-8 rounded-lg shadow-xl text-center max-h-[90vh] overflow-y-auto relative"
           >
-            {/* Product Confirmation UI */}
             {showProductConfirmation && detectedProduct && (
               <div className="mb-6 pb-4 border-b border-gray-100">
                 <div className="flex items-center justify-center gap-2">
@@ -646,7 +609,6 @@ const Hero = () => {
               </div>
             )}
 
-            {/* Previous Header: Show only after product detection and search triggered */}
             {!showProductConfirmation && previewImage && searchTriggered && searchText && (
               <div className="mb-4 pb-4 border-b border-gray-100 relative">
                 <div className="flex items-center justify-center gap-2">
@@ -675,10 +637,8 @@ const Hero = () => {
               </div>
             )}
 
-            {/* Progress Message */}
             <p className="text-2xl font-light text-gray-800 mb-4">{progressMessage}</p>
 
-            {/* Tips Section */}
             {showTip && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -691,7 +651,6 @@ const Hero = () => {
               </motion.div>
             )}
 
-            {/* Recent Products Section */}
             {showRecentProducts && recentProducts?.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
