@@ -224,10 +224,10 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                   <div className="flex py-2">
                     <div className="animate-pulse rounded-full bg-gray-200 h-8 w-24"></div>
                   </div>
-                ) : notableIngredients.length > 0 ? (
+                ) : dupe.ingredients?.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     <TooltipProvider delayDuration={100}>
-                      {notableIngredients.map((ingredient, index) => (
+                      {dupe.ingredients?.map((ingredient, index) => (
                         <IngredientPill 
                           key={`notable-${index}`}
                           ingredient={ingredient} 
