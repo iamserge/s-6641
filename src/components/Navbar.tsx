@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion, useScroll } from "framer-motion";
 import { CircleDollarSign, User } from "lucide-react";
@@ -75,28 +74,24 @@ const Navbar = () => {
       <div className="absolute top-0 left-0 right-0 z-40 px-6 py-4">
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link to="/">
-                <img 
-                  src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
-                  alt="Dupe Academy Logo" 
-                  className="h-8"
-                />
-              </Link>
-              
-              <NavigationMenu className="hidden md:flex">
-                <NavigationMenuList>
-                  {navLinks.map((link) => (
-                    <NavigationMenuItem key={link.name}>
-                      <Link to={link.href}>
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                          {link.name}
-                        </NavigationMenuLink>
-                      </Link>
-                    </NavigationMenuItem>
-                  ))}
-                </NavigationMenuList>
-              </NavigationMenu>
+            <Link to="/">
+              <img 
+                src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
+                alt="Dupe Academy Logo" 
+                className="h-8"
+              />
+            </Link>
+            
+            <div className="hidden md:flex space-x-8">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  className="text-violet-800 hover:text-violet-600 transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ))}
             </div>
             
             <div className="flex items-center gap-4">
@@ -118,28 +113,24 @@ const Navbar = () => {
       >
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/">
-                <img 
-                  src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
-                  alt="Dupe Academy Logo" 
-                  className="h-8"
-                />
-              </Link>
-              
-              <NavigationMenu className="hidden md:flex">
-                <NavigationMenuList>
-                  {navLinks.map((link) => (
-                    <NavigationMenuItem key={link.name}>
-                      <Link to={link.href}>
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                          {link.name}
-                        </NavigationMenuLink>
-                      </Link>
-                    </NavigationMenuItem>
-                  ))}
-                </NavigationMenuList>
-              </NavigationMenu>
+            <Link to="/">
+              <img 
+                src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
+                alt="Dupe Academy Logo" 
+                className="h-8"
+              />
+            </Link>
+            
+            <div className="hidden md:flex space-x-8">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  className="text-violet-800 hover:text-violet-600 transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ))}
             </div>
             
             <div className="flex items-center gap-4">
