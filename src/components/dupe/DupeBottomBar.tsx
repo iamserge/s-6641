@@ -4,6 +4,7 @@ import { ChevronUp, Search } from 'lucide-react';
 import { Dupe } from "@/types/dupe";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CategoryImage } from "@/components/dupe/CategoryImage";
 import { 
   Sheet,
   SheetContent,
@@ -56,28 +57,39 @@ export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop }: DupeBo
           >
             <div className="container mx-auto">
               <div className="flex items-center justify-between">
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-violet-100 text-violet-700 px-3 py-1.5 font-medium text-sm rounded-full">
-                      {Math.round(activeDupe.match_score)}% Match
-                    </Badge>
-                    
-                    {activeDupe.price ? (
-                      <Badge className="bg-green-100 text-green-700 px-3 py-1.5 font-medium text-sm rounded-full">
-                        ~${Math.round(activeDupe.price)} 
-                      </Badge>
-                    ) : null}
-                    
-                    {activeDupe.savings_percentage > 0 ? (
-                      <Badge className="bg-pink-100 text-pink-700 px-3 py-1.5 font-medium text-sm rounded-full">
-                        Save {Math.round(activeDupe.savings_percentage)}%
-                      </Badge>
-                    ) : null}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-sm border border-gray-100">
+                    <CategoryImage 
+                      category={activeDupe.category} 
+                      imageUrl={activeDupe.image_url}
+                      name={activeDupe.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   
-                  <p className="text-sm text-gray-700 font-medium">
-                    {activeDupe.brand} <span className="font-semibold text-violet-700">{activeDupe.name}</span>
-                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-violet-100 text-violet-700 px-3 py-1.5 font-medium text-sm rounded-full">
+                        {Math.round(activeDupe.match_score)}% Match
+                      </Badge>
+                      
+                      {activeDupe.price ? (
+                        <Badge className="bg-green-100 text-green-700 px-3 py-1.5 font-medium text-sm rounded-full">
+                          ~${Math.round(activeDupe.price)} 
+                        </Badge>
+                      ) : null}
+                      
+                      {activeDupe.savings_percentage > 0 ? (
+                        <Badge className="bg-pink-100 text-pink-700 px-3 py-1.5 font-medium text-sm rounded-full">
+                          Save {Math.round(activeDupe.savings_percentage)}%
+                        </Badge>
+                      ) : null}
+                    </div>
+                    
+                    <p className="text-sm text-gray-700 font-medium">
+                      {activeDupe.brand} <span className="font-semibold text-violet-700">{activeDupe.name}</span>
+                    </p>
+                  </div>
                 </div>
                 
                 <Button 
