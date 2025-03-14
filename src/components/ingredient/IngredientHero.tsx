@@ -43,9 +43,9 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
   };
 
   const getComedogenicRatingColor = (rating: number) => {
-    if (rating <= 1) return 'bg-green-50 text-green-700';
-    if (rating <= 3) return 'bg-amber-50 text-amber-700';
-    return 'bg-red-50 text-red-700';
+    if (rating <= 1) return 'text-green-700';
+    if (rating <= 3) return 'text-amber-700';
+    return 'text-red-700';
   };
 
   return (
@@ -104,8 +104,8 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
               className="flex flex-wrap justify-center gap-3 mb-6"
             >
               {ingredient.comedogenic_rating !== undefined && ingredient.comedogenic_rating > 0 && (
-                <Badge variant="secondary" className={cn(
-                  "px-5 py-1.5 text-sm rounded-full transition-all",
+                <Badge variant="outline" className={cn(
+                  "px-5 py-1.5 text-sm rounded-full transition-all border-gray-200",
                   getComedogenicRatingColor(ingredient.comedogenic_rating)
                 )}>
                   Comedogenic Rating: {ingredient.comedogenic_rating}/5
@@ -113,14 +113,14 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
               )}
               
               {ingredient.is_controversial && (
-                <Badge variant="secondary" className="bg-red-50 text-red-700 px-5 py-1.5 text-sm flex items-center gap-1 rounded-full hover:bg-red-100 transition-all">
+                <Badge variant="outline" className="text-red-700 px-5 py-1.5 text-sm flex items-center gap-1 rounded-full border-gray-200 hover:bg-red-50 transition-all">
                   <AlertTriangle className="w-3 h-3" />
                   Controversial
                 </Badge>
               )}
               
               {ingredient.restricted_in && ingredient.restricted_in.length > 0 && (
-                <Badge variant="secondary" className="bg-orange-50 text-orange-700 px-5 py-1.5 text-sm flex items-center gap-1 rounded-full hover:bg-orange-100 transition-all">
+                <Badge variant="outline" className="text-orange-700 px-5 py-1.5 text-sm flex items-center gap-1 rounded-full border-gray-200 hover:bg-orange-50 transition-all">
                   <Info className="w-3 h-3" />
                   Restricted in {ingredient.restricted_in.length} regions
                 </Badge>
@@ -135,14 +135,14 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
               className="flex flex-wrap justify-center gap-3 mb-6"
             >
               {ingredient.vegan && (
-                <Badge className="bg-green-50 text-green-700 flex gap-1 items-center px-5 py-1.5 text-sm rounded-full hover:bg-green-100 transition-all">
+                <Badge variant="outline" className="text-green-700 flex gap-1 items-center px-5 py-1.5 text-sm rounded-full border-gray-200 hover:bg-green-50 transition-all">
                   <Leaf className="w-3 h-3" />
                   Vegan
                 </Badge>
               )}
               
               {ingredient.ethically_sourced && (
-                <Badge className="bg-teal-50 text-teal-700 flex gap-1 items-center px-5 py-1.5 text-sm rounded-full hover:bg-teal-100 transition-all">
+                <Badge variant="outline" className="text-teal-700 flex gap-1 items-center px-5 py-1.5 text-sm rounded-full border-gray-200 hover:bg-teal-50 transition-all">
                   <Check className="w-3 h-3" />
                   Ethically Sourced
                 </Badge>
@@ -158,12 +158,12 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
                 className="mb-6"
               >
                 <h3 className="text-lg font-medium text-gray-800 mb-3">Benefits</h3>
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
+                <div className="rounded-xl p-4 flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
                   {ingredient.benefits.map((benefit, index) => (
                     <Badge 
                       key={index} 
                       variant="outline" 
-                      className="rounded-full bg-green-50/50 text-green-700 border-green-200 px-3 py-1.5 flex items-center gap-1"
+                      className="rounded-full text-green-700 border-green-100 px-3 py-1.5 flex items-center gap-1 hover:bg-green-50"
                     >
                       <span>{getBenefitIcon(benefit)}</span>
                       {benefit}
@@ -182,12 +182,12 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
                 className="mb-6"
               >
                 <h3 className="text-lg font-medium text-gray-800 mb-3">Potential Concerns</h3>
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
+                <div className="rounded-xl p-4 flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
                   {ingredient.concerns.map((concern, index) => (
                     <Badge 
                       key={index} 
                       variant="outline" 
-                      className="rounded-full bg-red-50/50 text-red-700 border-red-200 px-3 py-1.5 flex items-center gap-1"
+                      className="rounded-full text-red-700 border-red-100 px-3 py-1.5 flex items-center gap-1 hover:bg-red-50"
                     >
                       <AlertTriangle className="w-3 h-3" />
                       {concern}
@@ -206,12 +206,12 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
                 className="mb-6"
               >
                 <h3 className="text-lg font-medium text-gray-800 mb-3">Best For</h3>
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 flex flex-wrap justify-center gap-2">
+                <div className="rounded-xl p-4 flex flex-wrap justify-center gap-2">
                   {ingredient.skin_types.map((skinType, index) => (
                     <Badge 
                       key={index} 
-                      variant="secondary" 
-                      className="rounded-full bg-blue-50 text-blue-700 px-3 py-1"
+                      variant="outline" 
+                      className="rounded-full text-blue-700 border-blue-100 px-3 py-1 hover:bg-blue-50"
                     >
                       {skinType}
                     </Badge>
@@ -229,7 +229,7 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
                 className="mt-10"
               >
                 <h3 className="text-lg font-medium text-gray-800 mb-3">Similar Ingredients</h3>
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 flex flex-wrap justify-center gap-2">
+                <div className="rounded-xl p-4 flex flex-wrap justify-center gap-2">
                   <TooltipProvider>
                     {similarIngredients.map((similar, index) => (
                       <Tooltip key={index}>

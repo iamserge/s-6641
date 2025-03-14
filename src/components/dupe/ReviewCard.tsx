@@ -1,3 +1,4 @@
+
 import { Review } from "@/types/dupe";
 import { Star, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
@@ -39,8 +40,8 @@ export const ReviewCard = ({ review, index = 0 }: ReviewCardProps) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 * index, duration: 0.4 }}
-      className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-sm border border-gray-100/50 mb-4 relative overflow-hidden"
+      transition={{ duration: 0.3 }}
+      className="bg-white/80 backdrop-blur-sm p-5 rounded-xl shadow-sm border border-gray-100/50 relative overflow-hidden"
     >
       <div className="flex justify-between items-start mb-3">
         {review.author_name && (
@@ -49,7 +50,7 @@ export const ReviewCard = ({ review, index = 0 }: ReviewCardProps) => {
         <div className="flex items-center gap-2">
           <StarRating rating={review.rating} />
           {review.verified_purchase && (
-            <Badge variant="outline" className="bg-green-50 text-green-700 gap-1 flex items-center text-xs">
+            <Badge variant="outline" className="text-green-700 gap-1 flex items-center text-xs border-green-100">
               <CheckCircle className="w-3 h-3" />
               Verified
             </Badge>

@@ -24,9 +24,9 @@ export const IngredientPill = ({ ingredient, className }: IngredientPillProps) =
       <Badge 
         variant="outline" 
         className={`
-          rounded-full bg-white/90 text-gray-700 font-[500] transition-all hover:bg-white flex items-center gap-1 px-3 py-1 shadow-sm
-          ${ingredient.is_controversial ? 'border-[#FFDEE2]' : 'border-slate-200'}
-          ${ingredient.is_controversial ? 'bg-[#FFDEE2]/20' :  ''}
+          rounded-full text-gray-700 font-[500] transition-all hover:bg-white flex items-center gap-1 px-3 py-1
+          ${ingredient.is_controversial ? 'border-rose-200 text-rose-700' : 'border-gray-200'}
+          ${ingredient.is_controversial ? 'hover:bg-rose-50' : 'hover:bg-gray-50'}
           ${className}
         `}
       >
@@ -36,10 +36,10 @@ export const IngredientPill = ({ ingredient, className }: IngredientPillProps) =
       
       {showTooltip && (
         <div 
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-80 p-4 bg-white/95 backdrop-blur-sm border border-slate-200 shadow-lg rounded-lg z-[100]"
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-80 p-4 bg-white border border-slate-200 shadow-lg rounded-lg z-[100]"
         >
           {/* Small arrow pointing to the pill */}
-          <div className="absolute -bottom-[10px] left-1/2 -translate-x-1/2 w-4 h-4 bg-white/95 border-r border-b border-slate-200 transform rotate-45"></div>
+          <div className="absolute -bottom-[10px] left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r border-b border-slate-200 transform rotate-45"></div>
           
           <div className="space-y-2 text-sm">
             <div className="flex-col justify-between items-start">
@@ -81,13 +81,13 @@ export const IngredientPill = ({ ingredient, className }: IngredientPillProps) =
             <div className="flex justify-between items-center pt-1">
               <div className="flex flex-wrap gap-1">
                 {ingredient.vegan && (
-                  <Badge variant="pastelGreen" className="text-xs">Vegan</Badge>
+                  <Badge variant="outline" className="text-xs border-green-100 text-green-700">Vegan</Badge>
                 )}
                 {ingredient.ethically_sourced && (
-                  <Badge variant="pastelBlue" className="text-xs">Ethically Sourced</Badge>
+                  <Badge variant="outline" className="text-xs border-blue-100 text-blue-700">Ethically Sourced</Badge>
                 )}
                 {ingredient.comedogenic_rating !== undefined && ingredient.comedogenic_rating > 0 && (
-                  <Badge variant="pastelYellow" className="text-xs">
+                  <Badge variant="outline" className="text-xs border-amber-100 text-amber-700">
                     Comedogenic: {ingredient.comedogenic_rating}/5
                   </Badge>
                 )}
