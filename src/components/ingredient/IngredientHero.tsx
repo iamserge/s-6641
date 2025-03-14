@@ -103,7 +103,7 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
               transition={{ delay: 0.5 }}
               className="flex flex-wrap justify-center gap-3 mb-6"
             >
-              {ingredient.comedogenic_rating !== undefined && (
+              {ingredient.comedogenic_rating !== undefined && ingredient.comedogenic_rating > 0 && (
                 <Badge variant="secondary" className={cn(
                   "px-5 py-1.5 text-sm rounded-full transition-all",
                   getComedogenicRatingColor(ingredient.comedogenic_rating)
@@ -158,7 +158,7 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
                 className="mb-6"
               >
                 <h3 className="text-lg font-medium text-gray-800 mb-3">Benefits</h3>
-                <div className="flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
                   {ingredient.benefits.map((benefit, index) => (
                     <Badge 
                       key={index} 
@@ -182,7 +182,7 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
                 className="mb-6"
               >
                 <h3 className="text-lg font-medium text-gray-800 mb-3">Potential Concerns</h3>
-                <div className="flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
                   {ingredient.concerns.map((concern, index) => (
                     <Badge 
                       key={index} 
@@ -206,7 +206,7 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
                 className="mb-6"
               >
                 <h3 className="text-lg font-medium text-gray-800 mb-3">Best For</h3>
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 flex flex-wrap justify-center gap-2">
                   {ingredient.skin_types.map((skinType, index) => (
                     <Badge 
                       key={index} 
@@ -229,7 +229,7 @@ export const IngredientHero = ({ ingredient, similarIngredients = [] }: Ingredie
                 className="mt-10"
               >
                 <h3 className="text-lg font-medium text-gray-800 mb-3">Similar Ingredients</h3>
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 flex flex-wrap justify-center gap-2">
                   <TooltipProvider>
                     {similarIngredients.map((similar, index) => (
                       <Tooltip key={index}>

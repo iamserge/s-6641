@@ -168,14 +168,14 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                     </Badge>
                   )}
                   
-                  {dupe.spf && (
+                  {dupe.spf && dupe.spf > 0 && (
                     <Badge className="bg-white text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border border-gray-200">
                       <Shield className="w-3 h-3 text-orange-500" />
                       SPF {dupe.spf}
                     </Badge>
                   )}
                   
-                  {dupe.longevity_rating && (
+                  {dupe.longevity_rating && dupe.longevity_rating > 0 && (
                     <Badge className="bg-white text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border border-gray-200">
                       <Clock className="w-3 h-3 text-teal-500" />
                       Longevity: {dupe.longevity_rating}/10
@@ -297,52 +297,54 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                     </div>
                   )}
                   
-                  {/* Best For Section - renamed from Suitability */}
-                  <div>
-                    <h4 className="text-base font-medium mb-3 text-gray-800">Best For</h4>
-                    <div className="flex flex-wrap gap-2.5">
-                      {dupe.skin_types && dupe.skin_types.length > 0 ? (
-                        dupe.skin_types.map((type, index) => (
-                          <Badge 
-                            key={`skin-${index}`} 
-                            className="bg-white text-gray-700 px-3 py-1.5 text-sm rounded-full border border-gray-200"
-                          >
-                            {type}
-                          </Badge>
-                        ))
-                      ) : (
-                        <p className="text-gray-500 text-sm">No skin type information</p>
-                      )}
-                      
-                      {dupe.best_for && dupe.best_for.length > 0 && 
-                        dupe.best_for.map((item, index) => (
-                          <Badge 
-                            key={`best-${index}`} 
-                            className="bg-white text-gray-700 px-3 py-1.5 text-sm rounded-full border border-gray-200"
-                          >
-                            {item}
-                          </Badge>
-                        ))
-                      }
-                    </div>
-                  </div>
-                  
-                  {/* Free Of Section */}
-                  {dupe.free_of && dupe.free_of.length > 0 && (
-                    <div>
-                      <h4 className="text-base font-medium mb-3 text-gray-800">Free Of</h4>
-                      <div className="flex flex-wrap gap-2.5">
-                        {dupe.free_of.map((item, index) => (
-                          <Badge 
-                            key={`free-${index}`} 
-                            className="bg-white text-gray-700 px-3 py-1.5 text-sm rounded-full border border-gray-200"
-                          >
-                            {item}
-                          </Badge>
-                        ))}
+                  <div className="grid md:grid-cols-2 gap-5">
+                    {/* Best For Section */}
+                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 shadow-sm border border-gray-100">
+                      <h4 className="text-base font-medium mb-3 text-gray-800 text-center">Best For</h4>
+                      <div className="flex flex-wrap justify-center gap-2.5">
+                        {dupe.skin_types && dupe.skin_types.length > 0 ? (
+                          dupe.skin_types.map((type, index) => (
+                            <Badge 
+                              key={`skin-${index}`} 
+                              className="bg-white text-gray-700 px-3 py-1.5 text-sm rounded-full border border-gray-200"
+                            >
+                              {type}
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-gray-500 text-sm">No skin type information</p>
+                        )}
+                        
+                        {dupe.best_for && dupe.best_for.length > 0 && 
+                          dupe.best_for.map((item, index) => (
+                            <Badge 
+                              key={`best-${index}`} 
+                              className="bg-white text-gray-700 px-3 py-1.5 text-sm rounded-full border border-gray-200"
+                            >
+                              {item}
+                            </Badge>
+                          ))
+                        }
                       </div>
                     </div>
-                  )}
+                    
+                    {/* Free Of Section */}
+                    {dupe.free_of && dupe.free_of.length > 0 && (
+                      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 shadow-sm border border-gray-100">
+                        <h4 className="text-base font-medium mb-3 text-gray-800 text-center">Free Of</h4>
+                        <div className="flex flex-wrap justify-center gap-2.5">
+                          {dupe.free_of.map((item, index) => (
+                            <Badge 
+                              key={`free-${index}`} 
+                              className="bg-white text-gray-700 px-3 py-1.5 text-sm rounded-full border border-gray-200"
+                            >
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   
                   {/* Additional Reviews */}
                   {dupe.reviews && dupe.reviews.length > 1 && (

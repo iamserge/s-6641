@@ -24,9 +24,9 @@ export const IngredientPill = ({ ingredient, className }: IngredientPillProps) =
       <Badge 
         variant="outline" 
         className={`
-          rounded-full bg-white text-gray-700 font-[500] transition-all hover:bg-white flex items-center gap-1 px-3 py-1
+          rounded-full bg-white/90 text-gray-700 font-[500] transition-all hover:bg-white flex items-center gap-1 px-3 py-1 shadow-sm
           ${ingredient.is_controversial ? 'border-[#FFDEE2]' : 'border-slate-200'}
-          ${ingredient.is_controversial ? 'bg-[#FFDEE2]/30' :  ''}
+          ${ingredient.is_controversial ? 'bg-[#FFDEE2]/20' :  ''}
           ${className}
         `}
       >
@@ -44,9 +44,11 @@ export const IngredientPill = ({ ingredient, className }: IngredientPillProps) =
           <div className="space-y-2 text-sm">
             <div className="flex-col justify-between items-start">
               <h3 className="text-xl font-bold">{ingredient.name}</h3>
-              a.k.a. <br/>
               {ingredient.inci_name && (
-                 <h4 className='text-[14px]'>{ingredient.inci_name}</h4>
+                <div>
+                  <span className="text-[12px] text-gray-500">a.k.a.</span>
+                  <h4 className='text-[14px]'>{ingredient.inci_name}</h4>
+                </div>
               )}
             </div>
             

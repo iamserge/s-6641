@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -176,19 +177,19 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               </Badge>
             )}
             
-            {product.spf && (
+            {product.spf && product.spf > 0 && (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 <Shield className="w-4 h-4 text-orange-500" />
                 SPF {product.spf}
               </Badge>
             )}
             
-            {product.longevity_rating ? (
+            {product.longevity_rating && product.longevity_rating > 0 && (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 <Clock className="w-4 h-4 text-teal-500" />
                 Longevity: {product.longevity_rating}/10
               </Badge>
-            ) : null }
+            )}
           </motion.div>
 
           {/* Key Ingredients Section */}
@@ -198,9 +199,9 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             transition={{ delay: 0.5 }}
             className="w-full mb-8"
           >
-                <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Key Ingredients</h3>
+            <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Key Ingredients</h3>
             
-            <div className="backdrop-blur-sm">
+            <div className="bg-gradient-to-r from-gray-50/70 to-white/70 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
               {product.loading_ingredients ? (
                 <div className="flex justify-center py-4">
                   <div className="animate-pulse rounded-full bg-gray-200 h-10 w-40"></div>
@@ -262,61 +263,61 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="w-full mb-8"
+            className="w-full mb-8 grid md:grid-cols-2 gap-6"
           >
-              {/* Best For Section (renamed from Suitability) */}
-              <div className="p-6 backdrop-blur-sm">
-                <h3 className="text-xl font-semibold mb-4 font-[500] text-gray-800 text-center">Best For</h3>
-                <div className="flex flex-wrap justify-center gap-3">
-                  {product.skin_types && product.skin_types.length > 0 ? (
-                    product.skin_types.map((type, index) => (
-                      <Badge 
-                        key={`skin-${index}`} 
-                        className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
-                      >
-                        {type}
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-base">No skin type information</p>
-                  )}
-                  
-                  {product.best_for && product.best_for.length > 0 && 
-                    product.best_for.map((item, index) => (
-                      <Badge 
-                        key={`best-${index}`} 
-                        className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
-                      >
-                        {item}
-                      </Badge>
-                    ))
-                  }
-                </div>
+            {/* Best For Section */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
+              <h3 className="text-xl font-semibold mb-4 font-[500] text-gray-800 text-center">Best For</h3>
+              <div className="flex flex-wrap justify-center gap-3">
+                {product.skin_types && product.skin_types.length > 0 ? (
+                  product.skin_types.map((type, index) => (
+                    <Badge 
+                      key={`skin-${index}`} 
+                      className="bg-white text-gray-700 font-[500] px-5 py-2 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
+                    >
+                      {type}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-base">No skin type information</p>
+                )}
+                
+                {product.best_for && product.best_for.length > 0 && 
+                  product.best_for.map((item, index) => (
+                    <Badge 
+                      key={`best-${index}`} 
+                      className="bg-white text-gray-700 font-[500] px-5 py-2 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
+                    >
+                      {item}
+                    </Badge>
+                  ))
+                }
               </div>
-              
-              {/* Free Of Column */}
-              <div className="p-6 backdrop-blur-sm">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Free Of</h3>
-                <div className="flex flex-wrap justify-center gap-3">
-                  {product.free_of && product.free_of.length > 0 ? (
-                    product.free_of.map((item, index) => (
-                      <Badge 
-                        key={`free-${index}`} 
-                        className="bg-white font-[500] text-gray-700 px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
-                      >
-                        {item}
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-base">No free-of information</p>
-                  )}
-                </div>
-              </div>
-           
+            </div>
             
+            {/* Free Of Column */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Free Of</h3>
+              <div className="flex flex-wrap justify-center gap-3">
+                {product.free_of && product.free_of.length > 0 ? (
+                  product.free_of.map((item, index) => (
+                    <Badge 
+                      key={`free-${index}`} 
+                      className="bg-white font-[500] text-gray-700 px-5 py-2 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
+                    >
+                      {item}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-base">No free-of information</p>
+                )}
+              </div>
+            </div>
+          
+          
             {/* Description */}
             {product.description && (
-              <div className="p-6 backdrop-blur-sm mt-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 md:col-span-2">
                 <h3 className="text-xl font-semibold mb-3 text-gray-800">Description</h3>
                 <p className="text-gray-700">
                   {product.description}
@@ -344,7 +345,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               className="w-full"
             >
               <h3 className="text-xl font-semibold mb-3 text-gray-800 text-center">Summary</h3>
-              <div className="p-6 backdrop-blur-sm">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
                 <p className="text-lg text-gray-700 leading-relaxed font-light text-[24px]">
                   {product.summary}
                 </p>
