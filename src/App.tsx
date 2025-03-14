@@ -11,8 +11,6 @@ import BrandPage from "./pages/BrandPage";
 import IngredientPage from "./pages/IngredientPage";
 import BrandsDirectory from "./pages/BrandsDirectory";
 import IngredientsDirectory from "./pages/IngredientsDirectory";
-import AuthPage from "./pages/AuthPage";
-import AuthCallbackPage from "./pages/AuthCallbackPage";
 import { CurrencyProvider } from "./hooks/useCurrency";
 
 const queryClient = new QueryClient();
@@ -32,8 +30,6 @@ const App = () => (
             <Route path="/ingredients/:slug" element={<IngredientPage />} />
             <Route path="/brands" element={<BrandsDirectory />} />
             <Route path="/ingredients" element={<IngredientsDirectory />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/auth/callback" element={<AuthCallbackPage />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

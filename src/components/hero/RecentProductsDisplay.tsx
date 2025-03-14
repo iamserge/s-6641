@@ -12,14 +12,11 @@ interface RecentProduct {
 }
 
 interface RecentProductsDisplayProps {
-  showRecentProducts?: boolean;
-  recentProducts?: RecentProduct[];
+  showRecentProducts: boolean;
+  recentProducts: RecentProduct[] | undefined;
 }
 
-const RecentProductsDisplay = ({ 
-  showRecentProducts = false, 
-  recentProducts = [] 
-}: RecentProductsDisplayProps) => {
+const RecentProductsDisplay = ({ showRecentProducts, recentProducts }: RecentProductsDisplayProps) => {
   if (!showRecentProducts || !recentProducts?.length) return null;
 
   return (

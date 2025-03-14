@@ -35,7 +35,7 @@ redirect_uri = "{{ .SiteURL }}/auth/v1/callback"
 url = "https://appleid.apple.com/auth/authorize"
 
 [auth.external.google]
-enabled = true
+enabled = false
 redirect_uri = "{{ .SiteURL }}/auth/v1/callback"
 url = "https://accounts.google.com/o/oauth2/auth"
 
@@ -111,11 +111,6 @@ url = "https://gitlab.com/oauth/authorize"
 enabled = false
 redirect_uri = "{{ .SiteURL }}/auth/v1/callback"
 url = "https://slack.com/oauth/authorize"
-
-[auth.external.instagram]
-enabled = true
-redirect_uri = "{{ .SiteURL }}/auth/v1/callback"
-url = "https://api.instagram.com/oauth/authorize"
 
 [analytics]
 enabled = false

@@ -212,7 +212,7 @@ const DupesPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mb-12 text-center pt-6 md:pt-8" // Added padding-top here
+            className="mb-12 text-center"
           >
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-violet-800 to-purple-600">
               Discover Beauty Dupes

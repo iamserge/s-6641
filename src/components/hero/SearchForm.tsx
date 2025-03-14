@@ -6,56 +6,35 @@ import { Camera, Loader2, Search, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface SearchFormProps {
-  searchText?: string;
-  setSearchText?: (text: string) => void;
-  previewImage?: string | null;
-  clearPreview?: () => void;
-  isProcessing?: boolean;
-  isCameraOpen?: boolean;
-  handleCameraSearch?: () => void;
-  handleSearch?: (e?: React.FormEvent) => void;
-  fileInputRef?: React.RefObject<HTMLInputElement>;
-  onSearch?: (searchTerm: any) => void;
-  onImageUpload?: (imageFile: any) => Promise<void>;
-  onCameraOpen?: () => void;
+  searchText: string;
+  setSearchText: (text: string) => void;
+  previewImage: string | null;
+  clearPreview: () => void;
+  isProcessing: boolean;
+  isCameraOpen: boolean;
+  handleCameraSearch: () => void;
+  handleSearch: (e?: React.FormEvent) => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
 }
 
 const SearchForm = ({
-  searchText = "",
-  setSearchText = () => {},
-  previewImage = null,
-  clearPreview = () => {},
-  isProcessing = false,
-  isCameraOpen = false,
-  handleCameraSearch = () => {},
-  handleSearch = () => {},
-  fileInputRef = useRef(null),
-  onSearch = () => {},
-  onImageUpload = async () => {},
-  onCameraOpen = () => {}
+  searchText,
+  setSearchText,
+  previewImage,
+  clearPreview,
+  isProcessing,
+  isCameraOpen,
+  handleCameraSearch,
+  handleSearch,
+  fileInputRef
 }: SearchFormProps) => {
-  const [localSearchText, setLocalSearchText] = useState(searchText);
-
-  const onSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (onSearch) onSearch(localSearchText);
-    if (handleSearch) handleSearch(e);
-  };
-
-  const handleImageUploadClick = () => {
-    const input = fileInputRef.current;
-    if (input) {
-      input.click();
-    }
-  };
-
   return (
     <motion.form
       className="relative w-full max-w-3xl hero-search-section"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1.6, duration: 0.8 }}
-      onSubmit={onSubmit}
+      onSubmit={handleSearch}
     >
       <div className="relative">
         {previewImage && (
@@ -77,14 +56,8 @@ const SearchForm = ({
         <Input
           type="text"
           placeholder="Search for your favorite makeup product..."
-          value={typeof setSearchText === 'function' ? searchText : localSearchText}
-          onChange={(e) => {
-            if (typeof setSearchText === 'function') {
-              setSearchText(e.target.value);
-            } else {
-              setLocalSearchText(e.target.value);
-            }
-          }}
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
           className={`w-full h-16 pr-32 text-xl rounded-full border-2 border-pink-100 focus:border-pink-300 focus:ring-pink-200 font-light ${
             previewImage ? "pl-16" : "pl-8"
           }`}
@@ -96,10 +69,7 @@ const SearchForm = ({
           type="button"
           variant="ghost"
           size="icon"
-          onClick={() => {
-            if (onCameraOpen) onCameraOpen();
-            if (handleCameraSearch) handleCameraSearch();
-          }}
+          onClick={handleCameraSearch}
           disabled={isProcessing || isCameraOpen}
           className="h-12 w-12 hover:bg-pink-50"
         >
@@ -125,11 +95,7 @@ const SearchForm = ({
         ref={fileInputRef}
         accept="image/*"
         capture="environment"
-        onChange={(e) => {
-          if (e.target.files && e.target.files[0] && onImageUpload) {
-            onImageUpload(e.target.files[0]);
-          }
-        }}
+        onChange={() => {}}
         className="hidden"
       />
     </motion.form>

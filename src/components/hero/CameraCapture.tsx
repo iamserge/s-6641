@@ -1,123 +1,42 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
+import { Button } from "../ui/button";
+import { X } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Camera, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface CameraCaptureProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onCapture: (imageFile: File) => void;
+  isCameraOpen: boolean;
+  handleCameraSnap: () => void;
+  stopCamera: () => void;
+  videoRef: React.RefObject<HTMLVideoElement>;
 }
 
-const CameraCapture = ({ isOpen, onClose, onCapture }: CameraCaptureProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [deviceError, setDeviceError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let stream: MediaStream | null = null;
-
-    const setupCamera = async () => {
-      try {
-        if (isOpen && videoRef.current) {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
-            audio: false,
-          });
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            setDeviceError(null);
-          }
-        }
-      } catch (error) {
-        console.error("Error accessing camera:", error);
-        setDeviceError(
-          "Could not access camera. Please ensure you've granted camera access permissions."
-        );
-      }
-    };
-
-    setupCamera();
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [isOpen]);
-
-  const captureImage = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-
-    // Set canvas dimensions to match the video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    // Draw the video frame to the canvas
-    const context = canvas.getContext("2d");
-    if (context) {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // Convert the canvas to a file
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const imageFile = new File([blob], "camera-capture.jpg", {
-            type: "image/jpeg",
-          });
-          onCapture(imageFile);
-        }
-      }, "image/jpeg");
-    }
-  };
-
-  if (!isOpen) return null;
+const CameraCapture = ({ 
+  isCameraOpen, 
+  handleCameraSnap, 
+  stopCamera, 
+  videoRef 
+}: CameraCaptureProps) => {
+  if (!isCameraOpen) return null;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center"
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
     >
-      <div className="relative w-full max-w-lg max-h-[80vh] bg-black rounded-lg overflow-hidden">
+      <div className="relative bg-white p-4 rounded-lg">
+        <video ref={videoRef} className="w-full max-w-md rounded" autoPlay playsInline />
         <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-2 right-2 z-10 bg-black/50 text-white hover:bg-black/70"
-          onClick={onClose}
+          onClick={handleCameraSnap}
+          className="mt-4 w-full bg-pink-500 hover:bg-pink-600 text-white"
         >
-          <X />
+          Snap Photo
         </Button>
-
-        {deviceError ? (
-          <div className="p-8 text-white text-center">
-            <p className="mb-4">{deviceError}</p>
-            <Button onClick={onClose}>Close</Button>
-          </div>
-        ) : (
-          <>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            <canvas ref={canvasRef} className="hidden" />
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-              <Button
-                variant="secondary"
-                size="lg"
-                className="rounded-full w-16 h-16 bg-white hover:bg-gray-200"
-                onClick={captureImage}
-              >
-                <Camera className="h-6 w-6 text-black" />
-              </Button>
-            </div>
-          </>
-        )}
+        <Button onClick={stopCamera} variant="outline" className="mt-2 w-full">
+          Cancel
+        </Button>
       </div>
     </motion.div>
   );
