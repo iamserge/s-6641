@@ -9,6 +9,7 @@ import Footer from "../components/Footer";
 import DupeProductCard from "@/components/dupe/DupeProductCard";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
+import { DupeInfo, BrandInfo } from "@/types/product";
 
 // Categories matching the ones in PopularCategories component
 const categories = [
@@ -117,7 +118,9 @@ const DupesPage = () => {
             ...product,
             dupes: [],
             highest_savings: 0,
-            highest_match: 0
+            highest_match: 0,
+            dupeInfo: null,
+            brandInfo: null
           };
         }
 
@@ -143,19 +146,37 @@ const DupesPage = () => {
           };
         });
 
+        // Create the dupeInfo object from product properties
+        const dupeInfo: DupeInfo = {
+          coverage: product.coverage,
+          confidence_level: product.confidence_level,
+          longevity_comparison: product.longevity_comparison,
+          cruelty_free: product.cruelty_free,
+          vegan: product.vegan
+        };
+
+        // Create the brandInfo object from product.brands properties
+        const brandInfo: BrandInfo = product.brands ? {
+          name: product.brands.name,
+          country_of_origin: product.brands.country_of_origin,
+          sustainable_packaging: product.brands.sustainable_packaging,
+          cruelty_free: product.brands.cruelty_free,
+          vegan: product.brands.vegan
+        } : null;
+
         return {
-          ...product,
-          dupes,
-          highest_savings,
+          id: product.id,
+          name: product.name,
+          brand: product.brand,
+          slug: product.slug,
+          image_url: product.image_url,
+          category: product.category,
+          country_of_origin: product.country_of_origin,
           highest_match,
-          brandInfo: product.brands || null,
-          dupeInfo: {
-            coverage: product.coverage,
-            confidence_level: product.confidence_level,
-            longevity_comparison: product.longevity_comparison,
-            cruelty_free: product.cruelty_free,
-            vegan: product.vegan
-          }
+          highest_savings,
+          dupes,
+          dupeInfo,
+          brandInfo
         };
       }));
       
