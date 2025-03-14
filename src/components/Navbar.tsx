@@ -65,6 +65,7 @@ const Navbar = () => {
   }, [scrollY]);
 
   const navLinks = [
+    { name: "Dupes", href: "/dupes" },
     { name: "Ingredients", href: "/ingredients" },
     { name: "Brands", href: "/brands" },
   ];

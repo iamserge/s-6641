@@ -59,14 +59,14 @@ const PopularCategories = () => {
                 <img 
                   src={category.image} 
                   alt={category.name} 
-                  className="h-32 object-contain" 
+                  className="h-32 w-32 object-contain rounded-full bg-white/80 p-4" 
                 />
               </div>
               <div className="bg-white p-6">
                 <h3 className="text-xl font-semibold text-violet-800 mb-2">{category.name}</h3>
                 <p className="text-gray-600 mb-4 h-16">{category.description}</p>
                 <Link 
-                  to="/"
+                  to={`/dupes?category=${category.name}`}
                   className="inline-block text-sm font-medium text-violet-700 hover:text-violet-900 transition-colors"
                 >
                   Explore {category.name} →
