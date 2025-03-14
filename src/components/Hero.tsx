@@ -1,15 +1,21 @@
 
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Camera, Loader2, Search, X, DollarSign, Timer, Gift } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { motion, stagger } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
+// Import components
+import TaglineAnimation from "./hero/TaglineAnimation";
+import AnimatedSteps from "./hero/AnimatedSteps";
+import SearchForm from "./hero/SearchForm";
+import CameraCapture from "./hero/CameraCapture";
+import ProcessingModal from "./hero/ProcessingModal";
+import { useMessageVariations, useBeautyTips } from "./hero/useMessageVariations";
+
 const Hero = () => {
+  // State
   const [searchText, setSearchText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -22,118 +28,19 @@ const Hero = () => {
   const [searchTriggered, setSearchTriggered] = useState(false);
   const [detectedProduct, setDetectedProduct] = useState<any>(null);
   const [showProductConfirmation, setShowProductConfirmation] = useState(false);
+  
+  // Hooks
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
+  const { getRandomVariation } = useMessageVariations();
+  const { getRandomTip } = useBeautyTips();
 
   const taglineWords = "Outsmart the Beauty Industry, One Dupe at a Time 🧠".split(" ");
 
-  const wordAnimation = {
-    hidden: { opacity: 0, filter: "blur(10px)", scale: 0.9 },
-    visible: (i: number) => ({
-      opacity: 1,
-      filter: "blur(0px)",
-      scale: 1,
-      transition: {
-        delay: 0.7 + (i * 0.1),
-        duration: 0.4,
-        ease: [0.6, -0.05, 0.01, 0.99]
-      }
-    })
-  };
-
-  const stepAnimation = {
-    hidden: { opacity: 0, filter: "blur(10px)", scale: 0.9 },
-    visible: (i: number) => ({
-      opacity: 1,
-      filter: "blur(0px)",
-      scale: 1,
-      transition: {
-        delay: 1.9 + (i * 0.2),
-        duration: 0.4,
-        ease: [0.6, -0.05, 0.01, 0.99]
-      }
-    })
-  };
-
-  const messageVariations = useMemo(() => ({
-    "Analyzing your input...": [
-      "Reading your makeup vibes... 👀",
-      "Decoding your beauty DNA... 🔍",
-      "Translating your beauty language... 💬"
-    ],
-    "We detected: ": [
-      "Found your beauty match: ",
-      "I'm seeing: ",
-      "Got it, you're looking for: "
-    ],
-    "Heyyy! We're on the hunt for the perfect dupes for you! 🎨": [
-      "Obsessed with finding your makeup twin rn 💄",
-      "BRB, snatching dupes that hit different ✨",
-      "Your wallet's about to thank us so hard 💸",
-    ],
-    "Oh, we already know this one! Let's show you the dupes... 🌟": [
-      "This one's giving main character energy—dupes loading 💅",
-      "Bestie we already know this vibe—check these out ☕",
-    ],
-    "Scouring the beauty universe for your perfect match... 💄": [
-      "First one to ask for this—we're on a whole journey rn 🏄‍♀️",
-      "New to our algorithm—breaking the internet for you 🔥",
-    ],
-    "Found some matches! Creating initial entries...": [
-      "Caught some serious dupes—they ate 🔥",
-      "These matches are so valid—just perfecting the vibe 💫",
-    ],
-    "Putting together your beauty dossier... 📋": [
-      "Manifest your new go-to's in 3, 2, 1... ✨",
-      "Dropping your beauty rotation upgrade 💁‍♀️",
-    ],
-    "Checking our database for existing dupes...": [
-      "Scouring our beauty vault for matches... 💼",
-      "Checking if we've already found this gem... 💎",
-    ],
-    "Gathering detailed information in the background...": [
-      "Summoning all the tea on these dupes... ☕",
-      "Deep diving for those hidden details... 🔍",
-    ],
-    "Your dupes are ready! Loading details...": [
-      "Dupes served hot and fresh! 🔥",
-      "Dupe mission accomplished! 🚀",
-    ]
-  }), []);
-
-  const tips = useMemo(() => [
-    "Apply foundation with a damp sponge for a natural finish.",
-    "Use lip liner to prevent lipstick bleeding.",
-    "Set makeup with a light mist for longer wear.",
-    "Store mascara horizontally for better formula consistency.",
-    "When using cream products, apply before powder for better blending.",
-    "Concealer should be one shade lighter than your foundation for brightening.",
-    "Use a highlighter in the inner corners of eyes to look more awake.",
-    "Warm up your eyelash curler for 5 seconds with a hairdryer for better curl.",
-    "Powder your face before applying blush to help it last longer.",
-    "Use a setting spray to make your makeup last all day long."
-  ], []);
-
-  const getRandomVariation = useCallback((serverMessage) => {
-    for (const prefix in messageVariations) {
-      if (serverMessage.startsWith(prefix) && messageVariations[prefix]) {
-        const variations = messageVariations[prefix];
-        const randomPrefix = variations[Math.floor(Math.random() * variations.length)];
-        return randomPrefix + serverMessage.substring(prefix.length);
-      }
-    }
-    
-    const variations = messageVariations[serverMessage];
-    return variations?.length > 0
-      ? variations[Math.floor(Math.random() * variations.length)]
-      : serverMessage;
-  }, [messageVariations]);
-
-  const getRandomTip = useCallback(() => tips[Math.floor(Math.random() * tips.length)], [tips]);
-
+  // Function to fetch recent products
   const fetchRecentProducts = useCallback(async () => {
     try {
       const { data: productsWithDupes } = await supabase
@@ -177,6 +84,7 @@ const Hero = () => {
     refetchOnWindowFocus: false,
   });
 
+  // Effects
   useEffect(() => {
     let tipTimer, productsTimer;
     if (isProcessing) {
@@ -194,8 +102,9 @@ const Hero = () => {
         setShowRecentProducts(false);
       }
     };
-  }, [isProcessing]);
+  }, [isProcessing, getRandomTip]);
 
+  // Handlers
   const handleSearch = async (e?: React.FormEvent, productData?: any) => {
     if (e) e.preventDefault();
     
@@ -450,83 +359,57 @@ const Hero = () => {
           animate={{ scale: 1 }}
           transition={{ duration: 0.6, ease: [0.6, -0.05, 0.01, 0.99], delay: 0.2 }}
         />
-        <div className="mb-4 flex flex-wrap justify-center">
-          {taglineWords.map((word, i) => (
-            <motion.span
-              key={i}
-              className="text-2xl md:text-3xl text-gray-800 font-light tracking-wide inline-block mx-1"
-              custom={i}
-              initial="hidden"
-              animate="visible"
-              variants={wordAnimation}
-            >
-              {word}
-            </motion.span>
-          ))}
-        </div>
+        <TaglineAnimation taglineWords={taglineWords} />
       </motion.div>
 
-      <motion.form
-        className="relative w-full max-w-3xl hero-search-section"
+      <SearchForm
+        searchText={searchText}
+        setSearchText={setSearchText}
+        previewImage={previewImage}
+        clearPreview={clearPreview}
+        isProcessing={isProcessing}
+        isCameraOpen={isCameraOpen}
+        handleCameraSearch={handleCameraSearch}
+        handleSearch={handleSearch}
+        fileInputRef={fileInputRef}
+      />
+
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.6, duration: 0.8 }}
-        onSubmit={handleSearch}
+        transition={{ delay: 1.8, duration: 0.8 }}
+        className="w-full max-w-3xl mt-6 mb-12"
       >
-        <div className="relative">
-          {previewImage && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 group">
-              <img
-                src={previewImage}
-                alt="Preview"
-                className="h-10 w-10 rounded-full object-cover border-2 border-pink-100"
-              />
-              <button
-                type="button"
-                onClick={clearPreview}
-                className="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-3 h-3 text-gray-500" />
-              </button>
-            </div>
-          )}
-          <Input
-            type="text"
-            placeholder="Search for your favorite makeup product..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            className={`w-full h-16 pr-32 text-xl rounded-full border-2 border-pink-100 focus:border-pink-300 focus:ring-pink-200 font-light ${
-              previewImage ? "pl-16" : "pl-8"
-            }`}
-          />
-        </div>
+        <AnimatedSteps />
+      </motion.div>
 
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2 items-center">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={handleCameraSearch}
-            disabled={isProcessing || isCameraOpen}
-            className="h-12 w-12 hover:bg-pink-50"
-          >
-            <Camera className="w-6 h-6 text-pink-500" />
-          </Button>
-          <div className="w-px h-8 bg-pink-100" />
-          <Button
-            type="submit"
-            variant="ghost"
-            size="icon"
-            disabled={isProcessing || isCameraOpen}
-            className="h-12 w-12 hover:bg-pink-50 ml-2"
-          >
-            {isProcessing ? (
-              <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
-            ) : (
-              <Search className="w-6 h-6 text-pink-500" />
-            )}
-          </Button>
-        </div>
+      <CameraCapture
+        isCameraOpen={isCameraOpen}
+        handleCameraSnap={handleCameraSnap}
+        stopCamera={stopCamera}
+        videoRef={videoRef}
+      />
+
+      <ProcessingModal
+        isProcessing={isProcessing}
+        showProductConfirmation={showProductConfirmation}
+        detectedProduct={detectedProduct}
+        previewImage={previewImage}
+        progressMessage={progressMessage}
+        searchTriggered={searchTriggered}
+        searchText={searchText}
+        showTip={showTip}
+        tip={tip}
+        showRecentProducts={showRecentProducts}
+        recentProducts={recentProducts}
+        cancelSearch={cancelSearch}
+        setShowProductConfirmation={setShowProductConfirmation}
+      />
+
+      <canvas ref={canvasRef} className="hidden" />
+      
+      {/* File input handler needs to be here to access handleImageUpload */}
+      {fileInputRef.current && (
         <input
           type="file"
           ref={fileInputRef}
@@ -535,226 +418,7 @@ const Hero = () => {
           onChange={handleImageUpload}
           className="hidden"
         />
-      </motion.form>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.8, duration: 0.8 }}
-        className="w-full max-w-3xl mt-6 mb-12"
-      >
-        <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-4 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <motion.div 
-              className="flex items-center gap-3"
-              custom={0}
-              initial="hidden"
-              animate="visible"
-              variants={stepAnimation}
-            >
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-pink-500" />
-              </div>
-              <div>
-                <div className="text-xs text-pink-500 font-medium">Step 1</div>
-                <p className="text-sm text-gray-700">Get makeup price shock 😱 (we've all been there)</p>
-              </div>
-            </motion.div>
-            
-            <motion.div 
-              className="flex items-center gap-3"
-              custom={1}
-              initial="hidden"
-              animate="visible"
-              variants={stepAnimation}
-            >
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <Timer className="w-5 h-5 text-purple-500" />
-              </div>
-              <div>
-                <div className="text-xs text-purple-500 font-medium">Step 2</div>
-                <p className="text-sm text-gray-700">Sit pretty while we find your affordable twins 👯‍♀️</p>
-                <p className="text-xs text-gray-500">new products need ~1min for our beauty AI to perfect-match</p>
-              </div>
-            </motion.div>
-            
-            <motion.div 
-              className="flex items-center gap-3"
-              custom={2}
-              initial="hidden"
-              animate="visible"
-              variants={stepAnimation}
-            >
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
-                <Gift className="w-5 h-5 text-pink-500" />
-              </div>
-              <div>
-                <div className="text-xs text-pink-500 font-medium">Finally</div>
-                <p className="text-sm text-gray-700">Keep your look, lose the cost, win at life 🏆</p>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
-
-      {isCameraOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
-        >
-          <div className="relative bg-white p-4 rounded-lg">
-            <video ref={videoRef} className="w-full max-w-md rounded" autoPlay playsInline />
-            <Button
-              onClick={handleCameraSnap}
-              className="mt-4 w-full bg-pink-500 hover:bg-pink-600 text-white"
-            >
-              Snap Photo
-            </Button>
-            <Button onClick={stopCamera} variant="outline" className="mt-2 w-full">
-              Cancel
-            </Button>
-          </div>
-        </motion.div>
       )}
-
-      {isProcessing && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white p-8 rounded-lg shadow-xl text-center max-h-[90vh] overflow-y-auto relative"
-          >
-            {showProductConfirmation && detectedProduct && (
-              <div className="mb-6 pb-4 border-b border-gray-100">
-                <div className="flex items-center justify-center gap-2">
-                  {previewImage && (
-                    <div className="w-12 h-12 rounded-full overflow-hidden border border-pink-100">
-                      <img
-                        src={previewImage}
-                        alt="Detected product"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="text-left">
-                    <p className="text-sm text-gray-500">We detected:</p>
-                    <p className="font-medium text-gray-800">
-                      {detectedProduct.brand ? `${detectedProduct.brand} ` : ''}
-                      {detectedProduct.name}
-                    </p>
-                    {detectedProduct.category && (
-                      <p className="text-xs text-gray-500">{detectedProduct.category}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-3 flex justify-center space-x-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={cancelSearch}
-                  >
-                    Not what I'm looking for
-                  </Button>
-                  <Button 
-                    size="sm"
-                    onClick={() => setShowProductConfirmation(false)}
-                  >
-                    Yes, that's right
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {!showProductConfirmation && previewImage && searchTriggered && searchText && (
-              <div className="mb-4 pb-4 border-b border-gray-100 relative">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border border-pink-100">
-                    <img
-                      src={previewImage}
-                      alt="Detected product"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm text-gray-500">We detected:</p>
-                    <p className="font-medium text-gray-800">{searchText}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={cancelSearch}
-                  className="absolute right-0 top-0 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                  aria-label="Cancel search"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-                <p className="text-xs text-gray-500 mt-2">
-                  Not what you're looking for? Click the X to try again.
-                </p>
-              </div>
-            )}
-
-            <p className="text-2xl font-light text-gray-800 mb-4">{progressMessage}</p>
-
-            {showTip && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, ease: "easeIn" }}
-                className="mt-4"
-              >
-                <p className="text-lg font-light text-gray-800 mb-2">Beauty Tip</p>
-                <p className="text-sm text-gray-600 italic">{tip}</p>
-              </motion.div>
-            )}
-
-            {showRecentProducts && recentProducts?.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, ease: "easeIn" }}
-                className="mt-6"
-              >
-                <p className="text-lg font-light text-gray-800 mb-2">
-                  Trending Dupe Finds
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {recentProducts.map((product) => (
-                    <div key={product?.id} className="border rounded-lg p-2 bg-gray-50">
-                      <img
-                        src={product.image_url || "/placeholder-image.png"}
-                        alt={product.name}
-                        className="w-full h-24 object-cover rounded mb-2"
-                      />
-                      <p className="text-sm font-medium">
-                        <a
-                          href={`/dupes/for/${product.slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-pink-500 hover:underline"
-                        >
-                          {product.name}
-                        </a>
-                      </p>
-                      <p className="text-xs text-gray-600">{product.brand}</p>
-                      <p className="text-xs text-gray-600">{product.dupesCount} dupes</p>
-                      <p className="text-xs text-gray-600">Max saving: {product.maxSavings}%</p>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            <Loader2 className="w-12 h-12 text-pink-500 animate-spin mx-auto mt-6" />
-          </motion.div>
-        </motion.div>
-      )}
-
-      <canvas ref={canvasRef} className="hidden" />
     </section>
   );
 };
