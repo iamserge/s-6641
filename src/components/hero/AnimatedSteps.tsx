@@ -37,7 +37,7 @@ const AnimatedSteps = () => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-6 shadow-sm">
+    <div className="p-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {steps.map((step, index) => (
           <motion.div 
