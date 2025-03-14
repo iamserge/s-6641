@@ -1,6 +1,6 @@
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronUp, ExternalLink } from 'lucide-react';
+import { ChevronUp, Search } from 'lucide-react';
 import { Dupe } from "@/types/dupe";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,12 @@ interface DupeBottomBarProps {
 
 export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop }: DupeBottomBarProps) => {
   if (!activeDupe) return null;
+  
+  const handleGoogleSearch = () => {
+    const searchQuery = `${activeDupe.brand} ${activeDupe.name}`;
+    const encodedSearchQuery = encodeURIComponent(searchQuery);
+    window.open(`https://www.google.com/search?q=${encodedSearchQuery}`, '_blank');
+  };
   
   return (
     <>
@@ -56,9 +62,9 @@ export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop }: DupeBo
                       {Math.round(activeDupe.match_score)}% Match
                     </Badge>
                     
-                    {activeDupe.savings_percentage > 0 && (
+                    {activeDupe.price && activeDupe.savings_percentage > 0 && (
                       <Badge className="bg-green-100 text-green-700 px-3 py-1.5 font-medium text-sm rounded-full">
-                        Save {Math.round(activeDupe.savings_percentage)}%
+                        ~${Math.round(activeDupe.price)} (-{Math.round(activeDupe.savings_percentage)}%)
                       </Badge>
                     )}
                   </div>
@@ -68,58 +74,14 @@ export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop }: DupeBo
                   </p>
                 </div>
                 
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="default" className="bg-violet-600 hover:bg-violet-700 text-white rounded-full">
-                      Buy Now
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="bottom" className="px-4 sm:px-6 rounded-t-3xl bg-white/95 backdrop-blur-md">
-                    <SheetHeader>
-                      <SheetTitle className="text-2xl text-violet-700">Shop {activeDupe.brand} {activeDupe.name}</SheetTitle>
-                      <SheetDescription className="text-gray-600 text-base">
-                        Choose where to purchase this dupe
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="space-y-3 mt-6">
-                      {activeDupe.offers && activeDupe.offers.length > 0 ? (
-                        activeDupe.offers.map((offer, i) => (
-                          <a
-                            key={i}
-                            href={offer.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between p-4 rounded-xl border border-pink-200 bg-white hover:bg-pink-50 transition-colors"
-                          >
-                            <div>
-                              <p className="font-medium text-lg">{offer.merchant?.name || "Retailer"}</p>
-                              <p className="text-gray-500">~${Math.round(offer.price)} {offer.condition ? `- ${offer.condition}` : ''}</p>
-                            </div>
-                            <ExternalLink className="h-5 w-5 text-violet-600" />
-                          </a>
-                        ))
-                      ) : activeDupe.purchase_link ? (
-                        <a
-                          href={activeDupe.purchase_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between p-4 rounded-xl border border-pink-200 bg-white hover:bg-pink-50 transition-colors"
-                        >
-                          <div>
-                            <p className="font-medium text-lg">Shop Now</p>
-                            {activeDupe.price && <p className="text-gray-500">~${Math.round(activeDupe.price)}</p>}
-                          </div>
-                          <ExternalLink className="h-5 w-5 text-violet-600" />
-                        </a>
-                      ) : (
-                        <div className="text-center py-6 bg-white/70 rounded-xl">
-                          <p className="text-gray-600 text-lg">No purchasing options available</p>
-                          <p className="text-gray-500 text-sm mt-2">Try searching online retailers</p>
-                        </div>
-                      )}
-                    </div>
-                  </SheetContent>
-                </Sheet>
+                <Button 
+                  variant="default" 
+                  className="bg-violet-600 hover:bg-violet-700 text-white rounded-full flex items-center gap-2"
+                  onClick={handleGoogleSearch}
+                >
+                  <Search className="w-4 h-4" />
+                  Search
+                </Button>
               </div>
             </div>
           </motion.div>
