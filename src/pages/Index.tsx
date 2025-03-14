@@ -7,7 +7,6 @@ import Features from "../components/Features";
 import PopularCategories from "../components/PopularCategories";
 import Testimonials from "../components/Testimonials";
 import NewsletterCTA from "../components/NewsletterCTA";
-import StepsSection from "../components/StepsSection";
 
 // Lazy load these components with better chunk naming
 const Hero = lazy(() => import("../components/Hero" /* webpackChunkName: "hero" */));
@@ -47,8 +46,6 @@ const Index = () => {
         <Suspense fallback={<LoadingFallback />}>
           <Hero />
         </Suspense>
-        
-        <StepsSection />
         
         <PopularCategories />
         

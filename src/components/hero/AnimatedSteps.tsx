@@ -1,8 +1,26 @@
 
 import { motion } from "framer-motion";
-import { DollarSign, Timer, Gift } from "lucide-react";
+import { Search, Sparkles, ScrollText } from "lucide-react";
 
 const AnimatedSteps = () => {
+  const steps = [
+    {
+      icon: <Search className="w-5 h-5 text-gray-800" />,
+      title: "Find Your Product",
+      description: "Search for your favorite high-end beauty product or take a photo."
+    },
+    {
+      icon: <Sparkles className="w-5 h-5 text-gray-800" />,
+      title: "Discover Dupes",
+      description: "Our AI analyzes ingredients and finds affordable alternatives that match."
+    },
+    {
+      icon: <ScrollText className="w-5 h-5 text-gray-800" />,
+      title: "Compare & Save",
+      description: "See side-by-side comparisons and save up to 70% without sacrificing quality."
+    }
+  ];
+
   const stepAnimation = {
     hidden: { opacity: 0, filter: "blur(10px)", scale: 0.9 },
     visible: (i: number) => ({
@@ -18,56 +36,24 @@ const AnimatedSteps = () => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-4 shadow-sm">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <motion.div 
-          className="flex items-center gap-3"
-          custom={0}
-          initial="hidden"
-          animate="visible"
-          variants={stepAnimation}
-        >
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
-            <DollarSign className="w-5 h-5 text-pink-500" />
-          </div>
-          <div>
-            <div className="text-xs text-pink-500 font-medium">Step 1</div>
-            <p className="text-sm text-gray-700">Get makeup price shock 😱 (we've all been there)</p>
-          </div>
-        </motion.div>
-        
-        <motion.div 
-          className="flex items-center gap-3"
-          custom={1}
-          initial="hidden"
-          animate="visible"
-          variants={stepAnimation}
-        >
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-            <Timer className="w-5 h-5 text-purple-500" />
-          </div>
-          <div>
-            <div className="text-xs text-purple-500 font-medium">Step 2</div>
-            <p className="text-sm text-gray-700">Sit pretty while we find your affordable twins 👯‍♀️</p>
-            <p className="text-xs text-gray-500">new products need ~1min for our beauty AI to perfect-match</p>
-          </div>
-        </motion.div>
-        
-        <motion.div 
-          className="flex items-center gap-3"
-          custom={2}
-          initial="hidden"
-          animate="visible"
-          variants={stepAnimation}
-        >
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
-            <Gift className="w-5 h-5 text-pink-500" />
-          </div>
-          <div>
-            <div className="text-xs text-pink-500 font-medium">Finally</div>
-            <p className="text-sm text-gray-700">Keep your look, lose the cost, win at life 🏆</p>
-          </div>
-        </motion.div>
+    <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-6 shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {steps.map((step, index) => (
+          <motion.div 
+            key={index}
+            className="flex flex-col items-center text-center"
+            custom={index}
+            initial="hidden"
+            animate="visible"
+            variants={stepAnimation}
+          >
+            <div className="mb-4 p-4 bg-white rounded-full shadow-md">
+              {step.icon}
+            </div>
+            <h3 className="text-xl font-medium text-gray-800 mb-2">{step.title}</h3>
+            <p className="text-gray-700">{step.description}</p>
+          </motion.div>
+        ))}
       </div>
     </div>
   );
