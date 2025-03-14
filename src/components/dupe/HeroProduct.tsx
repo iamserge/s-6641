@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/dupe";
-import { Heart, Leaf, MapPin, Clock, Star, ChevronDown, ChevronUp } from 'lucide-react';
+import { Heart, Leaf, MapPin, Clock, Star, ChevronDown, ChevronUp, Droplet, Layout, Layers, Shield } from 'lucide-react';
 import { getFlagEmoji } from "@/lib/utils";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
 import { IngredientPill } from "@/components/dupe/IngredientPill";
@@ -142,17 +142,53 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             
             {product.cruelty_free && (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
-                <Heart className="w-4 h-4 text-gray-500" />
+                <Heart className="w-4 h-4 text-pink-500" />
                 Cruelty-Free
               </Badge>
             )}
             
             {product.vegan && (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
-                <Leaf className="w-4 h-4 text-gray-500" />
+                <Leaf className="w-4 h-4 text-green-500" />
                 Vegan
               </Badge>
             )}
+            
+            {/* Product Details moved here instead of their own section */}
+            {product.texture && (
+              <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
+                <Droplet className="w-4 h-4 text-blue-500" />
+                {product.texture}
+              </Badge>
+            )}
+            
+            {product.finish && (
+              <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
+                <Layout className="w-4 h-4 text-purple-500" />
+                {product.finish}
+              </Badge>
+            )}
+            
+            {product.coverage && (
+              <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
+                <Layers className="w-4 h-4 text-amber-500" />
+                {product.coverage}
+              </Badge>
+            )}
+            
+            {product.spf && (
+              <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
+                <Shield className="w-4 h-4 text-orange-500" />
+                SPF {product.spf}
+              </Badge>
+            )}
+            
+            {product.longevity_rating ? (
+              <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
+                <Clock className="w-4 h-4 text-teal-500" />
+                Longevity: {product.longevity_rating}/10
+              </Badge>
+            ) : null }
           </motion.div>
 
           {/* Key Ingredients Section */}
@@ -221,49 +257,16 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             </div>
           </motion.div>
 
-          {/* Product Details, Suitability, and Free Of Sections in 3 Columns */}
+          {/* Best For and Free Of Sections */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
             className="w-full mb-8"
           >
-              {/* Product Details Column */}
+              {/* Best For Section (renamed from Suitability) */}
               <div className="p-6 backdrop-blur-sm">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Product Details</h3>
-                <div className="flex flex-wrap justify-center gap-3">
-                  {product.texture ? (
-                    <Badge className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200">
-                      Texture: {product.texture}
-                    </Badge>
-                  ):null}
-                  {product.finish ? (
-                    <Badge className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200">
-                      Finish: {product.finish}
-                    </Badge>
-                  ): null}
-                  {product.coverage ? (
-                    <Badge className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200">
-                      Coverage: {product.coverage}
-                    </Badge>
-                  ): null}
-                  {product.spf ? (
-                    <Badge className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200">
-                      SPF: {product.spf}
-                    </Badge>
-                  ): null}
-                  {product.longevity_rating ? (
-                    <Badge className="bg-white text-gray-700 font-[500] px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-500" />
-                      Longevity: {product.longevity_rating}/10
-                    </Badge>
-                  ) : null }
-                </div>
-              </div>
-              
-              {/* Suitability Column */}
-              <div className="p-6 backdrop-blur-sm">
-                <h3 className="text-xl font-semibold mb-4 font-[500] text-gray-800 text-center">Suitability</h3>
+                <h3 className="text-xl font-semibold mb-4 font-[500] text-gray-800 text-center">Best For</h3>
                 <div className="flex flex-wrap justify-center gap-3">
                   {product.skin_types && product.skin_types.length > 0 ? (
                     product.skin_types.map((type, index) => (
@@ -322,122 +325,14 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             )}
           </motion.div>
 
-          {/* Reviews Section
+          {/* Reviews Section - Commented out as in original file
           {product.reviews && product.reviews.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
-              className="w-full mb-8"
-            >
-              <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Reviews</h3>
-              
-              <div className="p-6 backdrop-blur-sm">
-                {product.loading_reviews ? (
-                  <div className="flex justify-center py-4">
-                    <div className="animate-pulse rounded-xl bg-gray-200 h-40 w-full"></div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="text-3xl md:text-4xl text-gray-700 font-light leading-relaxed text-center px-6 mb-4">
-                      "{product.reviews[0].review_text}"
-                    </div>
-                    <div className="flex justify-center">
-                      <StarRating rating={product.reviews[0].rating} />
-                    </div>
-                    <p className="text-center text-gray-500 mt-2">{product.reviews[0].author_name}</p>
-                    
-                    {product.reviews.length > 1 && (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setShowAllReviews(!showAllReviews)}
-                        className="bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-full mt-6 mx-auto flex items-center gap-2 transition-all duration-300 px-6 py-2 font-medium shadow-sm hover:shadow-md border border-gray-200"
-                      >
-                        {showAllReviews ? "Show Less" : `View All ${product.reviews.length} Reviews`}
-                        {showAllReviews ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      </Button>
-                    )}
-                    
-                    {showAllReviews && (
-                      <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="mt-6 pt-6 space-y-6"
-                      >
-                        {product.reviews.slice(1).map((review, index) => (
-                          <ReviewCard 
-                            key={index + 1} 
-                            review={review} 
-                            index={index + 1} 
-                          />
-                        ))}
-                      </motion.div>
-                    )}
-                  </>
-                )}
-              </div>
-            </motion.div>
+            // ... keep existing code (reviews section)
           )} */}
 
-          {/* Resources Section
+          {/* Resources Section - Commented out as in original file
           {featuredResources.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="w-full mb-8"
-            >
-              <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Content</h3>
-              
-              <div className="p-6 backdrop-blur-sm">
-                {product.loading_resources ? (
-                  <div className="flex justify-center py-4">
-                    <div className="animate-pulse rounded-xl bg-gray-200 h-60 w-full"></div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      {featuredResources.slice(0, 2).map((resourceItem, index) => (
-                        <SocialMediaResource 
-                          key={index} 
-                          resource={resourceItem.resource} 
-                          index={index} 
-                        />
-                      ))}
-                    </div>
-                    
-                    {featuredResources.length > 2 && (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setShowAllResources(!showAllResources)}
-                        className="bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-full mt-6 mx-auto flex items-center gap-2 transition-all duration-300 px-6 py-2 font-medium shadow-sm hover:shadow-md border border-gray-200"
-                      >
-                        {showAllResources ? "Show Less" : `View All ${featuredResources.length} Resources`}
-                        {showAllResources ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      </Button>
-                    )}
-                    
-                    {showAllResources && featuredResources.length > 2 && (
-                      <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="mt-6 pt-6"
-                      >
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          {featuredResources.slice(2).map((resourceItem, index) => (
-                            <SocialMediaResource 
-                              key={index + 2} 
-                              resource={resourceItem.resource} 
-                              index={index + 2} 
-                            />
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </>
-                )}
-              </div>
-            </motion.div>
+            // ... keep existing code (resources section) 
           )} */}
 
           {/* Summary */}

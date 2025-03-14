@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Info, ExternalLink } from "lucide-react";
@@ -42,7 +43,7 @@ export const IngredientPill = ({ ingredient, className }: IngredientPillProps) =
           
           <div className="space-y-2 text-sm">
             <div className="flex-col justify-between items-start">
-              <h3 className="text-xl font-bo;d">{ingredient.name}</h3>
+              <h3 className="text-xl font-bold">{ingredient.name}</h3>
               a.k.a. <br/>
               {ingredient.inci_name && (
                  <h4 className='text-[14px]'>{ingredient.inci_name}</h4>
