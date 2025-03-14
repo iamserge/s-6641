@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion, useScroll } from "framer-motion";
 import { CircleDollarSign, User } from "lucide-react";
@@ -87,7 +88,7 @@ const Navbar = () => {
                 <Link
                   key={link.name}
                   to={link.href}
-                  className="text-violet-800 hover:text-violet-600 transition-colors"
+                  className="text-gray-800 hover:text-gray-600 transition-colors"
                 >
                   {link.name}
                 </Link>
@@ -126,7 +127,7 @@ const Navbar = () => {
                 <Link
                   key={link.name}
                   to={link.href}
-                  className="text-violet-800 hover:text-violet-600 transition-colors"
+                  className="text-gray-800 hover:text-gray-600 transition-colors"
                 >
                   {link.name}
                 </Link>
