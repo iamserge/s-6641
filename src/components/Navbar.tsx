@@ -1,150 +1,140 @@
-
 import { useState, useEffect } from "react";
-import { motion, useScroll } from "framer-motion";
-import { CircleDollarSign, User } from "lucide-react";
-import { Link } from "react-router-dom";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+import UserMenu from "./UserMenu";
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import { useCurrency } from "@/hooks/useCurrency";
-
-const CurrencySelector = () => {
-  const { 
-    selectedCurrency, 
-    setSelectedCurrency,
-    currencies
-  } = useCurrency();
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
-        <span className="text-base font-medium">{selectedCurrency.symbol}</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-24 bg-white">
-        {currencies.map((currency) => (
-          <DropdownMenuItem
-            key={currency.code}
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setSelectedCurrency(currency)}
-          >
-            <span>{currency.symbol}</span>
-            <span>{currency.code}</span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
+import { Menu } from "lucide-react";
 
 const Navbar = () => {
-  const { scrollY } = useScroll();
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const { pathname } = location;
 
-  useEffect(() => {
-    const searchElement = document.querySelector('.hero-search-section');
-    if (!searchElement) return;
-
-    const unsubscribe = scrollY.onChange(value => {
-      const searchBottom = searchElement?.getBoundingClientRect().bottom;
-      setIsScrolled(value > (searchBottom || 100));
-    });
-    return () => unsubscribe();
-  }, [scrollY]);
-
-  const navLinks = [
-    { name: "Dupes", href: "/dupes" },
-    { name: "Ingredients", href: "/ingredients" },
-    { name: "Brands", href: "/brands" },
-  ];
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
 
   return (
-    <>
-      {/* Static top navbar */}
-      <div className="absolute top-0 left-0 right-0 z-40 px-6 py-4">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="flex items-center justify-between">
-            <Link to="/">
-              <img 
-                src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
-                alt="Dupe Academy Logo" 
-                className="h-8"
+    <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/70 border-b border-gray-100">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
+              <motion.img
+                src="/logo-dupes.svg"
+                alt="Beauty Dupes Logo"
+                width={32}
+                height={32}
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 0.2 }}
               />
+              <span className="font-bold text-xl">BeautyDupes</span>
             </Link>
             
-            <div className="hidden md:flex space-x-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  className="text-gray-800 hover:text-gray-600 transition-colors"
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </div>
+            <nav className="hidden md:flex items-center space-x-4 ml-4">
+              <Link
+                to="/"
+                className={cn(
+                  "text-sm transition-colors hover:text-primary",
+                  pathname === "/" ? "text-primary font-medium" : "text-muted-foreground"
+                )}
+              >
+                Home
+              </Link>
+              <Link
+                to="/dupes"
+                className={cn(
+                  "text-sm transition-colors hover:text-primary",
+                  pathname.includes("/dupes") ? "text-primary font-medium" : "text-muted-foreground"
+                )}
+              >
+                Dupes
+              </Link>
+              <Link
+                to="/brands"
+                className={cn(
+                  "text-sm transition-colors hover:text-primary",
+                  pathname === "/brands" ? "text-primary font-medium" : "text-muted-foreground"
+                )}
+              >
+                Brands
+              </Link>
+              <Link
+                to="/ingredients"
+                className={cn(
+                  "text-sm transition-colors hover:text-primary",
+                  pathname === "/ingredients" ? "text-primary font-medium" : "text-muted-foreground"
+                )}
+              >
+                Ingredients
+              </Link>
+            </nav>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {/* Replace search button with UserMenu component */}
+            <UserMenu />
             
-            <div className="flex items-center gap-4">
-              <CurrencySelector />
-              <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30">
-                <User className="w-5 h-5" />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMobileMenu}
+              className="md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
-
-      {/* Sticky navbar that appears on scroll */}
-      <motion.nav 
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: isScrolled ? 0 : -100, opacity: isScrolled ? 1 : 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="fixed w-full z-50 px-6 py-4 backdrop-blur-[5px] bg-white/20"
+      
+      <motion.div
+        className="md:hidden absolute top-full left-0 w-full bg-white shadow-md border-b border-gray-100"
+        style={{ display: isMobileMenuOpen ? 'block' : 'none' }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: isMobileMenuOpen ? 1 : 0, y: isMobileMenuOpen ? 0 : -10 }}
+        transition={{ duration: 0.2 }}
       >
-        <div className="max-w-[1200px] mx-auto">
-          <div className="flex items-center justify-between">
-            <Link to="/">
-              <img 
-                src="/lovable-uploads/52ac84d3-c972-4947-9aab-008fcc78be99.png" 
-                alt="Dupe Academy Logo" 
-                className="h-8"
-              />
-            </Link>
-            
-            <div className="hidden md:flex space-x-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  className="text-gray-800 hover:text-gray-600 transition-colors"
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <CurrencySelector />
-              <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30">
-                <User className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </motion.nav>
-    </>
+        <nav className="flex flex-col p-4 space-y-2">
+          <Link
+            to="/"
+            className={cn(
+              "block text-sm transition-colors hover:text-primary",
+              pathname === "/" ? "text-primary font-medium" : "text-muted-foreground"
+            )}
+          >
+            Home
+          </Link>
+          <Link
+            to="/dupes"
+            className={cn(
+              "block text-sm transition-colors hover:text-primary",
+              pathname.includes("/dupes") ? "text-primary font-medium" : "text-muted-foreground"
+            )}
+          >
+            Dupes
+          </Link>
+          <Link
+            to="/brands"
+            className={cn(
+              "block text-sm transition-colors hover:text-primary",
+              pathname === "/brands" ? "text-primary font-medium" : "text-muted-foreground"
+            )}
+          >
+            Brands
+          </Link>
+          <Link
+            to="/ingredients"
+            className={cn(
+              "block text-sm transition-colors hover:text-primary",
+              pathname === "/ingredients" ? "text-primary font-medium" : "text-muted-foreground"
+            )}
+          >
+            Ingredients
+          </Link>
+        </nav>
+      </motion.div>
+    </header>
   );
 };
 
