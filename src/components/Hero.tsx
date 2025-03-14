@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -519,7 +520,8 @@ const Hero = () => {
               </div>
               <div>
                 <div className="text-xs text-purple-500 font-medium">Step 2</div>
-                <p className="text-sm text-gray-700">Sit pretty while we find your affordable twins 👯‍♀️ (new products need ~1min for our beauty AI to perfect-match)</p>
+                <p className="text-sm text-gray-700">Sit pretty while we find your affordable twins 👯‍♀️</p>
+                <p className="text-xs text-gray-500">new products need ~1min for our beauty AI to perfect-match</p>
               </div>
             </div>
             
