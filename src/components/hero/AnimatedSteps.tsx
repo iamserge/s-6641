@@ -1,23 +1,24 @@
 
 import { motion } from "framer-motion";
-import { Search, Sparkles, ScrollText } from "lucide-react";
+import { DollarSign, Clock, Trophy } from "lucide-react";
 
 const AnimatedSteps = () => {
   const steps = [
     {
-      icon: <Search className="w-5 h-5 text-gray-800" />,
-      title: "Find Your Product",
-      description: "Search for your favorite high-end beauty product or take a photo."
+      icon: <DollarSign className="w-5 h-5 text-gray-800" />,
+      title: "Step 1",
+      description: "Get makeup price shock 😱 (we've all been there)"
     },
     {
-      icon: <Sparkles className="w-5 h-5 text-gray-800" />,
-      title: "Discover Dupes",
-      description: "Our AI analyzes ingredients and finds affordable alternatives that match."
+      icon: <Clock className="w-5 h-5 text-gray-800" />,
+      title: "Step 2",
+      description: "Sit pretty while we find your affordable twins 👯‍♀️",
+      subtext: "new products need ~1min for our beauty AI to perfect-match"
     },
     {
-      icon: <ScrollText className="w-5 h-5 text-gray-800" />,
-      title: "Compare & Save",
-      description: "See side-by-side comparisons and save up to 70% without sacrificing quality."
+      icon: <Trophy className="w-5 h-5 text-gray-800" />,
+      title: "Finally",
+      description: "Keep your look, lose the cost, win at life 🏆"
     }
   ];
 
@@ -52,6 +53,7 @@ const AnimatedSteps = () => {
             </div>
             <h3 className="text-xl font-medium text-gray-800 mb-2">{step.title}</h3>
             <p className="text-gray-700">{step.description}</p>
+            {step.subtext && <p className="text-sm text-gray-500 mt-1">{step.subtext}</p>}
           </motion.div>
         ))}
       </div>
