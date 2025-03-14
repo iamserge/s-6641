@@ -188,7 +188,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             transition={{ delay: 0.5 }}
             className="w-full mb-8"
           >
-            <h3 className="text-xl font-semibold text-gray-800 text-center mb-4">Key Ingredients</h3>
+            <h3 className="text-xl font-semibold text-gray-800 text-center mb-4">Ingredients</h3>
             
             <div className="backdrop-blur-sm rounded-xl">
               {product.loading_ingredients ? (
@@ -209,7 +209,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                   </TooltipProvider>
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-2 text-base">No key ingredients information available</p>
+                <p className="text-gray-500 text-center py-2 text-base">No ingredients information available</p>
               )}
             </div>
           </motion.div>

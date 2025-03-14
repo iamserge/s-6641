@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, Leaf, Check, DollarSign, Star, ExternalLink, ChevronDown, ChevronUp, MapPin, Droplet, Layout, Layers, Shield, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -199,12 +198,13 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                 </div>
               </div>
               
-              {commonIngredients.length > 0 ? (
-                <div className="mb-4">
-                  <h4 className="text-base font-medium mb-2 text-gray-800">
-                    Matching Ingredients {commonIngredientsPercentage > 0 ? `(${commonIngredientsPercentage}% Match)` : ''}
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
+              <div className="mb-4">
+                <h4 className="text-base font-medium mb-2 text-gray-800">
+                  Ingredients {commonIngredients.length > 0 ? `(${commonIngredients.length} matching with original)` : ''}
+                </h4>
+                
+                {commonIngredients.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 mb-3">
                     {commonIngredients.map((ingredient, i) => (
                       <Badge
                         key={i}
@@ -216,11 +216,8 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                       </Badge>
                     ))}
                   </div>
-                </div>
-              ) : null}
-              
-              <div className="mb-4">
-                <h4 className="text-base font-medium mb-2 text-gray-800">Key Ingredients</h4>
+                ) : null}
+                
                 {dupe.loading_ingredients ? (
                   <div className="flex py-2">
                     <div className="animate-pulse rounded-full bg-gray-200 h-8 w-24"></div>
@@ -238,7 +235,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                     </TooltipProvider>
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-sm py-1">No key ingredients information available</p>
+                  <p className="text-gray-500 text-sm py-1">No ingredients information available</p>
                 )}
               </div>
 
