@@ -78,17 +78,19 @@ export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop }: DupeBo
                           ~${Math.round(activeDupe.price)} 
                         </Badge>
                       ) : null}
-                      
-                      {activeDupe.savings_percentage > 0 ? (
-                        <Badge className="bg-pink-100 text-pink-700 px-3 py-1.5 font-medium text-sm rounded-full">
-                          Save {Math.round(activeDupe.savings_percentage)}%
-                        </Badge>
-                      ) : null}
                     </div>
                     
-                    <p className="text-sm text-gray-700 font-medium">
-                      {activeDupe.brand} <span className="font-semibold text-violet-700">{activeDupe.name}</span>
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-gray-700 font-medium">
+                        {activeDupe.brand} <span className="font-semibold text-violet-700">{activeDupe.name}</span>
+                      </p>
+                      
+                      {activeDupe.savings_percentage > 0 && (
+                        <Badge variant="pastelPink" className="px-2 py-0.5 text-xs font-medium rounded-full">
+                          Save {Math.round(activeDupe.savings_percentage)}%
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
