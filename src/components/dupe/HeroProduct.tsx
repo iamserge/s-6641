@@ -199,9 +199,9 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             transition={{ delay: 0.5 }}
             className="w-full mb-8"
           >
-            <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Key Ingredients</h3>
+            <h3 className="text-xl font-semibold text-gray-800 text-center">Key Ingredients</h3>
             
-            <div className="bg-gradient-to-r from-gray-50/70 to-white/70 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="backdrop-blur-sm rounded-xl p-6  ">
               {product.loading_ingredients ? (
                 <div className="flex justify-center py-4">
                   <div className="animate-pulse rounded-full bg-gray-200 h-10 w-40"></div>

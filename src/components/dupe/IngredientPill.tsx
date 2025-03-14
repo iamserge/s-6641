@@ -24,7 +24,7 @@ export const IngredientPill = ({ ingredient, className }: IngredientPillProps) =
       <Badge 
         variant="outline" 
         className={`
-          rounded-full text-gray-700 font-[500] transition-all hover:bg-white flex items-center gap-1 px-3 py-1
+          rounded-full text-gray-700 font-[500] transition-all bg-white flex items-center gap-1 px-3 py-1
           ${ingredient.is_controversial ? 'border-rose-200 text-rose-700' : 'border-gray-200'}
           ${ingredient.is_controversial ? 'hover:bg-rose-50' : 'hover:bg-gray-50'}
           ${className}
