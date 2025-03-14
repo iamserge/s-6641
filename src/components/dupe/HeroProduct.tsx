@@ -187,17 +187,17 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             transition={{ delay: 0.5 }}
             className="w-full mb-8"
           >
-            <h3 className="text-xl font-semibold text-gray-800 text-center">Key Ingredients</h3>
+            <h3 className="text-xl font-semibold text-gray-800 text-center mb-4">Key Ingredients</h3>
             
-            <div className="backdrop-blur-sm rounded-xl p-6  ">
+            <div className="backdrop-blur-sm rounded-xl   ">
               {product.loading_ingredients ? (
                 <div className="flex justify-center py-4">
                   <div className="animate-pulse rounded-full bg-gray-200 h-10 w-40"></div>
                 </div>
-              ) : notableIngredients.length > 0 ? (
+              ) : allIngredients.length > 0 ? (
                 <div className="flex flex-wrap justify-center gap-3 mb-4 relative">
                   <TooltipProvider delayDuration={100}>
-                    {notableIngredients.map((ingredient, index) => (
+                    {allIngredients.map((ingredient, index) => (
                       <div key={`notable-${index}`} className="z-20 relative">
                         <IngredientPill 
                           ingredient={ingredient} 
@@ -211,38 +211,9 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 <p className="text-gray-500 text-center py-2 text-base">No key ingredients information available</p>
               )}
               
-              {allIngredients.length > notableIngredients.length ? (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowAllIngredients(!showAllIngredients)}
-                  className="bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-full mt-4 mx-auto flex items-center gap-2 transition-all duration-300 px-6 py-2 font-medium shadow-sm hover:shadow-md border border-gray-200"
-                >
-                  {showAllIngredients ? "Show Less" : "Show All Ingredients"}
-                  {showAllIngredients ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </Button>
-              ) : null}
+            
               
-              {showAllIngredients ? (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="mt-6 pt-4"
-                >
-                  <h4 className="text-lg font-medium mb-4 text-gray-700 text-center">All Ingredients</h4>
-                  <div className="flex flex-wrap justify-center gap-3 relative">
-                    <TooltipProvider delayDuration={100}>
-                      {allIngredients.map((ingredient, index) => (
-                        <div key={`all-${index}`} className="z-20 relative">
-                          <IngredientPill 
-                            ingredient={ingredient} 
-                            className="text-base px-5 py-2.5 shadow-sm transition-all duration-200 hover:shadow-md"
-                          />
-                        </div>
-                      ))}
-                    </TooltipProvider>
-                  </div>
-                </motion.div>
-              ) : null}
+        
             </div>
           </motion.div>
 
@@ -252,14 +223,14 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             transition={{ delay: 0.6 }}
             className="w-full mb-8 grid md:grid-cols-2 gap-6"
           >
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
+            <div>
               <h3 className="text-xl font-semibold mb-4 font-[500] text-gray-800 text-center">Best For</h3>
               <div className="flex flex-wrap justify-center gap-3">
                 {product.skin_types && product.skin_types.length > 0 ? (
                   product.skin_types.map((type, index) => (
                     <Badge 
                       key={`skin-${index}`} 
-                      className="bg-white text-gray-700 font-[500] px-5 py-2 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
+                      className="bg-white text-gray-700 font-[500] px- py-2 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
                     >
                       {type}
                     </Badge>
@@ -281,7 +252,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               </div>
             </div>
             
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
+            <div >
               <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Free Of</h3>
               <div className="flex flex-wrap justify-center gap-3">
                 {product.free_of && product.free_of.length > 0 ? (
@@ -298,15 +269,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 )}
               </div>
             </div>
-          
-            {product.description ? (
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 md:col-span-2">
-                <h3 className="text-xl font-semibold mb-3 text-gray-800">Description</h3>
-                <p className="text-gray-700">
-                  {product.description}
-                </p>
-              </div>
-            ) : null}
+            
           </motion.div>
 
           {product.summary ? (
@@ -314,7 +277,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
-              className="w-full"
+              className="w-full mt-10"
             >
               <h3 className="text-xl font-semibold mb-3 text-gray-800 text-center">Summary</h3>
               <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
