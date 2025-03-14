@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -47,10 +46,8 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showAllResources, setShowAllResources] = useState(false);
 
-  // Get featured resources
   const featuredResources = product.resources;
 
-  // Group ingredients by importance and sensitivity
   const notableIngredients = product.ingredients?.filter(i => i.is_controversial || i.benefits?.length > 0) || [];
   const allIngredients = product.ingredients || [];
 
@@ -62,7 +59,6 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center text-center relative"
         >
-          {/* Brand & Title Section */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -77,23 +73,21 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               by {product.brand}
             </p>
             
-            {/* Ratings Display */}
-            {product.rating && (
+            {product.rating ? (
               <div className="flex justify-center items-center gap-2 mb-2">
                 <StarRating rating={product.rating} />
-                {product.rating_count && (
+                {product.rating_count ? (
                   <span className="text-sm text-gray-500">
                     ({product.rating_count.toLocaleString()} reviews)
                   </span>
-                )}
+                ) : null}
               </div>
-            )}
-            {product.rating_source && (
+            ) : null}
+            {product.rating_source ? (
               <span className="text-xs text-gray-400">via {product.rating_source}</span>
-            )}
+            ) : null}
           </motion.div>
 
-          {/* Product Image with Price Badge */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -109,90 +103,84 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                   className="object-contain w-full h-full p-1"
                 />
               </div>
-              
-             
             </div>
-             {/* Price Badge - Positioned on top right of the image but OUTSIDE the overflow hidden container */}
-             {product.price && (
-                <div className="absolute -top-3 -right-3 bg-white text-gray-800 px-4 py-2 rounded-full font-bold shadow-md border border-gray-100 z-10 hover:shadow-lg transition-all duration-200">
-                  ~${Math.round(product.price)}
-                </div>
-              )}
+            {product.price ? (
+              <div className="absolute -top-3 -right-3 bg-white text-gray-800 px-4 py-2 rounded-full font-bold shadow-md border border-gray-100 z-10 hover:shadow-lg transition-all duration-200">
+                ~${Math.round(product.price)}
+              </div>
+            ) : null}
           </motion.div>
 
-          {/* Main Info Badges */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
             className="flex flex-wrap justify-center gap-3 mb-8"
           >
-            {product.category && (
+            {product.category ? (
               <Badge className="bg-white text-gray-700 px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 {product.category}
               </Badge>
-            )}
+            ) : null}
             
-            {product.country_of_origin && (
+            {product.country_of_origin ? (
               <Badge className="bg-white text-gray-700 px-5 py-2.5 text-base flex items-center gap-2 rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 <MapPin className="w-4 h-4 text-gray-500" />
                 <span>{getFlagEmoji(product.country_of_origin)}</span>
                 {product.country_of_origin}
               </Badge>
-            )}
+            ) : null}
             
-            {product.cruelty_free && (
+            {product.cruelty_free ? (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 <Heart className="w-4 h-4 text-pink-500" />
                 Cruelty-Free
               </Badge>
-            )}
+            ) : null}
             
-            {product.vegan && (
+            {product.vegan ? (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 <Leaf className="w-4 h-4 text-green-500" />
                 Vegan
               </Badge>
-            )}
+            ) : null}
             
-            {/* Product Details moved here instead of their own section */}
-            {product.texture && (
+            {product.texture ? (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 <Droplet className="w-4 h-4 text-blue-500" />
-                {product.texture}
+                Texture: {product.texture}
               </Badge>
-            )}
+            ) : null}
             
-            {product.finish && (
+            {product.finish ? (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 <Layout className="w-4 h-4 text-purple-500" />
-                {product.finish}
+                Finish: {product.finish}
               </Badge>
-            )}
+            ) : null}
             
-            {product.coverage && (
+            {product.coverage ? (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 <Layers className="w-4 h-4 text-amber-500" />
-                {product.coverage}
+                Coverage: {product.coverage}
               </Badge>
-            )}
+            ) : null}
             
-            {product.spf && product.spf > 0 && (
+            {product.spf && product.spf > 0 ? (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 <Shield className="w-4 h-4 text-orange-500" />
                 SPF {product.spf}
               </Badge>
-            )}
+            ) : null}
             
-            {product.longevity_rating && product.longevity_rating > 0 && (
+            {product.longevity_rating && product.longevity_rating > 0 ? (
               <Badge className="bg-white text-gray-700 flex gap-2 items-center px-5 py-2.5 text-base rounded-full border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200 font-medium">
                 <Clock className="w-4 h-4 text-teal-500" />
                 Longevity: {product.longevity_rating}/10
               </Badge>
-            )}
+            ) : null}
           </motion.div>
 
-          {/* Key Ingredients Section */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -223,7 +211,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 <p className="text-gray-500 text-center py-2 text-base">No key ingredients information available</p>
               )}
               
-              {allIngredients.length > notableIngredients.length && (
+              {allIngredients.length > notableIngredients.length ? (
                 <Button 
                   variant="outline" 
                   onClick={() => setShowAllIngredients(!showAllIngredients)}
@@ -232,9 +220,9 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                   {showAllIngredients ? "Show Less" : "Show All Ingredients"}
                   {showAllIngredients ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </Button>
-              )}
+              ) : null}
               
-              {showAllIngredients && (
+              {showAllIngredients ? (
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -254,18 +242,16 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                     </TooltipProvider>
                   </div>
                 </motion.div>
-              )}
+              ) : null}
             </div>
           </motion.div>
 
-          {/* Best For and Free Of Sections */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
             className="w-full mb-8 grid md:grid-cols-2 gap-6"
           >
-            {/* Best For Section */}
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
               <h3 className="text-xl font-semibold mb-4 font-[500] text-gray-800 text-center">Best For</h3>
               <div className="flex flex-wrap justify-center gap-3">
@@ -282,7 +268,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                   <p className="text-gray-500 text-base">No skin type information</p>
                 )}
                 
-                {product.best_for && product.best_for.length > 0 && 
+                {product.best_for && product.best_for.length > 0 ? 
                   product.best_for.map((item, index) => (
                     <Badge 
                       key={`best-${index}`} 
@@ -291,11 +277,10 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                       {item}
                     </Badge>
                   ))
-                }
+                : null}
               </div>
             </div>
             
-            {/* Free Of Column */}
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100">
               <h3 className="text-xl font-semibold mb-4 text-gray-800 text-center">Free Of</h3>
               <div className="flex flex-wrap justify-center gap-3">
@@ -314,30 +299,17 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
               </div>
             </div>
           
-          
-            {/* Description */}
-            {product.description && (
+            {product.description ? (
               <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 md:col-span-2">
                 <h3 className="text-xl font-semibold mb-3 text-gray-800">Description</h3>
                 <p className="text-gray-700">
                   {product.description}
                 </p>
               </div>
-            )}
+            ) : null}
           </motion.div>
 
-          {/* Reviews Section - Commented out as in original file
-          {product.reviews && product.reviews.length > 0 && (
-            // ... keep existing code (reviews section)
-          )} */}
-
-          {/* Resources Section - Commented out as in original file
-          {featuredResources.length > 0 && (
-            // ... keep existing code (resources section) 
-          )} */}
-
-          {/* Summary */}
-          {product.summary && (
+          {product.summary ? (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -351,7 +323,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
                 </p>
               </div>
             </motion.div>
-          )}
+          ) : null}
         </motion.div>
       </div>
     </div>

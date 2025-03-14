@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, Leaf, Check, DollarSign, Star, ExternalLink, ChevronDown, ChevronUp, MapPin, Droplet, Layout, Layers, Shield, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -50,7 +49,6 @@ const StarRating = ({ rating }: { rating: number }) => {
 export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, showBottomBar = false }: DupeCardProps) => {
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
   
-  // Calculate common ingredients with original product
   const dupeIngredientNames = dupe.ingredients?.map(i => i.name.toLowerCase()) || [];
   
   const commonIngredients = originalIngredients?.filter(ing => 
@@ -61,21 +59,16 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
     ? Math.round((commonIngredients.length / originalIngredients.length) * 100)
     : 0;
   
-  // Calculate savings percentage on the fly if original price is provided
   const calculatedSavingsPercentage = originalPrice && dupe.price && originalPrice > 0
     ? Math.round(((originalPrice - dupe.price) / originalPrice) * 100)
     : dupe.savings_percentage;
   
-  // Notable ingredients (with benefits or safety concerns)
   const notableIngredients = dupe.ingredients?.filter(i => i.is_controversial || i.benefits?.length > 0) || [];
   
-  // Beneficial ingredients (with benefits but not controversial)
   const beneficialIngredients = dupe.ingredients?.filter(i => i.benefits?.length > 0 && !i.is_controversial) || [];
   
-  // Problematic ingredients
   const problematicIngredients = dupe.ingredients?.filter(i => i.is_controversial) || [];
 
-  // Review navigation
   const nextReview = () => {
     if (dupe.reviews && dupe.reviews.length > 0) {
       setCurrentReviewIndex((prev) => (prev + 1) % dupe.reviews.length);
@@ -96,25 +89,23 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
       className="w-full"
     >
       <Card className="w-full backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200 relative bg-white/50 my-6">
-        {/* Match Score and Price Banner */}
         <div className="flex justify-between items-center p-5">
           <Badge variant="outline" className="text-gray-700 font-medium px-4 py-1.5 text-sm rounded-full border-gray-200">
             {Math.round(dupe.match_score)}% Match
           </Badge>
           
-          {dupe.price && (
+          {dupe.price ? (
             <Badge variant="outline" className="text-gray-700 font-medium px-4 py-1.5 text-sm rounded-full border-gray-200">
               ~${Math.round(dupe.price)}
               {calculatedSavingsPercentage > 0 && (
                 <span className="ml-2 text-green-600">(-{calculatedSavingsPercentage}%)</span>
               )}
             </Badge>
-          )}
+          ) : null}
         </div>
         
         <CardContent className="px-5 pb-6 pt-2">
           <div className="flex flex-col md:flex-row gap-6">
-            {/* Left Column - Circular Image */}
             <div className="w-full md:w-1/4 lg:w-1/5">
               <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden bg-white shadow-sm p-1 mx-auto md:mx-0">
                 <div className="w-full h-full rounded-full bg-gray-50 flex items-center justify-center overflow-hidden">
@@ -127,93 +118,87 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                 </div>
               </div>
               
-              {/* Ratings if available */}
-              {dupe.rating && dupe.rating > 0 && (
+              {dupe.rating && dupe.rating > 0 ? (
                 <div className="flex items-center justify-center md:justify-start mt-3 mb-2">
                   <StarRating rating={dupe.rating} />
                 </div>
-              )}
+              ) : null}
             </div>
             
-            {/* Right Column - Product Details */}
             <div className="w-full md:w-3/4 lg:w-4/5">
-              {/* Brand & Title */}
               <div className="mb-4">
                 <h3 className="text-xl font-semibold text-gray-800 mb-1">{dupe.name}</h3>
                 <p className="text-base text-gray-600 mb-2">by {dupe.brand}</p>
                 
-                {/* Notes - Moved directly below brand with no title */}
-                {dupe.notes && (
+                {dupe.notes ? (
                   <p className="text-base text-gray-700 leading-relaxed mt-3 mb-2">
                     {dupe.notes}
                   </p>
-                )}
+                ) : null}
               </div>
               
-              {/* Key Details Section - Moved badges here */}
               <div className="mb-4">
                 <div className="flex flex-wrap gap-2.5">
-                  {dupe.country_of_origin && (
+                  {dupe.country_of_origin ? (
                     <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <MapPin className="w-3 h-3 text-gray-500" />
                       <span>{getFlagEmoji(dupe.country_of_origin)}</span>
                       {dupe.country_of_origin}
                     </Badge>
-                  )}
+                  ) : null}
                 
-                  {dupe.texture && (
+                  {dupe.texture ? (
                     <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Droplet className="w-3 h-3 text-blue-500" />
-                      {dupe.texture}
+                      Texture: {dupe.texture}
                     </Badge>
-                  )}
+                  ) : null}
                   
-                  {dupe.finish && (
+                  {dupe.finish ? (
                     <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Layout className="w-3 h-3 text-purple-500" />
-                      {dupe.finish}
+                      Finish: {dupe.finish}
                     </Badge>
-                  )}
+                  ) : null}
                   
-                  {dupe.coverage && (
+                  {dupe.coverage ? (
                     <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Layers className="w-3 h-3 text-amber-500" />
-                      {dupe.coverage}
+                      Coverage: {dupe.coverage}
                     </Badge>
-                  )}
+                  ) : null}
                   
-                  {dupe.spf && dupe.spf > 0 && (
+                  {dupe.spf && dupe.spf > 0 ? (
                     <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Shield className="w-3 h-3 text-orange-500" />
                       SPF {dupe.spf}
                     </Badge>
-                  )}
+                  ) : null}
                   
-                  {dupe.longevity_rating && dupe.longevity_rating > 0 && (
+                  {dupe.longevity_rating && dupe.longevity_rating > 0 ? (
                     <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Clock className="w-3 h-3 text-teal-500" />
                       Longevity: {dupe.longevity_rating}/10
                     </Badge>
-                  )}
+                  ) : null}
                   
-                  {dupe.cruelty_free && (
+                  {dupe.cruelty_free ? (
                     <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Heart className="w-3 h-3 text-pink-500" />
                       Cruelty-Free
                     </Badge>
-                  )}
+                  ) : null}
                   
-                  {dupe.vegan && (
+                  {dupe.vegan ? (
                     <Badge variant="outline" className="text-gray-700 flex gap-1 items-center px-3 py-1.5 text-sm rounded-full border-gray-200">
                       <Leaf className="w-3 h-3 text-green-500" />
                       Vegan
                     </Badge>
-                  )}
+                  ) : null}
                 </div>
               </div>
               
-              {/* Matching Ingredients Section */}
-              {commonIngredients.length > 0 && (
+              {commonIngredients.length > 0 ? (
                 <div className="mb-4">
                   <h4 className="text-base font-medium mb-2 text-gray-800">
                     Matching Ingredients {commonIngredientsPercentage > 0 ? `(${commonIngredientsPercentage}% Match)` : ''}
@@ -231,9 +216,8 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null}
               
-              {/* Key Ingredients Section */}
               <div className="mb-4">
                 <h4 className="text-base font-medium mb-2 text-gray-800">Key Ingredients</h4>
                 {dupe.loading_ingredients ? (
@@ -258,12 +242,11 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
               </div>
 
               <div className="grid md:grid-cols-2 gap-4 mt-5">
-                {/* Best For Section */}
-                {(dupe.skin_types?.length > 0 || dupe.best_for?.length > 0) && (
+                {(dupe.skin_types?.length > 0 || dupe.best_for?.length > 0) ? (
                   <div className="rounded-xl border border-gray-100 p-4">
                     <h4 className="text-base font-medium mb-2 text-gray-800">Best For</h4>
                     <div className="flex flex-wrap gap-2">
-                      {dupe.skin_types && dupe.skin_types.length > 0 && 
+                      {dupe.skin_types && dupe.skin_types.length > 0 ? 
                         dupe.skin_types.map((type, index) => (
                           <Badge 
                             key={`skin-${index}`} 
@@ -273,9 +256,9 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                             {type}
                           </Badge>
                         ))
-                      }
+                      : null}
                       
-                      {dupe.best_for && dupe.best_for.length > 0 && 
+                      {dupe.best_for && dupe.best_for.length > 0 ? 
                         dupe.best_for.map((item, index) => (
                           <Badge 
                             key={`best-${index}`} 
@@ -285,13 +268,12 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                             {item}
                           </Badge>
                         ))
-                      }
+                      : null}
                     </div>
                   </div>
-                )}
+                ) : null}
                 
-                {/* Free Of Section */}
-                {dupe.free_of && dupe.free_of.length > 0 && (
+                {dupe.free_of && dupe.free_of.length > 0 ? (
                   <div className="rounded-xl border border-gray-100 p-4">
                     <h4 className="text-base font-medium mb-2 text-gray-800">Free Of</h4>
                     <div className="flex flex-wrap gap-2">
@@ -306,15 +288,14 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                       ))}
                     </div>
                   </div>
-                )}
+                ) : null}
               </div>
               
-              {/* Reviews Slider */}
-              {dupe.reviews && dupe.reviews.length > 0 && (
+              {dupe.reviews && dupe.reviews.length > 0 ? (
                 <div className="mt-5 border-t border-gray-100 pt-5">
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="text-base font-medium text-gray-800">Reviews</h4>
-                    {dupe.reviews.length > 1 && (
+                    {dupe.reviews.length > 1 ? (
                       <div className="flex items-center gap-1">
                         <span className="text-sm text-gray-500">{currentReviewIndex + 1}/{dupe.reviews.length}</span>
                         <div className="flex">
@@ -338,7 +319,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                           </Button>
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                   
                   <div className="relative">
@@ -348,10 +329,9 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                     />
                   </div>
                 </div>
-              )}
+              ) : null}
               
-              {/* Purchase Options */}
-              {dupe.offers && dupe.offers.length > 0 && (
+              {dupe.offers && dupe.offers.length > 0 ? (
                 <div className="mt-5 border-t border-gray-100 pt-5">
                   <h4 className="text-base font-medium mb-3 text-gray-800">Where to Buy</h4>
                   <div className="space-y-2">
@@ -372,7 +352,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </CardContent>

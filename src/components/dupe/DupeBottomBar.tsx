@@ -62,11 +62,11 @@ export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop }: DupeBo
                       {Math.round(activeDupe.match_score)}% Match
                     </Badge>
                     
-                    {activeDupe.price && activeDupe.savings_percentage > 0 && (
+                    {activeDupe.price && activeDupe.savings_percentage > 0 ? (
                       <Badge className="bg-green-100 text-green-700 px-3 py-1.5 font-medium text-sm rounded-full">
                         ~${Math.round(activeDupe.price)} (-{Math.round(activeDupe.savings_percentage)}%)
                       </Badge>
-                    )}
+                    ) : null}
                   </div>
                   
                   <p className="text-sm text-gray-700 font-medium">
