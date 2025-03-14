@@ -128,7 +128,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
               </div>
               
               {/* Ratings if available */}
-              {dupe.rating && (
+              {dupe.rating && dupe.rating > 0 && (
                 <div className="flex items-center justify-center md:justify-start mt-3 mb-2">
                   <StarRating rating={dupe.rating} />
                 </div>
@@ -268,7 +268,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                           <Badge 
                             key={`skin-${index}`} 
                             variant="outline" 
-                            className="rounded-full text-blue-700 border-blue-100 px-3 py-1 hover:bg-blue-50"
+                            className="rounded-full text-gray-700 border-gray-200 px-3 py-1"
                           >
                             {type}
                           </Badge>
@@ -280,7 +280,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
                           <Badge 
                             key={`best-${index}`} 
                             variant="outline" 
-                            className="rounded-full text-blue-700 border-blue-100 px-3 py-1 hover:bg-blue-50"
+                            className="rounded-full text-gray-700 border-gray-200 px-3 py-1"
                           >
                             {item}
                           </Badge>
