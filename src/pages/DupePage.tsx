@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -22,7 +21,6 @@ const DupePage = () => {
   const [showBottomBar, setShowBottomBar] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
 
-  // Fetch product data when the component mounts
   useEffect(() => {
     const fetchProductData = async () => {
       if (!slug) {
@@ -86,7 +84,6 @@ const DupePage = () => {
     fetchProductData();
   }, [slug]);
 
-  // Fetch dupes data when the product is loaded
   useEffect(() => {
     const fetchDupesData = async () => {
       if (!product || !product?.id) return;
@@ -163,7 +160,6 @@ const DupePage = () => {
           })
         );
 
-        // Sort dupes by match score in descending order
         processedDupes.sort((a, b) => b.match_score - a.match_score);
 
         setProduct(prevProduct => {
@@ -186,13 +182,11 @@ const DupePage = () => {
     }
   }, [product?.id]);
 
-  // Get the active dupe based on the active index
   const activeDupe = useMemo(() => 
     activeDupeIndex >= 0 && product?.dupes ? 
     product.dupes[activeDupeIndex] : null, 
   [activeDupeIndex, product?.dupes]);
   
-  // Scroll to top function
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -200,12 +194,10 @@ const DupePage = () => {
     });
   };
 
-  // Show loading state while product data is loading
   if (isLoadingProduct) {
     return <DupeLoading message="Loading product details..." />;
   }
 
-  // Show error message if there was an error or no product was found
   if (error || !product) {
     return <ErrorMessage error={error} />;
   }
@@ -238,6 +230,7 @@ const DupePage = () => {
         showBottomBar={showBottomBar}
         activeDupe={activeDupe}
         scrollToTop={scrollToTop}
+        originalPrice={product.price}
       />
     </div>
   );

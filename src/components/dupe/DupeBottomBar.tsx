@@ -18,9 +18,10 @@ interface DupeBottomBarProps {
   showBottomBar: boolean;
   activeDupe: Dupe | null;
   scrollToTop: () => void;
+  originalPrice?: number;
 }
 
-export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop }: DupeBottomBarProps) => {
+export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop, originalPrice }: DupeBottomBarProps) => {
   if (!activeDupe) return null;
   
   const handleGoogleSearch = () => {
@@ -28,6 +29,10 @@ export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop }: DupeBo
     const encodedSearchQuery = encodeURIComponent(searchQuery);
     window.open(`https://www.google.com/search?q=${encodedSearchQuery}`, '_blank');
   };
+  
+  const calculatedSavingsPercentage = originalPrice && activeDupe.price && originalPrice > 0
+    ? Math.round(((originalPrice - activeDupe.price) / originalPrice) * 100)
+    : activeDupe.savings_percentage;
   
   return (
     <>
@@ -76,6 +81,9 @@ export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop }: DupeBo
                       {activeDupe.price ? (
                         <Badge className="bg-green-100 text-green-700 px-3 py-1.5 font-medium text-sm rounded-full">
                           ~${Math.round(activeDupe.price)} 
+                          {calculatedSavingsPercentage > 0 ? (
+                            <span className="ml-1 text-green-600">(-{calculatedSavingsPercentage}%)</span>
+                          ) : null}
                         </Badge>
                       ) : null}
                     </div>
@@ -84,12 +92,6 @@ export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop }: DupeBo
                       <p className="text-sm text-gray-700 font-medium">
                         {activeDupe.brand} <span className="font-semibold text-violet-700">{activeDupe.name}</span>
                       </p>
-                      
-                      {activeDupe.savings_percentage > 0 && (
-                        <Badge variant="pastelPink" className="px-2 py-0.5 text-xs font-medium rounded-full">
-                          Save {Math.round(activeDupe.savings_percentage)}%
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </div>
