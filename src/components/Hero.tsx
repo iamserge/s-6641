@@ -439,6 +439,9 @@ const Hero = () => {
           animate={{ scale: 1 }}
           transition={{ duration: 0.6, ease: [0.6, -0.05, 0.01, 0.99], delay: 0.2 }}
         />
+        <h1 className="text-3xl md:text-4xl text-gray-800 font-medium mb-4">
+          Outsmart the Beauty Industry, One Dupe at a Time 🧠
+        </h1>
         <div className="text-2xl md:text-3xl text-gray-600 font-extralight flex justify-center gap-2 md:gap-3">
           {["Smart", "Dupes,", "Stunning", "You"].map((word, index) => (
             <motion.span
@@ -525,7 +528,7 @@ const Hero = () => {
         />
       </motion.form>
 
-      {/* New: How It Works - Compact Version */}
+      {/* How It Works - Compact Version */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
