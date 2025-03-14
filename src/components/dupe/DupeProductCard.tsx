@@ -1,4 +1,3 @@
-
 import { memo } from "react";
 import { motion } from "framer-motion";
 import { Star, DollarSign, Shield, Heart, Leaf, Droplet, Check } from "lucide-react";
@@ -6,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
 import { getFlagEmoji } from "@/lib/utils";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { useCurrency } from "@/hooks/useCurrency";
 
-// Define prop types for better performance
 interface DupeInfo {
   coverage?: string | null;
   confidence_level?: string | null;
@@ -54,6 +53,8 @@ interface ProductCardProps {
 }
 
 const DupeProductCard = memo(({ product, onClick, index }: ProductCardProps) => {
+  const { convertPrice } = useCurrency();
+  
   return (
     <motion.div
       key={product.slug}

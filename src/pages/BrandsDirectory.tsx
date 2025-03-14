@@ -1,141 +1,94 @@
 
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import AnimatedBackground from '@/components/AnimatedBackground';
-import { Separator } from '@/components/ui/separator';
-import { Loader2 } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 interface Brand {
   id: string;
   name: string;
   slug: string;
-  description?: string;
-  logo_url?: string;
+  country_of_origin?: string | null;
+  description?: string | null;
 }
 
 const BrandsDirectory = () => {
-  const [brands, setBrands] = useState<Record<string, Brand[]>>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: brands, isLoading, error } = useQuery({
+    queryKey: ["brandsDirectory"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("brands")
+        .select("id, name, slug, country_of_origin, description")
+        .order("name");
+      
+      if (error) throw error;
+      return data as Brand[];
+    }
+  });
 
-  useEffect(() => {
-    const fetchBrands = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('brands')
-          .select('id, name, slug, description, logo_url')
-          .order('name');
-        
-        if (error) throw error;
-        
-        // Organize brands by first letter
-        const organizedBrands: Record<string, Brand[]> = {};
-        
-        data.forEach((brand: Brand) => {
-          const firstLetter = brand.name.charAt(0).toUpperCase();
-          if (!organizedBrands[firstLetter]) {
-            organizedBrands[firstLetter] = [];
-          }
-          organizedBrands[firstLetter].push(brand);
-        });
-        
-        setBrands(organizedBrands);
-      } catch (error) {
-        console.error('Error fetching brands:', error);
-        setError('Failed to load brands');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Group brands by first letter
+  const groupedBrands = brands?.reduce((acc, brand) => {
+    const firstLetter = brand.name.charAt(0).toUpperCase();
+    if (!acc[firstLetter]) {
+      acc[firstLetter] = [];
+    }
+    acc[firstLetter].push(brand);
+    return acc;
+  }, {} as Record<string, Brand[]>) || {};
 
-    fetchBrands();
-  }, []);
+  // Sort the letters alphabetically
+  const sortedLetters = Object.keys(groupedBrands).sort();
 
   return (
-    <div className="min-h-screen font-urbanist bg-gradient-to-b from-blue-50 to-pink-50">
-      <AnimatedBackground />
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-pink-50">
       <Navbar />
       
-      <div className="pt-32 pb-20">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-center mb-8">
-            Brand Directory
-          </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto text-center mb-16">
-            Discover all beauty and skincare brands in our database. Find brand information and explore all their products.
-          </p>
-          
-          {isLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : error ? (
-            <div className="text-center text-red-500 py-10">
-              {error}
-            </div>
-          ) : (
-            <div className="space-y-12">
-              {Object.keys(brands).sort().map((letter) => (
-                <div key={letter} id={letter} className="scroll-mt-24">
-                  <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-sm border border-pink-100 p-6">
-                    <h2 className="text-3xl font-bold text-violet-700 mb-6">{letter}</h2>
-                    <Separator className="mb-6" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {brands[letter].map((brand) => (
-                        <Link 
-                          key={brand.id}
-                          to={`/brands/${brand.slug}`}
-                          className="flex items-center gap-4 p-4 rounded-lg hover:bg-violet-50 transition-colors"
-                        >
-                          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border border-gray-200">
-                            {brand.logo_url ? (
-                              <img 
-                                src={brand.logo_url} 
-                                alt={brand.name} 
-                                className="w-10 h-10 object-contain"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-violet-100 flex items-center justify-center text-violet-800 font-bold text-xl">
-                                {brand.name.charAt(0)}
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-violet-900">{brand.name}</h3>
-                            {brand.description && (
-                              <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                                {brand.description}
-                              </p>
-                            )}
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
+      <div className="container mx-auto px-4 py-24">
+        <h1 className="text-4xl font-bold mb-12 text-center">Brands Directory</h1>
+        
+        {isLoading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="w-10 h-10 animate-spin text-violet-700" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-16">
+            <p className="text-red-500">There was an error loading the brands.</p>
+          </div>
+        ) : sortedLetters.length === 0 ? (
+          <div className="text-center py-16">
+            <p>No brands found.</p>
+          </div>
+        ) : (
+          <div className="grid gap-12">
+            {sortedLetters.map(letter => (
+              <div key={letter}>
+                <h2 className="text-4xl font-bold mb-6 text-violet-800 border-b border-violet-100 pb-2">
+                  {letter}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {groupedBrands[letter].map(brand => (
+                    <Link 
+                      key={brand.id} 
+                      to={`/brands/${brand.slug}`}
+                      className="block p-6 rounded-lg bg-white/70 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow border border-violet-100/50"
+                    >
+                      <h3 className="text-xl font-semibold mb-2 text-violet-700">{brand.name}</h3>
+                      {brand.country_of_origin && (
+                        <p className="text-sm text-gray-500 mb-2">Origin: {brand.country_of_origin}</p>
+                      )}
+                      {brand.description && (
+                        <p className="text-sm text-gray-600 line-clamp-2">{brand.description}</p>
+                      )}
+                    </Link>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-          
-          {!isLoading && !error && (
-            <div className="sticky bottom-4 left-0 w-full flex justify-center mt-8">
-              <div className="flex flex-wrap gap-2 p-3 bg-white/80 backdrop-blur-md rounded-full shadow-md border border-pink-100">
-                {Object.keys(brands).sort().map((letter) => (
-                  <a
-                    key={letter}
-                    href={`#${letter}`}
-                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-violet-100 text-violet-800 font-medium text-sm transition-colors"
-                  >
-                    {letter}
-                  </a>
-                ))}
               </div>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
       
       <Footer />

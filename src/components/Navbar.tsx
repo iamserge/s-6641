@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { motion, useScroll } from "framer-motion";
-import { CircleDollarSign, User, Leaf, Award } from "lucide-react";
+import { CircleDollarSign, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
@@ -18,42 +19,39 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { useCurrency } from "@/hooks/useCurrency";
 
-interface Currency {
-  code: string;
-  symbol: string;
-}
+const CurrencySelector = () => {
+  const { 
+    selectedCurrency, 
+    setSelectedCurrency,
+    currencies
+  } = useCurrency();
 
-const currencies: Currency[] = [
-  { code: 'USD', symbol: '$' },
-  { code: 'GBP', symbol: '£' },
-  { code: 'EUR', symbol: '€' },
-];
-
-const CurrencySelector = ({ selectedCurrency, setSelectedCurrency }) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
-      <span className="text-base font-medium">{selectedCurrency.symbol}</span>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="w-24 bg-white">
-      {currencies.map((currency) => (
-        <DropdownMenuItem
-          key={currency.code}
-          className="flex items-center gap-2 cursor-pointer"
-          onClick={() => setSelectedCurrency(currency)}
-        >
-          <span>{currency.symbol}</span>
-          <span>{currency.code}</span>
-        </DropdownMenuItem>
-      ))}
-    </DropdownMenuContent>
-  </DropdownMenu>
-);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
+        <span className="text-base font-medium">{selectedCurrency.symbol}</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-24 bg-white">
+        {currencies.map((currency) => (
+          <DropdownMenuItem
+            key={currency.code}
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setSelectedCurrency(currency)}
+          >
+            <span>{currency.symbol}</span>
+            <span>{currency.code}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 const Navbar = () => {
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState(currencies[0]);
 
   useEffect(() => {
     const searchElement = document.querySelector('.hero-search-section');
@@ -67,8 +65,8 @@ const Navbar = () => {
   }, [scrollY]);
 
   const navLinks = [
-    { name: "Ingredients", icon: <Leaf className="w-4 h-4 mr-2" />, href: "/ingredients" },
-    { name: "Brands", icon: <Award className="w-4 h-4 mr-2" />, href: "/brands" },
+    { name: "Ingredients", href: "/ingredients" },
+    { name: "Brands", href: "/brands" },
   ];
 
   return (
@@ -92,10 +90,7 @@ const Navbar = () => {
                     <NavigationMenuItem key={link.name}>
                       <Link to={link.href}>
                         <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                          <div className="flex items-center">
-                            {link.icon}
-                            {link.name}
-                          </div>
+                          {link.name}
                         </NavigationMenuLink>
                       </Link>
                     </NavigationMenuItem>
@@ -105,10 +100,7 @@ const Navbar = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              <CurrencySelector
-                selectedCurrency={selectedCurrency}
-                setSelectedCurrency={setSelectedCurrency}
-              />
+              <CurrencySelector />
               <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30">
                 <User className="w-5 h-5" />
               </Button>
@@ -141,10 +133,7 @@ const Navbar = () => {
                     <NavigationMenuItem key={link.name}>
                       <Link to={link.href}>
                         <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                          <div className="flex items-center">
-                            {link.icon}
-                            {link.name}
-                          </div>
+                          {link.name}
                         </NavigationMenuLink>
                       </Link>
                     </NavigationMenuItem>
@@ -154,10 +143,7 @@ const Navbar = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              <CurrencySelector
-                selectedCurrency={selectedCurrency}
-                setSelectedCurrency={setSelectedCurrency}
-              />
+              <CurrencySelector />
               <Button variant="ghost" size="icon" className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30">
                 <User className="w-5 h-5" />
               </Button>

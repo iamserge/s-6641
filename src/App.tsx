@@ -10,25 +10,28 @@ import BrandPage from "./pages/BrandPage";
 import IngredientPage from "./pages/IngredientPage";
 import BrandsDirectory from "./pages/BrandsDirectory";
 import IngredientsDirectory from "./pages/IngredientsDirectory";
+import { CurrencyProvider } from "./hooks/useCurrency";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dupes/for/:slug" element={<DupePage />} />
-          <Route path="/brands/:slug" element={<BrandPage />} />
-          <Route path="/ingredients/:slug" element={<IngredientPage />} />
-          <Route path="/brands" element={<BrandsDirectory />} />
-          <Route path="/ingredients" element={<IngredientsDirectory />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <CurrencyProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dupes/for/:slug" element={<DupePage />} />
+            <Route path="/brands/:slug" element={<BrandPage />} />
+            <Route path="/ingredients/:slug" element={<IngredientPage />} />
+            <Route path="/brands" element={<BrandsDirectory />} />
+            <Route path="/ingredients" element={<IngredientsDirectory />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </CurrencyProvider>
   </QueryClientProvider>
 );
 

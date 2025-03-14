@@ -11,6 +11,7 @@ import { IngredientPill } from "@/components/dupe/IngredientPill";
 import { ReviewCard } from "@/components/dupe/ReviewCard";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getFlagEmoji } from "@/lib/utils";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface DupeCardProps {
   dupe: Dupe;
@@ -48,6 +49,7 @@ const StarRating = ({ rating }: { rating: number }) => {
 
 export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, showBottomBar = false }: DupeCardProps) => {
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
+  const { convertPrice } = useCurrency();
   
   const dupeIngredientNames = dupe.ingredients?.map(i => i.name.toLowerCase()) || [];
   
@@ -96,7 +98,7 @@ export const DupeCard = ({ dupe, index, originalIngredients, originalPrice, show
           
           {dupe.price ? (
             <Badge variant="outline" className="bg-white text-gray-700 font-medium px-4 py-1.5 text-sm rounded-full border-gray-200">
-              ~${Math.round(dupe.price)}
+              {convertPrice(dupe.price)}
               {calculatedSavingsPercentage > 0 ? (
                 <span className="ml-2 text-green-600">(-{calculatedSavingsPercentage}%)</span>
               ) : null}

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ReviewCard } from "@/components/dupe/ReviewCard";
 import { SocialMediaResource } from "@/components/dupe/SocialMediaResource";
 import { Button } from "@/components/ui/button";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface HeroProductProps {
   product: Product;
@@ -46,6 +46,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
   const [showAllIngredients, setShowAllIngredients] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showAllResources, setShowAllResources] = useState(false);
+  const { convertPrice } = useCurrency();
 
   const featuredResources = product.resources;
 
@@ -107,7 +108,7 @@ export const HeroProduct = ({ product }: HeroProductProps) => {
             </div>
             {product.price ? (
               <div className="absolute -top-3 -right-3 bg-white text-gray-800 px-4 py-2 rounded-full font-bold shadow-md border border-gray-100 z-10 hover:shadow-lg transition-all duration-200">
-                ~${Math.round(product.price)}
+                {convertPrice(product.price)}
               </div>
             ) : null}
           </motion.div>

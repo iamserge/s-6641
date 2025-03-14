@@ -5,6 +5,7 @@ import { Dupe } from "@/types/dupe";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryImage } from "@/components/dupe/CategoryImage";
+import { useCurrency } from "@/hooks/useCurrency";
 import { 
   Sheet,
   SheetContent,
@@ -22,6 +23,8 @@ interface DupeBottomBarProps {
 }
 
 export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop, originalPrice }: DupeBottomBarProps) => {
+  const { convertPrice } = useCurrency();
+  
   if (!activeDupe) return null;
   
   const handleGoogleSearch = () => {
@@ -80,7 +83,7 @@ export const DupeBottomBar = ({ showBottomBar, activeDupe, scrollToTop, original
                       
                       {activeDupe.price ? (
                         <Badge className="bg-green-100 text-green-700 px-3 py-1.5 font-medium text-sm rounded-full">
-                          ~${Math.round(activeDupe.price)} 
+                          {convertPrice(activeDupe.price)} 
                           {calculatedSavingsPercentage > 0 ? (
                             <span className="ml-1 text-green-600">(-{calculatedSavingsPercentage}%)</span>
                           ) : null}
