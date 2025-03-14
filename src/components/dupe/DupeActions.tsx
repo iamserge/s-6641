@@ -84,7 +84,6 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
 
   const fetchUserInteractions = async (userId: string) => {
     try {
-      // We need to use the REST API directly as the tables might not exist in the Supabase types
       // Check if user has favorited this dupe
       const { data: favoriteData, error: favoriteError } = await supabase
         .rpc('get_user_favorite', {
@@ -120,7 +119,7 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
   const fetchApprovalCount = async () => {
     try {
       // Count total approvals for this dupe
-      const { count, error } = await supabase
+      const { data: count, error } = await supabase
         .rpc('count_dupe_approvals', {
           dupe_id_param: dupeId,
           original_id_param: originalProductId

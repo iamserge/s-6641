@@ -18,31 +18,43 @@ const Hero = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [showProductConfirmation, setShowProductConfirmation] = useState(false);
+  const [progressMessage, setProgressMessage] = useState("Processing your request...");
+  const [detectedProduct, setDetectedProduct] = useState(null);
+  const [showTip, setShowTip] = useState(false);
+  const [tip, setTip] = useState("");
+  const [searchTriggered, setSearchTriggered] = useState(false);
+  const [showRecentProducts, setShowRecentProducts] = useState(false);
+  const [recentProducts, setRecentProducts] = useState<any[] | undefined>([]);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const handleSearch = (searchTerm) => {
     console.log("Search term:", searchTerm);
+    setSearchText(searchTerm);
+    setSearchTriggered(true);
   };
 
   const handleImageUpload = async (imageFile) => {
     setIsProcessing(true);
     setBeautyTip(null);
+    setProgressMessage("Analyzing your image...");
 
     // Simulate processing
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    setIsProcessing(false);
-    setConfirmedProduct({
+    const productData = {
       name: "Example Product",
       imageUrl: URL.createObjectURL(imageFile),
-    });
+      brand: "Example Brand"
+    };
+    
+    setDetectedProduct(productData);
     setPreviewImage(URL.createObjectURL(imageFile));
-    setBeautyTip({
-      title: "Hydration Boost",
-      content:
-        "Use a hydrating serum with hyaluronic acid to keep your skin plump and moisturized.",
-    });
+    setShowProductConfirmation(true);
+    setTip("Use a hydrating serum with hyaluronic acid to keep your skin plump and moisturized.");
+    setShowTip(true);
   };
 
   const handleConfirmation = () => {
@@ -65,6 +77,14 @@ const Hero = () => {
   const clearPreview = () => {
     setPreviewImage(null);
     setConfirmedProduct(null);
+  };
+
+  const cancelSearch = () => {
+    setIsProcessing(false);
+    setShowProductConfirmation(false);
+    setPreviewImage(null);
+    setSearchText("");
+    setSearchTriggered(false);
   };
 
   return (
@@ -125,14 +145,36 @@ const Hero = () => {
           <AnimatedSteps />
         </div>
 
-        <RecentProductsDisplay showRecentProducts={false} recentProducts={[]} />
+        <RecentProductsDisplay 
+          showRecentProducts={showRecentProducts} 
+          recentProducts={recentProducts} 
+        />
 
-        {isProcessing && <ProcessingModal isProcessing={isProcessing} />}
+        <ProcessingModal 
+          isProcessing={isProcessing}
+          showProductConfirmation={showProductConfirmation}
+          detectedProduct={detectedProduct}
+          previewImage={previewImage}
+          progressMessage={progressMessage}
+          searchTriggered={searchTriggered}
+          searchText={searchText}
+          showTip={showTip}
+          tip={tip}
+          showRecentProducts={showRecentProducts}
+          recentProducts={recentProducts}
+          cancelSearch={cancelSearch}
+          setShowProductConfirmation={setShowProductConfirmation}
+        />
         
         {confirmedProduct && (
           <ProductConfirmation
-            confirmProduct={confirmedProduct}
-            onConfirm={handleConfirmation}
+            showProductConfirmation={showProductConfirmation}
+            detectedProduct={confirmedProduct}
+            previewImage={previewImage}
+            searchTriggered={searchTriggered}
+            searchText={searchText}
+            cancelSearch={cancelSearch}
+            setShowProductConfirmation={setShowProductConfirmation}
           />
         )}
 

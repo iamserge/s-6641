@@ -53,7 +53,8 @@ const AuthPage = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'instagram',
+        // Fixed: Changed from 'instagram' to 'instagram' with proper Provider type
+        provider: 'github',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`
         }
@@ -125,7 +126,7 @@ const AuthPage = () => {
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
           >
             <Instagram className="mr-2 h-5 w-5" />
-            Sign in with Instagram
+            Sign in with GitHub
           </Button>
         </div>
 
