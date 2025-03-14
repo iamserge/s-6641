@@ -20,6 +20,38 @@ type DupeActionsProps = {
   originalProductId: string;
 };
 
+// Define interface for user favorites
+interface UserFavorite {
+  id: string;
+  user_id: string;
+  dupe_product_id: string;
+  original_product_id: string;
+  created_at: string;
+}
+
+// Define interface for user approvals
+interface UserApproval {
+  id: string;
+  user_id: string;
+  dupe_product_id: string;
+  original_product_id: string;
+  created_at: string;
+}
+
+// Define interface for dupe discussions
+interface DupeDiscussion {
+  id: string;
+  user_id: string;
+  dupe_product_id: string;
+  original_product_id: string;
+  message: string;
+  created_at: string;
+  profiles?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
+}
+
 const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -27,7 +59,7 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
   const [approvalCount, setApprovalCount] = useState(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<DupeDiscussion[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -52,16 +84,16 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
 
   const fetchUserInteractions = async (userId: string) => {
     try {
+      // We need to use the REST API directly as the tables might not exist in the Supabase types
       // Check if user has favorited this dupe
       const { data: favoriteData, error: favoriteError } = await supabase
-        .from('user_favorites')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('dupe_product_id', dupeId)
-        .eq('original_product_id', originalProductId)
-        .single();
+        .rpc('get_user_favorite', {
+          user_id_param: userId,
+          dupe_id_param: dupeId,
+          original_id_param: originalProductId
+        });
       
-      if (favoriteError && favoriteError.code !== 'PGRST116') {
+      if (favoriteError) {
         console.error("Error fetching favorite status:", favoriteError);
       } else {
         setIsFavorite(!!favoriteData);
@@ -69,14 +101,13 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
 
       // Check if user has approved this dupe
       const { data: approvalData, error: approvalError } = await supabase
-        .from('user_approvals')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('dupe_product_id', dupeId)
-        .eq('original_product_id', originalProductId)
-        .single();
+        .rpc('get_user_approval', {
+          user_id_param: userId,
+          dupe_id_param: dupeId,
+          original_id_param: originalProductId
+        });
       
-      if (approvalError && approvalError.code !== 'PGRST116') {
+      if (approvalError) {
         console.error("Error fetching approval status:", approvalError);
       } else {
         setIsApproved(!!approvalData);
@@ -90,10 +121,10 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
     try {
       // Count total approvals for this dupe
       const { count, error } = await supabase
-        .from('user_approvals')
-        .select('*', { count: 'exact', head: true })
-        .eq('dupe_product_id', dupeId)
-        .eq('original_product_id', originalProductId);
+        .rpc('count_dupe_approvals', {
+          dupe_id_param: dupeId,
+          original_id_param: originalProductId
+        });
       
       if (error) throw error;
       setApprovalCount(count || 0);
@@ -105,19 +136,10 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
   const fetchMessages = async () => {
     try {
       const { data, error } = await supabase
-        .from('dupe_discussions')
-        .select(`
-          id,
-          message,
-          created_at,
-          profiles:user_id (
-            full_name,
-            avatar_url
-          )
-        `)
-        .eq('dupe_product_id', dupeId)
-        .eq('original_product_id', originalProductId)
-        .order('created_at', { ascending: false });
+        .rpc('get_dupe_discussions', {
+          dupe_id_param: dupeId,
+          original_id_param: originalProductId
+        });
       
       if (error) throw error;
       setMessages(data || []);
@@ -145,11 +167,11 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
       if (isFavorite) {
         // Remove from favorites
         const { error } = await supabase
-          .from('user_favorites')
-          .delete()
-          .eq('user_id', userId)
-          .eq('dupe_product_id', dupeId)
-          .eq('original_product_id', originalProductId);
+          .rpc('remove_user_favorite', {
+            user_id_param: userId,
+            dupe_id_param: dupeId,
+            original_id_param: originalProductId
+          });
         
         if (error) throw error;
         
@@ -161,11 +183,10 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
       } else {
         // Add to favorites
         const { error } = await supabase
-          .from('user_favorites')
-          .insert({
-            user_id: userId,
-            dupe_product_id: dupeId,
-            original_product_id: originalProductId
+          .rpc('add_user_favorite', {
+            user_id_param: userId,
+            dupe_id_param: dupeId,
+            original_id_param: originalProductId
           });
         
         if (error) throw error;
@@ -200,11 +221,11 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
       if (isApproved) {
         // Remove approval
         const { error } = await supabase
-          .from('user_approvals')
-          .delete()
-          .eq('user_id', userId)
-          .eq('dupe_product_id', dupeId)
-          .eq('original_product_id', originalProductId);
+          .rpc('remove_user_approval', {
+            user_id_param: userId,
+            dupe_id_param: dupeId,
+            original_id_param: originalProductId
+          });
         
         if (error) throw error;
         
@@ -217,11 +238,10 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
       } else {
         // Add approval
         const { error } = await supabase
-          .from('user_approvals')
-          .insert({
-            user_id: userId,
-            dupe_product_id: dupeId,
-            original_product_id: originalProductId
+          .rpc('add_user_approval', {
+            user_id_param: userId,
+            dupe_id_param: dupeId,
+            original_id_param: originalProductId
           });
         
         if (error) throw error;
@@ -262,12 +282,11 @@ const DupeActions = ({ dupeId, originalProductId }: DupeActionsProps) => {
 
     try {
       const { error } = await supabase
-        .from('dupe_discussions')
-        .insert({
-          user_id: userId,
-          dupe_product_id: dupeId,
-          original_product_id: originalProductId,
-          message: message.trim()
+        .rpc('add_dupe_discussion', {
+          user_id_param: userId,
+          dupe_id_param: dupeId,
+          original_id_param: originalProductId,
+          message_param: message.trim()
         });
       
       if (error) throw error;

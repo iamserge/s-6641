@@ -2,10 +2,10 @@
 import { motion } from "framer-motion";
 
 interface TaglineAnimationProps {
-  taglineWords: string[];
+  taglineWords?: string[];
 }
 
-const TaglineAnimation = ({ taglineWords }: TaglineAnimationProps) => {
+const TaglineAnimation = ({ taglineWords = ["Find", "Your", "Beauty", "Dupe", "For", "Less"] }: TaglineAnimationProps) => {
   const wordAnimation = {
     hidden: { opacity: 0, filter: "blur(10px)", scale: 0.9 },
     visible: (i: number) => ({

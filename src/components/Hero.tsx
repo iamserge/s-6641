@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import SearchForm from "./hero/SearchForm";
@@ -15,6 +16,9 @@ const Hero = () => {
   const [confirmedProduct, setConfirmedProduct] = useState(null);
   const [beautyTip, setBeautyTip] = useState(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const handleSearch = (searchTerm) => {
@@ -33,6 +37,7 @@ const Hero = () => {
       name: "Example Product",
       imageUrl: URL.createObjectURL(imageFile),
     });
+    setPreviewImage(URL.createObjectURL(imageFile));
     setBeautyTip({
       title: "Hydration Boost",
       content:
@@ -55,6 +60,11 @@ const Hero = () => {
   const handleCameraCapture = async (imageFile) => {
     setIsCameraOpen(false);
     handleImageUpload(imageFile);
+  };
+
+  const clearPreview = () => {
+    setPreviewImage(null);
+    setConfirmedProduct(null);
   };
 
   return (
@@ -88,7 +98,18 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="w-full max-w-md mb-8"
           >
-            <SearchForm onSearch={handleSearch} onImageUpload={handleImageUpload} onCameraOpen={handleCameraOpen} />
+            <SearchForm 
+              searchText={searchText}
+              setSearchText={setSearchText}
+              previewImage={previewImage}
+              clearPreview={clearPreview}
+              isProcessing={isProcessing}
+              isCameraOpen={isCameraOpen}
+              fileInputRef={fileInputRef}
+              onSearch={handleSearch} 
+              onImageUpload={handleImageUpload} 
+              onCameraOpen={handleCameraOpen} 
+            />
           </motion.div>
 
           {beautyTip && (
@@ -97,20 +118,21 @@ const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <BeautyTip tip={beautyTip} />
+              <BeautyTip tip={beautyTip.content} showTip={true} />
             </motion.div>
           )}
 
           <AnimatedSteps />
         </div>
 
-        <RecentProductsDisplay />
+        <RecentProductsDisplay showRecentProducts={false} recentProducts={[]} />
 
-        {isProcessing && <ProcessingModal />}
+        {isProcessing && <ProcessingModal isProcessing={isProcessing} />}
+        
         {confirmedProduct && (
           <ProductConfirmation
-            product={confirmedProduct}
-            onConfirmation={handleConfirmation}
+            confirmProduct={confirmedProduct}
+            onConfirm={handleConfirmation}
           />
         )}
 

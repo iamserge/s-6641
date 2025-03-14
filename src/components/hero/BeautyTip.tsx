@@ -2,12 +2,12 @@
 import { motion } from "framer-motion";
 
 interface BeautyTipProps {
-  showTip: boolean;
-  tip: string;
+  tip: string | null;
+  showTip?: boolean;
 }
 
-const BeautyTip = ({ showTip, tip }: BeautyTipProps) => {
-  if (!showTip) return null;
+const BeautyTip = ({ showTip = true, tip }: BeautyTipProps) => {
+  if (!showTip || !tip) return null;
 
   return (
     <motion.div
