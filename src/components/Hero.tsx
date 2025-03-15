@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
@@ -336,7 +336,7 @@ const Hero = () => {
   };
 
   // Cleanup on component unmount
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       cleanupEventSource();
     };
