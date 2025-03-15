@@ -344,7 +344,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="container mx-auto px-4 min-h-screen flex flex-col items-center justify-center font-urbanist">
+    <section className="container mx-auto px-4 pt-8 mt-20 min-h-screen flex flex-col items-center justify-center font-urbanist">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
