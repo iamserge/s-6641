@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getInitialDupes, identifyProductWithPerplexity } from "../services/perplexity.ts";
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
@@ -5,17 +6,34 @@ import { supabase } from "../shared/db-client.ts";
 import { corsHeaders, logInfo, logError, safeStringify } from "../shared/utils.ts";
 import { extractProductInfoFromImage } from "../services/openai.ts";
 
+// Define interface for product info to fix TypeScript errors
+interface ProductInfo {
+  name?: string;
+  brand?: string | null;
+  category?: string;
+  isRelevant?: boolean;
+}
+
 /**
  * Processes text input to identify product and check relevance
  * @param textData Text input from user
  * @returns Object with product name, brand, category and relevance status
  */
-async function processTextInput(textData) {
+async function processTextInput(textData: string): Promise<ProductInfo> {
   const logPrefix = `[TEXT-PROCESSING]`;
   logInfo(`${logPrefix} Processing text input: "${textData}"`);
   
-  // Call Perplexity to identify product and determine if it's relevant
-  return await identifyProductWithPerplexity(textData);
+  try {
+    // Call Perplexity to identify product and determine if it's relevant
+    return await identifyProductWithPerplexity(textData);
+  } catch (error) {
+    logError(`${logPrefix} Error processing text: ${safeStringify(error)}`);
+    return {
+      name: textData,
+      brand: undefined,
+      isRelevant: false
+    };
+  }
 }
 
 /**
@@ -23,7 +41,7 @@ async function processTextInput(textData) {
  * @param imageData Base64 encoded image data
  * @returns Object with product name, brand, category and relevance status
  */
-async function processImageInput(imageData) {
+async function processImageInput(imageData: string): Promise<ProductInfo> {
   const logPrefix = `[IMAGE-PROCESSING]`;
   logInfo(`${logPrefix} Starting image analysis`);
   
@@ -44,7 +62,7 @@ async function processImageInput(imageData) {
         logError(`${logPrefix} Invalid barcode format: ${extractedInfo.barcode}`);
         return {
           name: "Unknown product",
-          brand: null,
+          brand: undefined,
           isRelevant: false
         };
       }
@@ -65,15 +83,15 @@ async function processImageInput(imageData) {
     logInfo(`${logPrefix} Could not extract clear product information from image`);
     return {
       name: extractedInfo.name || "Unknown product",
-      brand: extractedInfo.brand || null,
-      category: extractedInfo.category || null,
+      brand: extractedInfo.brand,
+      category: extractedInfo.category,
       isRelevant: false // Default to false when we can't determine
     };
   } catch (error) {
     logError(`${logPrefix} Error processing image: ${safeStringify(error)}`);
     return {
       name: "Unknown product",
-      brand: null,
+      brand: undefined,
       isRelevant: false
     };
   }
@@ -84,7 +102,12 @@ async function processImageInput(imageData) {
  * @param barcodeData Barcode number
  * @returns Object with product name, brand, category and relevance status
  */
-async function processBarcodeInput(barcodeData) {
+/**
+ * Processes barcode input to get product information
+ * @param barcodeData Barcode number
+ * @returns Object with product name, brand, category and relevance status
+ */
+async function processBarcodeInput(barcodeData: string): Promise<ProductInfo> {
   const logPrefix = `[BARCODE-PROCESSING]`;
   logInfo(`${logPrefix} Starting barcode lookup: ${barcodeData}`);
   
@@ -126,7 +149,7 @@ async function processBarcodeInput(barcodeData) {
       // If we couldn't get a search query, return basic info
       return {
         name: item.title,
-        brand: item.brand,
+        brand: item.brand || undefined, // Use undefined instead of null
         category: item.category,
         isRelevant: false // We couldn't verify with Perplexity, so default to false
       };
@@ -139,7 +162,7 @@ async function processBarcodeInput(barcodeData) {
     // If barcode lookup fails, return just the barcode as the name
     return {
       name: `Product #${barcodeData}`,
-      brand: null,
+      brand: undefined, // Use undefined instead of null
       isRelevant: false
     };
   }
@@ -151,7 +174,7 @@ async function processBarcodeInput(barcodeData) {
  * @param requestId Unique ID for the request
  * @returns Array of results from background tasks
  */
-async function runBackgroundTasks(backgroundData, requestId) {
+async function runBackgroundTasks(backgroundData: any, requestId: string): Promise<any[]> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const authKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   
@@ -180,7 +203,7 @@ async function runBackgroundTasks(backgroundData, requestId) {
           return result;
         } catch (e) {
           logError(`[${requestId}] process-brands task failed: ${safeStringify(e)}`);
-          return { success: false, error: e.message };
+          return { success: false, error: e instanceof Error ? e.message : String(e) };
         }
       })(),
     
@@ -198,7 +221,7 @@ async function runBackgroundTasks(backgroundData, requestId) {
           return result;
         } catch (e) {
           logError(`[${requestId}] process-reviews task failed: ${safeStringify(e)}`);
-          return { success: false, error: e.message };
+          return { success: false, error: e instanceof Error ? e.message : String(e) };
         }
       })(),
       
@@ -216,7 +239,7 @@ async function runBackgroundTasks(backgroundData, requestId) {
           return result;
         } catch (e) {
           logError(`[${requestId}] process-resources task failed: ${safeStringify(e)}`);
-          return { success: false, error: e.message };
+          return { success: false, error: e instanceof Error ? e.message : String(e) };
         }
       })(),
       
@@ -234,7 +257,7 @@ async function runBackgroundTasks(backgroundData, requestId) {
           return result;
         } catch (e) {
           logError(`[${requestId}] process-detailed-analysis task failed: ${safeStringify(e)}`);
-          return { success: false, error: e.message };
+          return { success: false, error: e instanceof Error ? e.message : String(e) };
         }
       })()
     ]);
@@ -250,6 +273,276 @@ async function runBackgroundTasks(backgroundData, requestId) {
 }
 
 /**
+ * Improved function to check if product exists in database
+ * Uses multiple search strategies to find products more reliably
+ * @param searchText Search text to check against product names and brands
+ * @param productInfo Additional product info that can help with search
+ * @param requestId Request ID for logging
+ * @returns Object with found status and product data if found
+ */
+async function checkExistingProduct(
+  searchText: string, 
+  productInfo: ProductInfo, 
+  requestId: string
+): Promise<{ found: boolean; product?: any; error?: any }> {
+  logInfo(`[${requestId}] Searching database for existing product: ${searchText}`);
+  
+  try {
+    // Define search strategies in order of precision
+    
+    // 1. Try exact match on name
+    const { data: exactNameMatch, error: exactNameError } = await supabase
+      .from('products')
+      .select('id, name, brand, slug')
+      .eq('name', searchText)
+      .limit(1);
+      
+    if (exactNameError) {
+      logError(`[${requestId}] Error in exact name search: ${safeStringify(exactNameError)}`);
+    } else if (exactNameMatch && exactNameMatch.length > 0) {
+      logInfo(`[${requestId}] Found product with exact name match: ${exactNameMatch[0].name}`);
+      return { found: true, product: exactNameMatch[0] };
+    }
+    
+    // 2. If productInfo has brand and name, try that combination
+    if (productInfo.brand && productInfo.name) {
+      const { data: brandNameMatch, error: brandNameError } = await supabase
+        .from('products')
+        .select('id, name, brand, slug')
+        .eq('brand', productInfo.brand)
+        .ilike('name', `%${productInfo.name}%`)
+        .limit(1);
+        
+      if (brandNameError) {
+        logError(`[${requestId}] Error in brand+name search: ${safeStringify(brandNameError)}`);
+      } else if (brandNameMatch && brandNameMatch.length > 0) {
+        logInfo(`[${requestId}] Found product with brand+name match: ${brandNameMatch[0].brand} ${brandNameMatch[0].name}`);
+        return { found: true, product: brandNameMatch[0] };
+      }
+    }
+    
+    // 3. Try searching for parts of the text in either name or brand
+    const searchTerms = searchText.split(' ').filter(term => term.length > 3);
+    
+    if (searchTerms.length > 0) {
+      // Build a query that will match any of the significant words
+      const query = supabase
+        .from('products')
+        .select('id, name, brand, slug');
+      
+      const orConditions = searchTerms.map(term => `name.ilike.%${term}%`);
+      const fullOrCondition = orConditions.join(',');
+      
+      const { data: partialMatches, error: partialError } = await query
+        .or(fullOrCondition)
+        .limit(5);
+        
+      if (partialError) {
+        logError(`[${requestId}] Error in partial search: ${safeStringify(partialError)}`);
+      } else if (partialMatches && partialMatches.length > 0) {
+        // Find the best match using a scoring system
+        const bestMatch = findBestMatch(partialMatches, searchText);
+        logInfo(`[${requestId}] Found product with partial match: ${bestMatch.brand} ${bestMatch.name}`);
+        return { found: true, product: bestMatch };
+      }
+    }
+    
+    // 4. Try by slug variation
+    const slugifiedSearch = slugify(searchText, { lower: true });
+    const { data: slugMatches, error: slugError } = await supabase
+      .from('products')
+      .select('id, name, brand, slug')
+      .ilike('slug', `%${slugifiedSearch}%`)
+      .limit(5);
+      
+    if (slugError) {
+      logError(`[${requestId}] Error in slug search: ${safeStringify(slugError)}`);
+    } else if (slugMatches && slugMatches.length > 0) {
+      const bestMatch = findBestMatch(slugMatches, searchText);
+      logInfo(`[${requestId}] Found product with slug match: ${bestMatch.brand} ${bestMatch.name}`);
+      return { found: true, product: bestMatch };
+    }
+    
+    // No matches found
+    logInfo(`[${requestId}] No existing product found for: ${searchText}`);
+    return { found: false };
+  } catch (error) {
+    logError(`[${requestId}] Error checking for existing product: ${safeStringify(error)}`);
+    return { found: false, error };
+  }
+}
+
+/**
+ * Helper function to find the best match from multiple potential matches
+ * @param products Array of potential matching products
+ * @param searchText Original search text
+ * @returns Best matching product
+ */
+function findBestMatch(products: any[], searchText: string): any {
+  // No products case
+  if (!products || products.length === 0) {
+    return null;
+  }
+  
+  // Single product case
+  if (products.length === 1) {
+    return products[0];
+  }
+  
+  // Convert to lowercase for case-insensitive comparison
+  const searchLower = searchText.toLowerCase();
+  const searchParts = searchLower.split(' ').filter(part => part.length > 2);
+  
+  // Score each product based on how well it matches
+  const scoredProducts = products.map(product => {
+    const nameLower = product.name.toLowerCase();
+    const brandLower = product.brand.toLowerCase();
+    const fullText = `${brandLower} ${nameLower}`;
+    
+    let score = 0;
+    
+    // Exact matches give most points
+    if (nameLower === searchLower) score += 100;
+    if (fullText === searchLower) score += 100;
+    
+    // Contains entire search string
+    if (nameLower.includes(searchLower)) score += 50;
+    if (fullText.includes(searchLower)) score += 40;
+    
+    // Contains brand
+    if (searchLower.includes(brandLower)) score += 30;
+    
+    // Count how many search terms match
+    for (const part of searchParts) {
+      if (nameLower.includes(part)) score += 5;
+      if (brandLower.includes(part)) score += 5;
+    }
+    
+    return { product, score };
+  });
+  
+  // Sort by score descending and take highest
+  scoredProducts.sort((a, b) => b.score - a.score);
+  return scoredProducts[0].product;
+}
+
+/**
+ * Insert original product and its dupes into database
+ * @param initialDupes Object with original product and dupes info from Perplexity
+ * @param requestId Request ID for logging
+ * @returns Object with product data and dupe IDs
+ */
+async function insertProductAndDupes(initialDupes: any, requestId: string): Promise<{
+  originalProduct: any;
+  dupeIds: string[];
+  productSlug: string;
+}> {
+  try {
+    // Create slug for original product - fix duplicated brand issue
+    const cleanProductName = initialDupes.originalName
+      .replace(initialDupes.originalBrand, '')
+      .trim()
+      .replace(/^[-\s]+/, ''); // Remove leading dashes or spaces
+      
+    const productSlug = slugify(`${initialDupes.originalBrand}-${cleanProductName}`, { lower: true });
+    logInfo(`[${requestId}] Generated slug for original product: ${productSlug}`);
+    
+    // Insert original product with minimal data
+    logInfo(`[${requestId}] Inserting original product into database: ${initialDupes.originalBrand} ${initialDupes.originalName}`);
+    const { data: originalProduct, error: productError } = await supabase
+      .from('products')
+      .insert({
+        name: initialDupes.originalName,
+        brand: initialDupes.originalBrand,
+        slug: productSlug,
+        price: 0, // Will be updated later
+        loading_ingredients: false,
+        loading_reviews: false,
+        loading_resources: false
+      })
+      .select()
+      .single();
+
+    if (productError) {
+      logError(`[${requestId}] Error inserting original product: ${safeStringify(productError)}`);
+      throw productError;
+    }
+    
+    logInfo(`[${requestId}] Original product inserted successfully with ID: ${originalProduct?.id}`);
+
+    // Insert dupes with minimal data
+    logInfo(`[${requestId}] Inserting ${initialDupes.dupes.length} dupes into database`);
+    const dupeIds = await Promise.all(
+      initialDupes.dupes.map(async (dupe: any, index: number) => {
+        // Clean dupe name to avoid duplicated brand
+        const cleanDupeName = dupe.name
+          .replace(dupe.brand, '')
+          .trim()
+          .replace(/^[-\s]+/, '');
+          
+        const dupeSlug = slugify(`${dupe.brand}-${cleanDupeName}`, { lower: true });
+        logInfo(`[${requestId}] Processing dupe #${index + 1}: ${dupe.brand} ${dupe.name} (slug: ${dupeSlug})`);
+        
+        try {
+          const { data: dupeProduct, error: dupeError } = await supabase
+            .from('products')
+            .insert({
+              name: dupe.name,
+              brand: dupe.brand,
+              slug: dupeSlug,
+              price: 0, // Will be updated later
+              loading_ingredients: false,
+              loading_reviews: false,
+              loading_resources: false
+            })
+            .select()
+            .single();
+
+          if (dupeError) {
+            logError(`[${requestId}] Error inserting dupe #${index + 1}: ${safeStringify(dupeError)}`);
+            throw dupeError;
+          }
+          
+          logInfo(`[${requestId}] Dupe #${index + 1} inserted with ID: ${dupeProduct?.id}`);
+
+          // Create dupe relationship
+          logInfo(`[${requestId}] Creating relationship between ${originalProduct?.id} and ${dupeProduct?.id}`);
+          const { error: relationError } = await supabase
+            .from('product_dupes')
+            .insert({
+              original_product_id: originalProduct?.id,
+              dupe_product_id: dupeProduct?.id,
+              match_score: dupe.matchScore,
+              savings_percentage: 0 // Will be updated later
+            });
+            
+          if (relationError) {
+            logError(`[${requestId}] Error creating dupe relationship: ${safeStringify(relationError)}`);
+            throw relationError;
+          }
+
+          return dupeProduct?.id;
+        } catch (dupeInsertError) {
+          logError(`[${requestId}] Failed to insert dupe #${index + 1}: ${safeStringify(dupeInsertError)}`);
+          throw dupeInsertError;
+        }
+      })
+    );
+    
+    logInfo(`[${requestId}] Successfully inserted all ${dupeIds.length} dupes`);
+    
+    return {
+      originalProduct,
+      dupeIds,
+      productSlug
+    };
+  } catch (error) {
+    logError(`[${requestId}] Error inserting product and dupes: ${safeStringify(error)}`);
+    throw error;
+  }
+}
+
+/**
  * Main handler function for search-dupes endpoint
  * Processes input (text/image), checks database, finds dupes, and runs background tasks
  */
@@ -259,30 +552,31 @@ serve(async (req) => {
   
   logInfo(`[${requestId}] New search-dupes request received: ${req.method}`);
   
+  // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
     logInfo(`[${requestId}] Handling preflight OPTIONS request`);
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Only handle POST requests
+  if (req.method !== 'POST') {
+    logError(`[${requestId}] Method not allowed: ${req.method}`);
+    return new Response(
+      JSON.stringify({ success: false, error: "Method not allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
-    // Extract input data based on method
-    let searchText = null;
-    let imageData = null;
+    // Extract input data from POST request body
+    logInfo(`[${requestId}] Processing POST request body`);
+    const body = await req.json();
+    const searchText = body.searchText;
+    const imageData = body.imageData;
     
-    if (req.method === 'GET') {
-      const url = new URL(req.url);
-      searchText = url.searchParams.get("searchText");
-      logInfo(`[${requestId}] GET request with searchText: ${searchText?.substring(0, 30)}${searchText?.length > 30 ? '...' : ''}`);
-    } else if (req.method === 'POST') {
-      logInfo(`[${requestId}] Processing POST request body`);
-      const body = await req.json();
-      searchText = body.searchText;
-      imageData = body.imageData;
-      
-      logInfo(`[${requestId}] POST request with:
-        - searchText: ${searchText?.substring(0, 30)}${searchText?.length > 30 ? '...' : ''}
-        - imageData: ${imageData ? "Present" : "None"}`);
-    }
+    logInfo(`[${requestId}] POST request with:
+      - searchText: ${searchText ? `${searchText.substring(0, 30)}${searchText.length > 30 ? '...' : ''}` : 'None'}
+      - imageData: ${imageData ? "Present" : "None"}`);
     
     if (!searchText && !imageData) {
       logError(`[${requestId}] No search input provided in request`);
@@ -297,7 +591,7 @@ serve(async (req) => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
-        const sendProgress = (message) => {
+        const sendProgress = (message: string) => {
           logInfo(`[${requestId}] Progress update: ${message}`);
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "progress", message })}\n\n`));
         };
@@ -307,7 +601,7 @@ serve(async (req) => {
           sendProgress("Analyzing your input...");
           
           // 1. Identify product from input (text or image)
-          let productInfo = null;
+          let productInfo: ProductInfo = { name: undefined, brand: undefined, category: undefined, isRelevant: undefined };
           let inputType = searchText ? "text" : "image";
           
           if (imageData) {
@@ -316,17 +610,10 @@ serve(async (req) => {
             productInfo = await processImageInput(imageData);
             logInfo(`[${requestId}] Image analysis complete, product identified: ${safeStringify(productInfo)}`);
           } else if (searchText) {
-            // Handle text input - check if it's an EAN/UPC code first
-            const eanRegex = /^[0-9]{8,14}$/;
-            if (eanRegex.test(searchText.trim())) {
-              logInfo(`[${requestId}] Detected EAN/UPC code in text input: ${searchText.trim()}`);
-              inputType = "barcode";
-              productInfo = await processBarcodeInput(searchText.trim());
-            } else {
-              logInfo(`[${requestId}] Processing text input: ${searchText}`);
-              inputType = "text";
-              productInfo = await processTextInput(searchText);
-            }
+            // Process text input directly
+            logInfo(`[${requestId}] Processing text input: ${searchText}`);
+            inputType = "text";
+            productInfo = await processTextInput(searchText);
             logInfo(`[${requestId}] Text analysis complete, product identified: ${safeStringify(productInfo)}`);
           }
           
@@ -360,7 +647,92 @@ serve(async (req) => {
             }
             
             // Use the identified product name for further processing
-            searchText = productName;
+            const productQuery = productName;
+
+            // 2. Check if product exists in database - using improved search
+            sendProgress("Checking our database for existing dupes...");
+            const existingProductResult = await checkExistingProduct(productQuery, productInfo, requestId);
+            
+            if (existingProductResult.found && existingProductResult.product) {
+              const existingProduct = existingProductResult.product;
+              sendProgress("Oh, we already know this one! Let's show you the dupes... 🌟");
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                type: "result",
+                data: {
+                  success: true,
+                  data: {
+                    name: existingProduct.name,
+                    brand: existingProduct.brand,
+                    slug: existingProduct.slug
+                  }
+                }
+              })}\n\n`));
+              logInfo(`[${requestId}] Request completed successfully with existing product`);
+              controller.close();
+              return;
+            }
+            
+            logInfo(`[${requestId}] No existing product found, proceeding to fetch dupes`);
+
+            // 3. Get initial dupes from Perplexity
+            sendProgress("Scouring the beauty universe for your perfect match... 💄");
+            logInfo(`[${requestId}] Calling Perplexity API to get initial dupes for: ${productQuery}`);
+            const initialDupes = await getInitialDupes(productQuery);
+            
+            if (!initialDupes.originalName || !initialDupes.originalBrand) {
+              const errorMsg = 'Could not identify original product from search';
+              logError(`[${requestId}] ${errorMsg}`);
+              throw new Error(errorMsg);
+            }
+            
+            logInfo(`[${requestId}] Initial dupes received from Perplexity:
+              - Original: ${initialDupes.originalBrand} ${initialDupes.originalName}
+              - Found ${initialDupes.dupes.length} potential dupes`);
+
+            // 4. Create initial products with minimal data
+            sendProgress("Found some gems! Let's doll them up with more details... 💎");
+            
+            // Insert original product and dupes
+            const { originalProduct, dupeIds, productSlug } = await insertProductAndDupes(initialDupes, requestId);
+
+            // 5. Run all background processes
+            sendProgress("Putting together your beauty dossier... 📋");
+            
+            // Background tasks data
+            const backgroundData = {
+              originalProductId: originalProduct?.id,
+              dupeProductIds: dupeIds,
+              originalBrand: initialDupes.originalBrand,
+              originalName: initialDupes.originalName,
+              dupeInfo: initialDupes.dupes.map((dupe: any, index: number) => ({ id: dupeIds[index], name: dupe.name, brand: dupe.brand }))
+            };
+            
+            // Run background tasks in parallel
+            const results = await runBackgroundTasks(backgroundData, requestId);
+            
+            // Check for any failures in the results
+            const failures = results.filter(result => !result.success);
+            if (failures.length > 0) {
+              logError(`[${requestId}] ${failures.length} background processes failed: ${safeStringify(failures)}`);
+              // Continue anyway - we'll still show what we have
+            }
+
+            // 6. Return results to frontend
+            sendProgress("Ta-da! Your dupes are ready to shine! 🌟");
+            logInfo(`[${requestId}] Sending final result to client with slug: ${productSlug}`);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              type: "result",
+              data: {
+                success: true,
+                data: {
+                  name: originalProduct.name,
+                  brand: originalProduct.brand,
+                  slug: productSlug
+                }
+              }
+            })}\n\n`));
+            
+            logInfo(`[${requestId}] Request completed successfully`);
           } else {
             // Couldn't identify product clearly
             logError(`[${requestId}] Failed to identify product from input`);
@@ -371,186 +743,11 @@ serve(async (req) => {
             controller.close();
             return;
           }
-
-          // 2. Check if product exists in database
-          sendProgress("Checking our database for existing dupes...");
-          logInfo(`[${requestId}] Searching database for existing product: ${searchText}`);
-          
-          const { data: existingProducts, error: searchError } = await supabase
-            .from('products')
-            .select('id, name, brand, slug')
-            .or(`name.ilike.%${searchText}%,brand.ilike.%${searchText}%`)
-            .limit(1);
-            
-          if (searchError) {
-            logError(`[${requestId}] Error searching existing products: ${safeStringify(searchError)}`);
-          }
-
-          if (existingProducts && existingProducts.length > 0) {
-            logInfo(`[${requestId}] Found existing product in database: ${existingProducts[0].brand} ${existingProducts[0].name} (${existingProducts[0].slug})`);
-            sendProgress("Oh, we already know this one! Let's show you the dupes... 🌟");
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-              type: "result",
-              data: {
-                success: true,
-                data: {
-                  name: existingProducts[0].name,
-                  brand: existingProducts[0].brand,
-                  slug: existingProducts[0].slug
-                }
-              }
-            })}\n\n`));
-            logInfo(`[${requestId}] Request completed successfully with existing product`);
-            controller.close();
-            return;
-          }
-          
-          logInfo(`[${requestId}] No existing product found, proceeding to fetch dupes`);
-
-          // 3. Get initial dupes from Perplexity
-          sendProgress("Scouring the beauty universe for your perfect match... 💄");
-          logInfo(`[${requestId}] Calling Perplexity API to get initial dupes for: ${searchText}`);
-          const initialDupes = await getInitialDupes(searchText);
-          
-          if (!initialDupes.originalName || !initialDupes.originalBrand) {
-            const errorMsg = 'Could not identify original product from search';
-            logError(`[${requestId}] ${errorMsg}`);
-            throw new Error(errorMsg);
-          }
-          
-          logInfo(`[${requestId}] Initial dupes received from Perplexity:
-            - Original: ${initialDupes.originalBrand} ${initialDupes.originalName}
-            - Found ${initialDupes.dupes.length} potential dupes`);
-
-          // 4. Create initial products with minimal data
-          sendProgress("Found some gems! Let's doll them up with more details... 💎");
-          
-          // Create slug for original product
-          const productSlug = slugify(`${initialDupes.originalBrand}-${initialDupes.originalName}`, { lower: true });
-          logInfo(`[${requestId}] Generated slug for original product: ${productSlug}`);
-          
-          // Insert original product with minimal data
-          logInfo(`[${requestId}] Inserting original product into database: ${initialDupes.originalBrand} ${initialDupes.originalName}`);
-          const { data: originalProduct, error: productError } = await supabase
-            .from('products')
-            .insert({
-              name: initialDupes.originalName,
-              brand: initialDupes.originalBrand,
-              slug: productSlug,
-              price: 0, // Will be updated later
-              loading_ingredients: false, // Set to false since we'll wait for processing
-              loading_reviews: false,
-              loading_resources: false
-            })
-            .select()
-            .single();
-
-          if (productError) {
-            logError(`[${requestId}] Error inserting original product: ${safeStringify(productError)}`);
-            throw productError;
-          }
-          
-          logInfo(`[${requestId}] Original product inserted successfully with ID: ${originalProduct?.id}`);
-
-          // Insert dupes with minimal data
-          logInfo(`[${requestId}] Inserting ${initialDupes.dupes.length} dupes into database`);
-          const dupeIds = await Promise.all(
-            initialDupes.dupes.map(async (dupe, index) => {
-              const dupeSlug = slugify(`${dupe.brand}-${dupe.name}`, { lower: true });
-              logInfo(`[${requestId}] Processing dupe #${index + 1}: ${dupe.brand} ${dupe.name} (slug: ${dupeSlug})`);
-              
-              try {
-                const { data: dupeProduct, error: dupeError } = await supabase
-                  .from('products')
-                  .insert({
-                    name: dupe.name,
-                    brand: dupe.brand,
-                    slug: dupeSlug,
-                    price: 0, // Will be updated later
-                    loading_ingredients: false, // Set to false since we'll wait for processing
-                    loading_reviews: false,
-                    loading_resources: false
-                  })
-                  .select()
-                  .single();
-
-                if (dupeError) {
-                  logError(`[${requestId}] Error inserting dupe #${index + 1}: ${safeStringify(dupeError)}`);
-                  throw dupeError;
-                }
-                
-                logInfo(`[${requestId}] Dupe #${index + 1} inserted with ID: ${dupeProduct?.id}`);
-
-                // Create dupe relationship
-                logInfo(`[${requestId}] Creating relationship between ${originalProduct?.id} and ${dupeProduct?.id}`);
-                const { error: relationError } = await supabase
-                  .from('product_dupes')
-                  .insert({
-                    original_product_id: originalProduct?.id,
-                    dupe_product_id: dupeProduct?.id,
-                    match_score: dupe.matchScore,
-                    savings_percentage: 0 // Will be updated later
-                  });
-                  
-                if (relationError) {
-                  logError(`[${requestId}] Error creating dupe relationship: ${safeStringify(relationError)}`);
-                  throw relationError;
-                }
-
-                return dupeProduct?.id;
-              } catch (dupeInsertError) {
-                logError(`[${requestId}] Failed to insert dupe #${index + 1}: ${safeStringify(dupeInsertError)}`);
-                throw dupeInsertError;
-              }
-            })
-          );
-          
-          logInfo(`[${requestId}] Successfully inserted all ${dupeIds.length} dupes`);
-
-          // 5. Run all background processes
-          sendProgress("Putting together your beauty dossier... 📋");
-          
-          // Background tasks data
-          const backgroundData = {
-            originalProductId: originalProduct?.id,
-            dupeProductIds: dupeIds,
-            originalBrand: initialDupes.originalBrand,
-            originalName: initialDupes.originalName,
-            dupeInfo: initialDupes.dupes.map((dupe, index) => ({ id: dupeIds[index], name: dupe.name, brand: dupe.brand }))
-          };
-          
-          // Run background tasks in parallel
-          const results = await runBackgroundTasks(backgroundData, requestId);
-          
-          // Check for any failures in the results
-          const failures = results.filter(result => !result.success);
-          if (failures.length > 0) {
-            logError(`[${requestId}] ${failures.length} background processes failed: ${safeStringify(failures)}`);
-            // Continue anyway - we'll still show what we have
-          }
-
-          // 6. Return results to frontend
-          sendProgress("Ta-da! Your dupes are ready to shine! 🌟");
-          logInfo(`[${requestId}] Sending final result to client with slug: ${productSlug}`);
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-            type: "result",
-            data: {
-              success: true,
-              data: {
-                name: originalProduct.name,
-                brand: originalProduct.brand,
-                slug: productSlug
-              }
-            }
-          })}\n\n`));
-          
-          logInfo(`[${requestId}] Request completed successfully`);
-          
         } catch (error) {
           logError(`[${requestId}] Error in search-dupes stream handler: ${safeStringify(error)}`);
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({
             type: "error",
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
           })}\n\n`));
         } finally {
           controller.close();
@@ -570,7 +767,7 @@ serve(async (req) => {
   } catch (error) {
     logError(`[${requestId}] Fatal error in search-dupes handler: ${safeStringify(error)}`);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
