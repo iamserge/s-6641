@@ -1,7 +1,7 @@
 /// <reference lib="es2015" />
 
 import { GETIMG_API_KEY, GETIMG_BASE_URL, HF_API_KEY, HF_API_ENDPOINT } from "../shared/constants.ts";
-import { logInfo, logError, withRetry, blobToBase64, base64ToBlob } from "../shared/utils.ts";
+import { blobToBase64, base64ToBlob } from "../shared/utils.ts";
 import { uploadImage, getPublicUrl } from "../shared/db-client.ts";
 
 interface GetImgResponse {
