@@ -24,6 +24,9 @@ const Hero = () => {
   const [detectedProduct, setDetectedProduct] = useState(null);
   const [productError, setProductError] = useState(null);
   
+  // Refs
+  const eventSourceRef = useRef(null);
+  
   // Hooks
   const { toast } = useToast();
   const fileInputRef = useRef(null);
@@ -33,25 +36,29 @@ const Hero = () => {
   const { getRandomVariation } = useMessageVariations();
 
   const taglineWords = "Outsmart the Beauty Industry, One Dupe at a Time 🧠".split(" ");
+  
+  // Cleanup function to close EventSource if it exists
+  const cleanupEventSource = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+  }, []);
 
   // Handlers
   const handleSearch = async (e, productData) => {
     if (e) e.preventDefault();
     
     let searchData = {};
-    let bodyMethod = 'GET';
-    const url = new URL(`${(supabase as any).supabaseUrl}/functions/v1/search-dupes`);
     
+    // Build request data based on input type
     if (productData) {
       const formattedText = `${productData.brand || ''} ${productData.name || ''}`.trim();
       searchData = { searchText: formattedText };
-      url.searchParams.append("searchText", formattedText);
     } else if (previewImage) {
       searchData = { imageData: previewImage.replace(/^data:image\/\w+;base64,/, '') };
-      bodyMethod = 'POST';
     } else if (searchText.trim()) {
       searchData = { searchText: searchText.trim() };
-      url.searchParams.append("searchText", searchText.trim());
     } else {
       toast({
         variant: "destructive",
@@ -62,85 +69,128 @@ const Hero = () => {
     }
     
     try {
+      // Clean up any existing event source
+      cleanupEventSource();
+      
+      // Set UI state
       setIsProcessing(true);
       setSearchTriggered(true);
       setDetectedProduct(null);
       setProductError(null);
       setProgressMessage(getRandomVariation("Looking for dupes! 🎨"));
       
+      // Get authentication info
       const { data: { session } } = await supabase.auth.getSession();
       const apikey = (supabase as any).supabaseKey;
+      const baseUrl = `${(supabase as any).supabaseUrl}/functions/v1/search-dupes`;
       
-      url.searchParams.append("apikey", apikey);
-      if (session?.access_token) url.searchParams.append("authorization", `Bearer ${session.access_token}`);
+      // Send the POST request to initiate the search
+      const response = await fetch(baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': apikey,
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+        },
+        body: JSON.stringify(searchData)
+      });
       
-      const eventSource = new EventSource(url.toString());
-      
-      if (bodyMethod === 'POST') {
-        fetch(url.toString(), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(searchData)
-        }).catch(error => {
-          console.error("Error initiating search:", error);
-        });
+      // Check for immediate response (not SSE)
+      const contentType = response.headers.get('Content-Type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        if (data.success && data.data?.slug) {
+          setProgressMessage("Ta-da! Your dupes are ready to shine! 🌟");
+          setTimeout(() => {
+            navigate(`/dupes/for/${data.data.slug}`);
+            setIsProcessing(false);
+            setSearchTriggered(false);
+          }, 1500);
+          return;
+        } else if (data.error) {
+          throw new Error(data.error);
+        }
       }
       
-      eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        
-        if (data.type === "productIdentified") {
-          setDetectedProduct(data.data);
-        } else if (data.type === "progress") {
-          setProgressMessage(getRandomVariation(data.message));
-        } else if (data.type === "notRelevant") {
-          setProductError({
-            type: "notRelevant",
-            message: data.message || "This doesn't appear to be a beauty product we can find dupes for."
+      // If we didn't get a direct JSON response, set up SSE connection
+      eventSourceRef.current = new EventSource(`${baseUrl}?apikey=${apikey}`);
+      
+      eventSourceRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          switch (data.type) {
+            case "productIdentified":
+              setDetectedProduct(data.data);
+              break;
+              
+            case "progress":
+              setProgressMessage(getRandomVariation(data.message));
+              break;
+              
+            case "notRelevant":
+              setProductError({
+                type: "notRelevant",
+                message: data.message || "This doesn't appear to be a beauty product we can find dupes for."
+              });
+              cleanupEventSource();
+              setIsProcessing(false);
+              setSearchTriggered(false);
+              break;
+              
+            case "result":
+              if (data.data.success && data.data.data.slug) {
+                setProgressMessage("Ta-da! Your dupes are ready to shine! 🌟");
+                setTimeout(() => {
+                  cleanupEventSource();
+                  navigate(`/dupes/for/${data.data.data.slug}`);
+                  setIsProcessing(false);
+                  setSearchTriggered(false);
+                }, 1500);
+              } else {
+                throw new Error("No product data returned");
+              }
+              break;
+              
+            case "error":
+              throw new Error(data.error);
+              
+            default:
+              console.warn("Unknown event type:", data.type);
+          }
+        } catch (error) {
+          console.error("Error parsing SSE message:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Something went wrong processing the search results."
           });
-          eventSource.close();
+          cleanupEventSource();
           setIsProcessing(false);
           setSearchTriggered(false);
-        } else if (data.type === "result") {
-          if (data.data.success && data.data.data.slug) {
-            setProgressMessage("Ta-da! Your dupes are ready to shine! 🌟");
-            setTimeout(() => {
-              setProgressMessage("Almost ready... 🚀");
-              setTimeout(() => {
-                eventSource.close();
-                navigate(`/dupes/for/${data.data.data.slug}`);
-                setIsProcessing(false);
-                setSearchTriggered(false);
-              }, 1000);
-            }, 1500);
-          } else {
-            throw new Error("No product data returned");
-          }
-        } else if (data.type === "error") {
-          throw new Error(data.error);
         }
       };
       
-      eventSource.onerror = () => {
-        eventSource.close();
-        setIsProcessing(false);
-        setSearchTriggered(false);
+      eventSourceRef.current.onerror = (error) => {
+        console.error("EventSource error:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Something went wrong. Please try again.",
+          description: "Connection lost. Please try again."
         });
+        cleanupEventSource();
+        setIsProcessing(false);
+        setSearchTriggered(false);
       };
       
-      return () => eventSource.close();
     } catch (error) {
+      console.error("Search error:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to search for products. Please try again.",
+        description: error.message || "Failed to search for products. Please try again."
       });
+      cleanupEventSource();
       setIsProcessing(false);
       setSearchTriggered(false);
     }
@@ -268,6 +318,7 @@ const Hero = () => {
   };
 
   const cancelSearch = () => {
+    cleanupEventSource();
     setIsProcessing(false);
     setPreviewImage(null);
     setSearchText("");
@@ -278,8 +329,18 @@ const Hero = () => {
 
   const confirmProduct = () => {
     // Continue with the search using the detected product
+    if (detectedProduct) {
+      handleSearch(null, detectedProduct);
+    }
     setDetectedProduct(null);
   };
+
+  // Cleanup on component unmount
+  React.useEffect(() => {
+    return () => {
+      cleanupEventSource();
+    };
+  }, [cleanupEventSource]);
 
   return (
     <section className="container mx-auto px-4 pt-8 mt-20 min-h-screen flex flex-col items-center justify-center font-urbanist">

@@ -14,6 +14,9 @@ interface ProductInfo {
   isRelevant?: boolean;
 }
 
+// In-memory storage for SSE connections
+const requestDataStore = new Map<string, any>();
+
 /**
  * Processes text input to identify product and check relevance
  * @param textData Text input from user
@@ -97,11 +100,6 @@ async function processImageInput(imageData: string): Promise<ProductInfo> {
   }
 }
 
-/**
- * Processes barcode input to get product information
- * @param barcodeData Barcode number
- * @returns Object with product name, brand, category and relevance status
- */
 /**
  * Processes barcode input to get product information
  * @param barcodeData Barcode number
@@ -543,219 +541,226 @@ async function insertProductAndDupes(initialDupes: any, requestId: string): Prom
 }
 
 /**
+ * Process a search request and handle the full workflow
+ * @param searchData Search data (searchText or imageData)
+ * @param requestId Unique request ID for tracking
+ * @param sendEvent Function to send SSE events to client
+ */
+async function processSearchRequest(
+  searchData: any, 
+  requestId: string,
+  sendEvent: (type: string, data: any) => void
+) {
+  try {
+    sendEvent("progress", "Analyzing your input...");
+    
+    // 1. Identify product from input (text or image)
+    let productInfo: ProductInfo = { name: undefined, brand: undefined, category: undefined, isRelevant: undefined };
+    let inputType = searchData.searchText ? "text" : "image";
+    
+    if (searchData.imageData) {
+      // Process image to extract product info or barcode
+      logInfo(`[${requestId}] Processing image input`);
+      productInfo = await processImageInput(searchData.imageData);
+      logInfo(`[${requestId}] Image analysis complete, product identified: ${safeStringify(productInfo)}`);
+    } else if (searchData.searchText) {
+      // Process text input directly
+      logInfo(`[${requestId}] Processing text input: ${searchData.searchText}`);
+      inputType = "text";
+      productInfo = await processTextInput(searchData.searchText);
+      logInfo(`[${requestId}] Text analysis complete, product identified: ${safeStringify(productInfo)}`);
+    }
+    
+    // Send identified product info
+    if (productInfo && (productInfo.name || productInfo.brand)) {
+      const productName = [productInfo.brand, productInfo.name].filter(Boolean).join(' ');
+      logInfo(`[${requestId}] Product identified: ${productName}, isRelevant: ${productInfo.isRelevant}`);
+      
+      sendEvent("productIdentified", {
+        name: productInfo.name || '',
+        brand: productInfo.brand || '',
+        category: productInfo.category || '',
+        isRelevant: productInfo.isRelevant === false ? false : true,
+        inputType: inputType
+      });
+      
+      sendEvent("progress", `We detected: ${productName}`);
+      
+      // If product is not relevant for beauty dupes, end processing
+      if (productInfo.isRelevant === false) {
+        logInfo(`[${requestId}] Product not relevant for dupes, ending processing`);
+        sendEvent("notRelevant", "This doesn't appear to be a beauty product we can find dupes for.");
+        return;
+      }
+      
+      // Use the identified product name for further processing
+      const productQuery = productName;
+
+      // 2. Check if product exists in database - using improved search
+      sendEvent("progress", "Checking our database for existing dupes...");
+      const existingProductResult = await checkExistingProduct(productQuery, productInfo, requestId);
+      
+      if (existingProductResult.found && existingProductResult.product) {
+        const existingProduct = existingProductResult.product;
+        sendEvent("progress", "Oh, we already know this one! Let's show you the dupes... 🌟");
+        sendEvent("result", {
+          success: true,
+          data: {
+            name: existingProduct.name,
+            brand: existingProduct.brand,
+            slug: existingProduct.slug
+          }
+        });
+        logInfo(`[${requestId}] Request completed successfully with existing product`);
+        return;
+      }
+      
+      logInfo(`[${requestId}] No existing product found, proceeding to fetch dupes`);
+
+      // 3. Get initial dupes from Perplexity
+      sendEvent("progress", "Scouring the beauty universe for your perfect match... 💄");
+      logInfo(`[${requestId}] Calling Perplexity API to get initial dupes for: ${productQuery}`);
+      const initialDupes = await getInitialDupes(productQuery);
+      
+      if (!initialDupes.originalName || !initialDupes.originalBrand) {
+        const errorMsg = 'Could not identify original product from search';
+        logError(`[${requestId}] ${errorMsg}`);
+        throw new Error(errorMsg);
+      }
+      
+      logInfo(`[${requestId}] Initial dupes received from Perplexity:
+        - Original: ${initialDupes.originalBrand} ${initialDupes.originalName}
+        - Found ${initialDupes.dupes.length} potential dupes`);
+
+      // 4. Create initial products with minimal data
+      sendEvent("progress", "Found some gems! Let's doll them up with more details... 💎");
+      
+      // Insert original product and dupes
+      const { originalProduct, dupeIds, productSlug } = await insertProductAndDupes(initialDupes, requestId);
+
+      // 5. Run all background processes
+      sendEvent("progress", "Putting together your beauty dossier... 📋");
+      
+      // Background tasks data
+      const backgroundData = {
+        originalProductId: originalProduct?.id,
+        dupeProductIds: dupeIds,
+        originalBrand: initialDupes.originalBrand,
+        originalName: initialDupes.originalName,
+        dupeInfo: initialDupes.dupes.map((dupe: any, index: number) => ({ id: dupeIds[index], name: dupe.name, brand: dupe.brand }))
+      };
+      
+      // Run background tasks in parallel
+      const results = await runBackgroundTasks(backgroundData, requestId);
+      
+      // Check for any failures in the results
+      const failures = results.filter(result => !result.success);
+      if (failures.length > 0) {
+        logError(`[${requestId}] ${failures.length} background processes failed: ${safeStringify(failures)}`);
+        // Continue anyway - we'll still show what we have
+      }
+
+      // 6. Return results to frontend
+      sendEvent("progress", "Ta-da! Your dupes are ready to shine! 🌟");
+      logInfo(`[${requestId}] Sending final result to client with slug: ${productSlug}`);
+      sendEvent("result", {
+        success: true,
+        data: {
+          name: originalProduct.name,
+          brand: originalProduct.brand,
+          slug: productSlug
+        }
+      });
+      
+      logInfo(`[${requestId}] Request completed successfully`);
+    } else {
+      // Couldn't identify product clearly
+      logError(`[${requestId}] Failed to identify product from input`);
+      sendEvent("error", "We couldn't identify the product clearly. Please try again.");
+    }
+  } catch (error) {
+    logError(`[${requestId}] Error in search-dupes processing: ${safeStringify(error)}`);
+    sendEvent("error", error instanceof Error ? error.message : String(error));
+  }
+}
+
+/**
  * Main handler function for search-dupes endpoint
- * Processes input (text/image), checks database, finds dupes, and runs background tasks
+ * Supports both POST for data submission and GET for SSE connections 
  */
 serve(async (req) => {
   // Create a unique request ID for tracing this request through logs
   const requestId = crypto.randomUUID();
+  const url = new URL(req.url);
+  const providedRequestId = url.searchParams.get('requestId');
   
-  logInfo(`[${requestId}] New search-dupes request received: ${req.method}`);
+  // Use provided requestId or generate a new one
+  const actualRequestId = providedRequestId || requestId;
+  
+  logInfo(`[${actualRequestId}] New search-dupes request received: ${req.method}`);
   
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
-    logInfo(`[${requestId}] Handling preflight OPTIONS request`);
+    logInfo(`[${actualRequestId}] Handling preflight OPTIONS request`);
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // Only handle POST requests
-  if (req.method !== 'POST') {
-    logError(`[${requestId}] Method not allowed: ${req.method}`);
-    return new Response(
-      JSON.stringify({ success: false, error: "Method not allowed" }),
-      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  try {
-    // Extract input data from POST request body
-    logInfo(`[${requestId}] Processing POST request body`);
-    const body = await req.json();
-    const searchText = body.searchText;
-    const imageData = body.imageData;
+  // Check for SSE stream request (GET)
+  const isStream = url.searchParams.get('stream') === 'true';
+  
+  if (req.method === 'GET') {
+    logInfo(`[${actualRequestId}] Handling GET request, isStream: ${isStream}`);
     
-    logInfo(`[${requestId}] POST request with:
-      - searchText: ${searchText ? `${searchText.substring(0, 30)}${searchText.length > 30 ? '...' : ''}` : 'None'}
-      - imageData: ${imageData ? "Present" : "None"}`);
-    
-    if (!searchText && !imageData) {
-      logError(`[${requestId}] No search input provided in request`);
+    // If it's not a streaming request, return an error
+    if (!isStream) {
+      logError(`[${actualRequestId}] GET method without stream parameter`);
       return new Response(
-        JSON.stringify({ success: false, error: "No search input provided" }),
+        JSON.stringify({ success: false, error: "This endpoint requires either a POST request with search data or a GET request with stream=true" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Set up SSE stream
-    logInfo(`[${requestId}] Setting up Server-Sent Events (SSE) stream`);
+    
+    // Set up Server-Sent Events for streaming response
+    logInfo(`[${actualRequestId}] Setting up SSE stream for client`);
     const encoder = new TextEncoder();
+    
+    // Get request data from store if it exists
+    const searchData = requestDataStore.get(actualRequestId);
+    
+    if (!searchData) {
+      logError(`[${actualRequestId}] No data found for this request ID`);
+      return new Response(
+        JSON.stringify({ success: false, error: "No data found for this request ID. Send a POST request first." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Create ReadableStream for SSE
     const stream = new ReadableStream({
       async start(controller) {
-        const sendProgress = (message: string) => {
-          logInfo(`[${requestId}] Progress update: ${message}`);
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "progress", message })}\n\n`));
+        const sendEvent = (type: string, data: any) => {
+          logInfo(`[${actualRequestId}] Sending event: ${type}`);
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type, ...data })}\n\n`));
         };
-
+        
         try {
-          // Initial progress
-          sendProgress("Analyzing your input...");
-          
-          // 1. Identify product from input (text or image)
-          let productInfo: ProductInfo = { name: undefined, brand: undefined, category: undefined, isRelevant: undefined };
-          let inputType = searchText ? "text" : "image";
-          
-          if (imageData) {
-            // Process image to extract product info or barcode
-            logInfo(`[${requestId}] Processing image input`);
-            productInfo = await processImageInput(imageData);
-            logInfo(`[${requestId}] Image analysis complete, product identified: ${safeStringify(productInfo)}`);
-          } else if (searchText) {
-            // Process text input directly
-            logInfo(`[${requestId}] Processing text input: ${searchText}`);
-            inputType = "text";
-            productInfo = await processTextInput(searchText);
-            logInfo(`[${requestId}] Text analysis complete, product identified: ${safeStringify(productInfo)}`);
-          }
-          
-          // Send identified product info
-          if (productInfo && (productInfo.name || productInfo.brand)) {
-            const productName = [productInfo.brand, productInfo.name].filter(Boolean).join(' ');
-            logInfo(`[${requestId}] Product identified: ${productName}, isRelevant: ${productInfo.isRelevant}`);
-            
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-              type: "productIdentified",
-              data: {
-                name: productInfo.name || '',
-                brand: productInfo.brand || '',
-                category: productInfo.category || '',
-                isRelevant: productInfo.isRelevant === false ? false : true,
-                inputType: inputType
-              }
-            })}\n\n`));
-            
-            sendProgress(`We detected: ${productName}`);
-            
-            // If product is not relevant for beauty dupes, end processing
-            if (productInfo.isRelevant === false) {
-              logInfo(`[${requestId}] Product not relevant for dupes, ending processing`);
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                type: "notRelevant",
-                message: "This doesn't appear to be a beauty product we can find dupes for."
-              })}\n\n`));
-              controller.close();
-              return;
-            }
-            
-            // Use the identified product name for further processing
-            const productQuery = productName;
-
-            // 2. Check if product exists in database - using improved search
-            sendProgress("Checking our database for existing dupes...");
-            const existingProductResult = await checkExistingProduct(productQuery, productInfo, requestId);
-            
-            if (existingProductResult.found && existingProductResult.product) {
-              const existingProduct = existingProductResult.product;
-              sendProgress("Oh, we already know this one! Let's show you the dupes... 🌟");
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                type: "result",
-                data: {
-                  success: true,
-                  data: {
-                    name: existingProduct.name,
-                    brand: existingProduct.brand,
-                    slug: existingProduct.slug
-                  }
-                }
-              })}\n\n`));
-              logInfo(`[${requestId}] Request completed successfully with existing product`);
-              controller.close();
-              return;
-            }
-            
-            logInfo(`[${requestId}] No existing product found, proceeding to fetch dupes`);
-
-            // 3. Get initial dupes from Perplexity
-            sendProgress("Scouring the beauty universe for your perfect match... 💄");
-            logInfo(`[${requestId}] Calling Perplexity API to get initial dupes for: ${productQuery}`);
-            const initialDupes = await getInitialDupes(productQuery);
-            
-            if (!initialDupes.originalName || !initialDupes.originalBrand) {
-              const errorMsg = 'Could not identify original product from search';
-              logError(`[${requestId}] ${errorMsg}`);
-              throw new Error(errorMsg);
-            }
-            
-            logInfo(`[${requestId}] Initial dupes received from Perplexity:
-              - Original: ${initialDupes.originalBrand} ${initialDupes.originalName}
-              - Found ${initialDupes.dupes.length} potential dupes`);
-
-            // 4. Create initial products with minimal data
-            sendProgress("Found some gems! Let's doll them up with more details... 💎");
-            
-            // Insert original product and dupes
-            const { originalProduct, dupeIds, productSlug } = await insertProductAndDupes(initialDupes, requestId);
-
-            // 5. Run all background processes
-            sendProgress("Putting together your beauty dossier... 📋");
-            
-            // Background tasks data
-            const backgroundData = {
-              originalProductId: originalProduct?.id,
-              dupeProductIds: dupeIds,
-              originalBrand: initialDupes.originalBrand,
-              originalName: initialDupes.originalName,
-              dupeInfo: initialDupes.dupes.map((dupe: any, index: number) => ({ id: dupeIds[index], name: dupe.name, brand: dupe.brand }))
-            };
-            
-            // Run background tasks in parallel
-            const results = await runBackgroundTasks(backgroundData, requestId);
-            
-            // Check for any failures in the results
-            const failures = results.filter(result => !result.success);
-            if (failures.length > 0) {
-              logError(`[${requestId}] ${failures.length} background processes failed: ${safeStringify(failures)}`);
-              // Continue anyway - we'll still show what we have
-            }
-
-            // 6. Return results to frontend
-            sendProgress("Ta-da! Your dupes are ready to shine! 🌟");
-            logInfo(`[${requestId}] Sending final result to client with slug: ${productSlug}`);
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-              type: "result",
-              data: {
-                success: true,
-                data: {
-                  name: originalProduct.name,
-                  brand: originalProduct.brand,
-                  slug: productSlug
-                }
-              }
-            })}\n\n`));
-            
-            logInfo(`[${requestId}] Request completed successfully`);
-          } else {
-            // Couldn't identify product clearly
-            logError(`[${requestId}] Failed to identify product from input`);
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-              type: "error",
-              error: "We couldn't identify the product clearly. Please try again."
-            })}\n\n`));
-            controller.close();
-            return;
-          }
+          // Process the search request
+          await processSearchRequest(searchData, actualRequestId, sendEvent);
         } catch (error) {
-          logError(`[${requestId}] Error in search-dupes stream handler: ${safeStringify(error)}`);
+          logError(`[${actualRequestId}] Error in SSE stream handler: ${safeStringify(error)}`);
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({
             type: "error",
             error: error instanceof Error ? error.message : String(error)
           })}\n\n`));
         } finally {
+          // Clean up the request data
+          requestDataStore.delete(actualRequestId);
           controller.close();
-          logInfo(`[${requestId}] SSE stream closed`);
+          logInfo(`[${actualRequestId}] SSE stream closed`);
         }
       }
     });
-
+    
     return new Response(stream, { 
       headers: {
         ...corsHeaders,
@@ -764,11 +769,126 @@ serve(async (req) => {
         'Connection': 'keep-alive'
       }
     });
-  } catch (error) {
-    logError(`[${requestId}] Fatal error in search-dupes handler: ${safeStringify(error)}`);
-    return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : String(error) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
   }
+  
+  // Handle POST request
+  if (req.method === 'POST') {
+    logInfo(`[${actualRequestId}] Handling POST request`);
+    
+    try {
+      // Extract input data from POST request body
+      const body = await req.json();
+      const searchText = body.searchText;
+      const imageData = body.imageData;
+      
+      logInfo(`[${actualRequestId}] POST request with:
+        - searchText: ${searchText ? `${searchText.substring(0, 30)}${searchText.length > 30 ? '...' : ''}` : 'None'}
+        - imageData: ${imageData ? "Present" : "None"}`);
+      
+      if (!searchText && !imageData) {
+        logError(`[${actualRequestId}] No search input provided in request`);
+        return new Response(
+          JSON.stringify({ success: false, error: "No search input provided" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Store the data for this request ID
+      requestDataStore.set(actualRequestId, { searchText, imageData });
+      
+      // If streaming is requested directly in the POST, set up SSE
+      if (isStream) {
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          async start(controller) {
+            const sendEvent = (type: string, data: any) => {
+              logInfo(`[${actualRequestId}] Sending event: ${type}`);
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type, ...data })}\n\n`));
+            };
+            
+            try {
+              // Process the search request
+              await processSearchRequest({ searchText, imageData }, actualRequestId, sendEvent);
+            } catch (error) {
+              logError(`[${actualRequestId}] Error in SSE stream handler: ${safeStringify(error)}`);
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                type: "error",
+                error: error instanceof Error ? error.message : String(error)
+              })}\n\n`));
+            } finally {
+              // Clean up the request data
+              requestDataStore.delete(actualRequestId);
+              controller.close();
+              logInfo(`[${actualRequestId}] SSE stream closed`);
+            }
+          }
+        });
+        
+        return new Response(stream, { 
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+          }
+        });
+      }
+      
+      // If no streaming requested, process immediately and return result
+      logInfo(`[${actualRequestId}] Processing search synchronously`);
+      
+      // Define a collector for events
+      const events: any[] = [];
+      const sendEvent = (type: string, data: any) => {
+        logInfo(`[${actualRequestId}] Collecting event: ${type}`);
+        events.push({ type, ...data });
+      };
+      
+      // Process the search and collect events
+      await processSearchRequest({ searchText, imageData }, actualRequestId, sendEvent);
+      
+      // Find the last result event if any
+      const resultEvent = events.findLast(event => event.type === 'result');
+      if (resultEvent) {
+        return new Response(
+          JSON.stringify({ success: true, data: resultEvent.data }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Find any error events
+      const errorEvent = events.findLast(event => event.type === 'error');
+      if (errorEvent) {
+        return new Response(
+          JSON.stringify({ success: false, error: errorEvent.error }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // If no result or error, return a general success with the last progress
+      const lastProgressEvent = events.findLast(event => event.type === 'progress');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          status: "processing", 
+          message: lastProgressEvent?.message || "Processing request",
+          requestId: actualRequestId
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (error) {
+      logError(`[${actualRequestId}] Fatal error in search-dupes handler: ${safeStringify(error)}`);
+      return new Response(
+        JSON.stringify({ success: false, error: error instanceof Error ? error.message : String(error) }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+  
+  // Reject all other HTTP methods
+  logError(`[${actualRequestId}] Method not allowed: ${req.method}`);
+  return new Response(
+    JSON.stringify({ success: false, error: "Method not allowed" }),
+    { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
 });
