@@ -212,9 +212,9 @@ const DupesPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mb-12 text-center"
+            className="mb-14 mt-8 text-center" // Added mt-8 for top margin
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-violet-800 to-purple-600">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-orange-800 to-amber-600">
               Discover Beauty Dupes
             </h1>
             <p className="text-gray-600 max-w-2xl mx-auto">
@@ -222,14 +222,14 @@ const DupesPage = () => {
             </p>
           </motion.div>
 
-          <div className="mb-10">
-            <Tabs defaultValue={selectedCategory} onValueChange={handleCategoryChange} className="w-full justify-center">
+          <div className="mb-10 flex justify-center"> {/* Added flex and justify-center to center the tabs */}
+            <Tabs defaultValue={selectedCategory} onValueChange={handleCategoryChange} className="w-full max-w-3xl mx-auto">
               <TabsList className="bg-white/50 backdrop-blur-sm p-1 rounded-full border border-gray-100 shadow-sm mx-auto">
                 {categories.map((category) => (
                   <TabsTrigger
                     key={category.id}
                     value={category.id}
-                    className="rounded-full px-5 py-2 data-[state=active]:bg-violet-100 data-[state=active]:text-violet-800"
+                    className="rounded-full px-5 py-2 data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800"
                   >
                     {category.name}
                   </TabsTrigger>
@@ -240,8 +240,8 @@ const DupesPage = () => {
 
           {isLoading ? (
             <div className="flex justify-center items-center p-12">
-              <Loader2 className="w-10 h-10 animate-spin text-violet-600" />
-              <span className="ml-4 text-lg text-violet-800">Loading dupes...</span>
+              <Loader2 className="w-10 h-10 animate-spin text-orange-600" />
+              <span className="ml-4 text-lg text-orange-800">Loading dupes...</span>
             </div>
           ) : isError ? (
             <div className="text-center p-12 bg-red-50 rounded-xl">
