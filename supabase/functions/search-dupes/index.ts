@@ -319,31 +319,7 @@ async function checkExistingProduct(
       }
     }
     
-    // 3. Try searching for parts of the text in either name or brand
-    const searchTerms = searchText.split(' ').filter(term => term.length > 3);
-    
-    if (searchTerms.length > 0) {
-      // Build a query that will match any of the significant words
-      const query = supabase
-        .from('products')
-        .select('id, name, brand, slug');
-      
-      const orConditions = searchTerms.map(term => `name.ilike.%${term}%`);
-      const fullOrCondition = orConditions.join(',');
-      
-      const { data: partialMatches, error: partialError } = await query
-        .or(fullOrCondition)
-        .limit(5);
-        
-      if (partialError) {
-        logError(`[${requestId}] Error in partial search: ${safeStringify(partialError)}`);
-      } else if (partialMatches && partialMatches.length > 0) {
-        // Find the best match using a scoring system
-        const bestMatch = findBestMatch(partialMatches, searchText);
-        logInfo(`[${requestId}] Found product with partial match: ${bestMatch.brand} ${bestMatch.name}`);
-        return { found: true, product: bestMatch };
-      }
-    }
+ 
     
     // 4. Try by slug variation
     const slugifiedSearch = slugify(searchText, { lower: true });
