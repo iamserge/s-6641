@@ -1,9 +1,258 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getInitialDupes } from "../services/perplexity.ts";
+import { getInitialDupes, identifyProductWithPerplexity } from "../services/perplexity.ts";
 import { slugify } from "https://deno.land/x/slugify@0.3.0/mod.ts";
 import { supabase } from "../shared/db-client.ts";
 import { corsHeaders, logInfo, logError, safeStringify } from "../shared/utils.ts";
+import { extractProductInfoFromImage } from "../services/openai.ts";
 
+/**
+ * Processes text input to identify product and check relevance
+ * @param textData Text input from user
+ * @returns Object with product name, brand, category and relevance status
+ */
+async function processTextInput(textData) {
+  const logPrefix = `[TEXT-PROCESSING]`;
+  logInfo(`${logPrefix} Processing text input: "${textData}"`);
+  
+  // Call Perplexity to identify product and determine if it's relevant
+  return await identifyProductWithPerplexity(textData);
+}
+
+/**
+ * Processes image input to extract product information or barcode
+ * @param imageData Base64 encoded image data
+ * @returns Object with product name, brand, category and relevance status
+ */
+async function processImageInput(imageData) {
+  const logPrefix = `[IMAGE-PROCESSING]`;
+  logInfo(`${logPrefix} Starting image analysis`);
+  
+  try {
+    // Use OpenAI Vision to analyze the image via the dedicated function
+    const extractedInfo = await extractProductInfoFromImage(imageData);
+    
+    // Check if it's a barcode
+    if (extractedInfo.barcode) {
+      logInfo(`${logPrefix} Barcode detected: ${extractedInfo.barcode}`);
+      
+      // Use regex to validate barcode format
+      const barcodeRegex = /^[0-9]{8,14}$/;
+      if (barcodeRegex.test(extractedInfo.barcode)) {
+        // Process the barcode with external database
+        return await processBarcodeInput(extractedInfo.barcode);
+      } else {
+        logError(`${logPrefix} Invalid barcode format: ${extractedInfo.barcode}`);
+        return {
+          name: "Unknown product",
+          brand: null,
+          isRelevant: false
+        };
+      }
+    }
+    
+    // If it's a product image, process it through Perplexity
+    if (extractedInfo.name) {
+      logInfo(`${logPrefix} Product image detected: ${extractedInfo.name}`);
+      const searchText = `${extractedInfo.brand || ''} ${extractedInfo.name || ''}`.trim();
+      
+      if (searchText) {
+        // Use product identification function
+        return await identifyProductWithPerplexity(searchText);
+      }
+    }
+    
+    // If we couldn't extract useful information
+    logInfo(`${logPrefix} Could not extract clear product information from image`);
+    return {
+      name: extractedInfo.name || "Unknown product",
+      brand: extractedInfo.brand || null,
+      category: extractedInfo.category || null,
+      isRelevant: false // Default to false when we can't determine
+    };
+  } catch (error) {
+    logError(`${logPrefix} Error processing image: ${safeStringify(error)}`);
+    return {
+      name: "Unknown product",
+      brand: null,
+      isRelevant: false
+    };
+  }
+}
+
+/**
+ * Processes barcode input to get product information
+ * @param barcodeData Barcode number
+ * @returns Object with product name, brand, category and relevance status
+ */
+async function processBarcodeInput(barcodeData) {
+  const logPrefix = `[BARCODE-PROCESSING]`;
+  logInfo(`${logPrefix} Starting barcode lookup: ${barcodeData}`);
+  
+  try {
+    // Handle barcode/EAN/UPC lookup
+    const UPCITEMDB_API_ENDPOINT = "https://api.upcitemdb.com/prod/trial/lookup";
+    const apiKey = Deno.env.get('UPCDB_API_KEY');
+    
+    if (!apiKey) {
+      logError(`${logPrefix} UPCDB_API_KEY is not set in environment variables`);
+    }
+    
+    logInfo(`${logPrefix} Calling UPC Item DB API: ${UPCITEMDB_API_ENDPOINT}?upc=${barcodeData}`);
+    
+    const response = await fetch(`${UPCITEMDB_API_ENDPOINT}?upc=${barcodeData}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      logError(`${logPrefix} UPC Item DB API error: ${response.status} - ${errorText}`);
+      throw new Error(`Barcode lookup API error: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    logInfo(`${logPrefix} UPC Item DB response received: ${safeStringify(result)}`);
+    
+    if (result.items && result.items.length > 0) {
+      logInfo(`${logPrefix} Barcode lookup found ${result.items.length} items`);
+      const item = result.items[0];
+      
+      // After getting product info from UPC database, verify if it's a beauty product
+      // using Perplexity for consistency with other flows
+      const searchQuery = `${item.brand || ''} ${item.title || ''}`.trim();
+      if (searchQuery) {
+        return await identifyProductWithPerplexity(searchQuery);
+      }
+      
+      // If we couldn't get a search query, return basic info
+      return {
+        name: item.title,
+        brand: item.brand,
+        category: item.category,
+        isRelevant: false // We couldn't verify with Perplexity, so default to false
+      };
+    }
+    
+    logError(`${logPrefix} No items found for barcode: ${barcodeData}`);
+    throw new Error('Barcode not found');
+  } catch (error) {
+    logError(`${logPrefix} Error processing barcode: ${safeStringify(error)}`);
+    // If barcode lookup fails, return just the barcode as the name
+    return {
+      name: `Product #${barcodeData}`,
+      brand: null,
+      isRelevant: false
+    };
+  }
+}
+
+/**
+ * Runs background processing tasks for product and dupes
+ * @param backgroundData Object containing product and dupe information
+ * @param requestId Unique ID for the request
+ * @returns Array of results from background tasks
+ */
+async function runBackgroundTasks(backgroundData, requestId) {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const authKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  
+  if (!supabaseUrl || !authKey) {
+    logError(`[${requestId}] Missing Supabase URL or service role key for background tasks`);
+    return [];
+  }
+  
+  // Execute all background functions in parallel
+  logInfo(`[${requestId}] Executing background processing tasks in parallel`);
+  const startTime = Date.now();
+  
+  try {
+    const results = await Promise.all([
+      // Process brands
+      (async () => {
+        logInfo(`[${requestId}] Starting process-brands task`);
+        try {
+          const response = await fetch(`${supabaseUrl}/functions/v1/process-brands`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
+            body: JSON.stringify(backgroundData)
+          });
+          const result = await response.json();
+          logInfo(`[${requestId}] process-brands task completed: ${safeStringify(result)}`);
+          return result;
+        } catch (e) {
+          logError(`[${requestId}] process-brands task failed: ${safeStringify(e)}`);
+          return { success: false, error: e.message };
+        }
+      })(),
+    
+      // Process reviews
+      (async () => {
+        logInfo(`[${requestId}] Starting process-reviews task`);
+        try {
+          const response = await fetch(`${supabaseUrl}/functions/v1/process-reviews`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
+            body: JSON.stringify(backgroundData)
+          });
+          const result = await response.json();
+          logInfo(`[${requestId}] process-reviews task completed: ${safeStringify(result)}`);
+          return result;
+        } catch (e) {
+          logError(`[${requestId}] process-reviews task failed: ${safeStringify(e)}`);
+          return { success: false, error: e.message };
+        }
+      })(),
+      
+      // Process resources
+      (async () => {
+        logInfo(`[${requestId}] Starting process-resources task`);
+        try {
+          const response = await fetch(`${supabaseUrl}/functions/v1/process-resources`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
+            body: JSON.stringify(backgroundData)
+          });
+          const result = await response.json();
+          logInfo(`[${requestId}] process-resources task completed: ${safeStringify(result)}`);
+          return result;
+        } catch (e) {
+          logError(`[${requestId}] process-resources task failed: ${safeStringify(e)}`);
+          return { success: false, error: e.message };
+        }
+      })(),
+      
+      // Process detailed analysis (images, prices, etc.)
+      (async () => {
+        logInfo(`[${requestId}] Starting process-detailed-analysis task`);
+        try {
+          const response = await fetch(`${supabaseUrl}/functions/v1/process-detailed-analysis`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
+            body: JSON.stringify(backgroundData)
+          });
+          const result = await response.json();
+          logInfo(`[${requestId}] process-detailed-analysis task completed: ${safeStringify(result)}`);
+          return result;
+        } catch (e) {
+          logError(`[${requestId}] process-detailed-analysis task failed: ${safeStringify(e)}`);
+          return { success: false, error: e.message };
+        }
+      })()
+    ]);
+    
+    const endTime = Date.now();
+    logInfo(`[${requestId}] All background tasks completed in ${endTime - startTime}ms`);
+    
+    return results;
+  } catch (error) {
+    logError(`[${requestId}] Error running background tasks: ${safeStringify(error)}`);
+    return [];
+  }
+}
+
+/**
+ * Main handler function for search-dupes endpoint
+ * Processes input (text/image), checks database, finds dupes, and runs background tasks
+ */
 serve(async (req) => {
   // Create a unique request ID for tracing this request through logs
   const requestId = crypto.randomUUID();
@@ -19,7 +268,6 @@ serve(async (req) => {
     // Extract input data based on method
     let searchText = null;
     let imageData = null;
-    let barcodeData = null;
     
     if (req.method === 'GET') {
       const url = new URL(req.url);
@@ -29,16 +277,14 @@ serve(async (req) => {
       logInfo(`[${requestId}] Processing POST request body`);
       const body = await req.json();
       searchText = body.searchText;
-      imageData = body.imageData ? "[IMAGE DATA PRESENT]" : null; // Log presence but not content
-      barcodeData = body.barcodeData;
+      imageData = body.imageData;
       
       logInfo(`[${requestId}] POST request with:
         - searchText: ${searchText?.substring(0, 30)}${searchText?.length > 30 ? '...' : ''}
-        - imageData: ${imageData ? "Present" : "None"}
-        - barcodeData: ${barcodeData || "None"}`);
+        - imageData: ${imageData ? "Present" : "None"}`);
     }
     
-    if (!searchText && !imageData && !barcodeData) {
+    if (!searchText && !imageData) {
       logError(`[${requestId}] No search input provided in request`);
       return new Response(
         JSON.stringify({ success: false, error: "No search input provided" }),
@@ -60,20 +306,15 @@ serve(async (req) => {
           // Initial progress
           sendProgress("Analyzing your input...");
           
-          // 1. Determine input type and identify product
+          // 1. Identify product from input (text or image)
           let productInfo = null;
-          let inputType = "unknown";
+          let inputType = searchText ? "text" : "image";
           
           if (imageData) {
+            // Process image to extract product info or barcode
             logInfo(`[${requestId}] Processing image input`);
-            inputType = "image";
             productInfo = await processImageInput(imageData);
             logInfo(`[${requestId}] Image analysis complete, product identified: ${safeStringify(productInfo)}`);
-          } else if (barcodeData) {
-            logInfo(`[${requestId}] Processing barcode input: ${barcodeData}`);
-            inputType = "barcode";
-            productInfo = await processBarcodeInput(barcodeData);
-            logInfo(`[${requestId}] Barcode lookup complete, product identified: ${safeStringify(productInfo)}`);
           } else if (searchText) {
             // Handle text input - check if it's an EAN/UPC code first
             const eanRegex = /^[0-9]{8,14}$/;
@@ -92,7 +333,7 @@ serve(async (req) => {
           // Send identified product info
           if (productInfo && (productInfo.name || productInfo.brand)) {
             const productName = [productInfo.brand, productInfo.name].filter(Boolean).join(' ');
-            logInfo(`[${requestId}] Sending identified product to client: ${productName}`);
+            logInfo(`[${requestId}] Product identified: ${productName}, isRelevant: ${productInfo.isRelevant}`);
             
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
               type: "productIdentified",
@@ -100,14 +341,35 @@ serve(async (req) => {
                 name: productInfo.name || '',
                 brand: productInfo.brand || '',
                 category: productInfo.category || '',
+                isRelevant: productInfo.isRelevant === false ? false : true,
                 inputType: inputType
               }
             })}\n\n`));
             
             sendProgress(`We detected: ${productName}`);
             
-            // Use the detected product name for further processing
+            // If product is not relevant for beauty dupes, end processing
+            if (productInfo.isRelevant === false) {
+              logInfo(`[${requestId}] Product not relevant for dupes, ending processing`);
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                type: "notRelevant",
+                message: "This doesn't appear to be a beauty product we can find dupes for."
+              })}\n\n`));
+              controller.close();
+              return;
+            }
+            
+            // Use the identified product name for further processing
             searchText = productName;
+          } else {
+            // Couldn't identify product clearly
+            logError(`[${requestId}] Failed to identify product from input`);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              type: "error",
+              error: "We couldn't identify the product clearly. Please try again."
+            })}\n\n`));
+            controller.close();
+            return;
           }
 
           // 2. Check if product exists in database
@@ -242,13 +504,11 @@ serve(async (req) => {
               }
             })
           );
-
           
           logInfo(`[${requestId}] Successfully inserted all ${dupeIds.length} dupes`);
 
-          // 5. Run all background processes and wait for them to complete
+          // 5. Run all background processes
           sendProgress("Putting together your beauty dossier... 📋");
-          logInfo(`[${requestId}] Initiating background processing tasks`);
           
           // Background tasks data
           const backgroundData = {
@@ -259,107 +519,17 @@ serve(async (req) => {
             dupeInfo: initialDupes.dupes.map((dupe, index) => ({ id: dupeIds[index], name: dupe.name, brand: dupe.brand }))
           };
           
-          const supabaseUrl = Deno.env.get('SUPABASE_URL');
-          const authKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+          // Run background tasks in parallel
+          const results = await runBackgroundTasks(backgroundData, requestId);
           
-          if (!supabaseUrl || !authKey) {
-            logError(`[${requestId}] Missing Supabase URL or service role key for background tasks`);
-          }
-          
-          // Execute all background functions in parallel but wait for them to complete
-          logInfo(`[${requestId}] Executing background processing tasks in parallel`);
-          const startTime = Date.now();
-          
-          try {
-            const results = await Promise.all([
-              // Process brands
-              (async () => {
-                logInfo(`[${requestId}] Starting process-brands task`);
-                try {
-                  const response = await fetch(`${supabaseUrl}/functions/v1/process-brands`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
-                    body: JSON.stringify(backgroundData)
-                  });
-                  const result = await response.json();
-                  logInfo(`[${requestId}] process-brands task completed: ${safeStringify(result)}`);
-                  return result;
-                } catch (e) {
-                  logError(`[${requestId}] process-brands task failed: ${safeStringify(e)}`);
-                  return { success: false, error: e.message };
-                }
-              })(),
-            
-              // Process reviews
-              (async () => {
-                logInfo(`[${requestId}] Starting process-reviews task`);
-                try {
-                  const response = await fetch(`${supabaseUrl}/functions/v1/process-reviews`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
-                    body: JSON.stringify(backgroundData)
-                  });
-                  const result = await response.json();
-                  logInfo(`[${requestId}] process-reviews task completed: ${safeStringify(result)}`);
-                  return result;
-                } catch (e) {
-                  logError(`[${requestId}] process-reviews task failed: ${safeStringify(e)}`);
-                  return { success: false, error: e.message };
-                }
-              })(),
-              
-              // Process resources
-              (async () => {
-                logInfo(`[${requestId}] Starting process-resources task`);
-                try {
-                  const response = await fetch(`${supabaseUrl}/functions/v1/process-resources`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
-                    body: JSON.stringify(backgroundData)
-                  });
-                  const result = await response.json();
-                  logInfo(`[${requestId}] process-resources task completed: ${safeStringify(result)}`);
-                  return result;
-                } catch (e) {
-                  logError(`[${requestId}] process-resources task failed: ${safeStringify(e)}`);
-                  return { success: false, error: e.message };
-                }
-              })(),
-              
-              // Process detailed analysis (images, prices, etc.)
-              (async () => {
-                logInfo(`[${requestId}] Starting process-detailed-analysis task`);
-                try {
-                  const response = await fetch(`${supabaseUrl}/functions/v1/process-detailed-analysis`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authKey}` },
-                    body: JSON.stringify(backgroundData)
-                  });
-                  const result = await response.json();
-                  logInfo(`[${requestId}] process-detailed-analysis task completed: ${safeStringify(result)}`);
-                  return result;
-                } catch (e) {
-                  logError(`[${requestId}] process-detailed-analysis task failed: ${safeStringify(e)}`);
-                  return { success: false, error: e.message };
-                }
-              })()
-            ]);
-            
-            const endTime = Date.now();
-            logInfo(`[${requestId}] All background tasks completed in ${endTime - startTime}ms`);
-            
-            // Check for any failures in the results
-            const failures = results.filter(result => !result.success);
-            if (failures.length > 0) {
-              logError(`[${requestId}] ${failures.length} background processes failed: ${safeStringify(failures)}`);
-              // Continue anyway - we'll still show what we have
-            }
-          } catch (backgroundError) {
-            logError(`[${requestId}] Error running background tasks: ${safeStringify(backgroundError)}`);
-            // Continue anyway - we'll still return the basic product info
+          // Check for any failures in the results
+          const failures = results.filter(result => !result.success);
+          if (failures.length > 0) {
+            logError(`[${requestId}] ${failures.length} background processes failed: ${safeStringify(failures)}`);
+            // Continue anyway - we'll still show what we have
           }
 
-          // 6. Return results to frontend once all background tasks are complete
+          // 6. Return results to frontend
           sendProgress("Ta-da! Your dupes are ready to shine! 🌟");
           logInfo(`[${requestId}] Sending final result to client with slug: ${productSlug}`);
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({
@@ -405,165 +575,3 @@ serve(async (req) => {
     );
   }
 });
-
-async function processImageInput(imageData) {
-  const logPrefix = `[IMAGE-PROCESSING]`;
-  logInfo(`${logPrefix} Starting image analysis with OpenAI Vision API`);
-  
-  try {
-    // Vision API call to detect product
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You analyze images of makeup products and return structured information in JSON format with name, brand and category fields.'
-          },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: 'Extract product name, brand, and category from this image. Return only name, brand, and category fields.' },
-              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageData}` } }
-            ]
-          }
-        ],
-        response_format: { type: "json_object" }
-      }),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      logError(`${logPrefix} OpenAI API error: ${response.status} - ${errorText}`);
-      throw new Error(`Vision API error: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    logInfo(`${logPrefix} OpenAI Vision API response received`);
-    
-    const content = result.choices[0].message.content;
-    logInfo(`${logPrefix} Parsed content: ${content}`);
-    
-    const parsedResult = JSON.parse(content);
-    logInfo(`${logPrefix} Image analysis complete: ${safeStringify(parsedResult)}`);
-    
-    return parsedResult;
-  } catch (error) {
-    logError(`${logPrefix} Error processing image: ${safeStringify(error)}`);
-    // Return a basic structure on error
-    return {
-      name: "Unknown product",
-      brand: null,
-      category: null
-    };
-  }
-}
-
-async function processTextInput(textData) {
-  const logPrefix = `[TEXT-PROCESSING]`;
-  logInfo(`${logPrefix} Starting text analysis: "${textData}"`);
-  
-  try {
-    // For text input, use a lightweight model to extract product name and brand
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'Extract the makeup product name and brand from the text. Return JSON with name and brand fields only.'
-          },
-          {
-            role: 'user',
-            content: textData
-          }
-        ],
-        response_format: { type: "json_object" }
-      }),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      logError(`${logPrefix} OpenAI API error: ${response.status} - ${errorText}`);
-      throw new Error(`Text analysis API error: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    logInfo(`${logPrefix} OpenAI text analysis response received`);
-    
-    const content = result.choices[0].message.content;
-    logInfo(`${logPrefix} Parsed content: ${content}`);
-    
-    const parsedResult = JSON.parse(content);
-    logInfo(`${logPrefix} Text analysis complete: ${safeStringify(parsedResult)}`);
-    
-    return parsedResult;
-  } catch (error) {
-    logError(`${logPrefix} Error processing text: ${safeStringify(error)}`);
-    // If parsing fails, just return the text as name
-    return {
-      name: textData,
-      brand: null
-    };
-  }
-}
-
-async function processBarcodeInput(barcodeData) {
-  const logPrefix = `[BARCODE-PROCESSING]`;
-  logInfo(`${logPrefix} Starting barcode lookup: ${barcodeData}`);
-  
-  try {
-    // Handle barcode/EAN/UPC lookup
-    const UPCITEMDB_API_ENDPOINT = "https://api.upcitemdb.com/prod/trial/lookup";
-    const apiKey = Deno.env.get('UPCDB_API_KEY');
-    
-    if (!apiKey) {
-      logError(`${logPrefix} UPCDB_API_KEY is not set in environment variables`);
-    }
-    
-    logInfo(`${logPrefix} Calling UPC Item DB API: ${UPCITEMDB_API_ENDPOINT}?upc=${barcodeData}`);
-    
-    const response = await fetch(`${UPCITEMDB_API_ENDPOINT}?upc=${barcodeData}`, {
-      headers: { 'Authorization': `Bearer ${apiKey}` }
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      logError(`${logPrefix} UPC Item DB API error: ${response.status} - ${errorText}`);
-      throw new Error(`Barcode lookup API error: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    logInfo(`${logPrefix} UPC Item DB response received: ${safeStringify(result)}`);
-    
-    if (result.items && result.items.length > 0) {
-      logInfo(`${logPrefix} Barcode lookup found ${result.items.length} items`);
-      const item = result.items[0];
-      return {
-        name: item.title,
-        brand: item.brand,
-        category: item.category
-      };
-    }
-    
-    logError(`${logPrefix} No items found for barcode: ${barcodeData}`);
-    throw new Error('Barcode not found');
-  } catch (error) {
-    logError(`${logPrefix} Error processing barcode: ${safeStringify(error)}`);
-    // If barcode lookup fails, return just the barcode as the name
-    return {
-      name: `Product #${barcodeData}`,
-      brand: null
-    };
-  }
-}

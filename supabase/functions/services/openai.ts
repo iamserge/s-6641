@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /// <reference lib="es2015" />
 
 import { logInfo, logError } from "../shared/utils.ts";
@@ -220,11 +221,11 @@ export async function getProductEnrichmentData(productName: string, brand: strin
  * Repairs invalid JSON from Perplexity API using OpenAI's structured format
  * Enhanced with stronger error handling and validation
  */
-export async function repairPerplexityResponse(perplexityContent: string, schemaDefinition: string): Promise<DupeResponse> {
+export async function repairPerplexityResponse(perplexityContent: string, schemaDefinition: string): Promise<any> {
   logInfo("Repairing invalid JSON from Perplexity using OpenAI structured format");
   
   // First, try to clean up common JSON formatting issues
-  let cleanedContent = perplexityContent
+  const cleanedContent = perplexityContent
     .replace(/^```json\s*|\s*```$/g, '') // Remove Markdown code blocks
     .replace(/\/\/.*$/gm, '') // Remove JavaScript-style comments
     .replace(/[""]/g, '"') // Replace fancy quotes with regular quotes
@@ -318,7 +319,93 @@ export async function cleanupAndStructureData(dupeAnalysis: any): Promise<DupeRe
 
 
 
+export async function extractProductInfoFromImage(imageData: string): Promise<{
+  name?: string;
+  brand?: string;
+  category?: string;
+  barcode?: string;
+}> {
+  const logPrefix = `[OPENAI-VISION]`;
+  logInfo(`${logPrefix} Analyzing image with OpenAI Vision API`);
+  
+  try {
+    // Use OpenAI Vision to analyze the image
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You analyze images of products and return structured information. 
+If the image shows a barcode or QR code, extract ONLY the numeric barcode number.
+If the image shows a product, extract the product name, brand, and category if visible.
 
+Return ONLY a valid JSON object with one of these two exact formats:
+
+For barcodes:
+{
+  "barcode": "numeric code only"
+}
+
+For products:
+{
+  "name": "product name",
+  "brand": "brand name if visible",
+  "category": "product category if identifiable"
+}
+
+Do not include any additional fields or explanatory text.`
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Analyze this image and extract either product details or barcode.' },
+              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageData}` } }
+            ]
+          }
+        ],
+        response_format: { type: "json_object" }
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      logError(`${logPrefix} OpenAI API error: ${response.status} - ${errorText}`);
+      throw new Error(`Vision API error: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    const content = result.choices[0].message.content;
+    logInfo(`${logPrefix} OpenAI Vision API response received`);
+    
+    try {
+      const parsedResult = JSON.parse(content);
+      
+      if (parsedResult.barcode) {
+        logInfo(`${logPrefix} Barcode detected: ${parsedResult.barcode}`);
+        return { barcode: parsedResult.barcode };
+      } else {
+        logInfo(`${logPrefix} Product detected: ${parsedResult.name}`);
+        return {
+          name: parsedResult.name,
+          brand: parsedResult.brand,
+          category: parsedResult.category
+        };
+      }
+    } catch (parseError) {
+      logError(`${logPrefix} Failed to parse OpenAI response: ${parseError.message}`);
+      throw new Error('Invalid response format from OpenAI');
+    }
+  } catch (error) {
+    logError(`${logPrefix} Error processing image: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
+  }
+}
 /**
  * Cleans up and structures the initial dupes response from Perplexity using OpenAI
  * Enhanced with better error handling and validation
@@ -332,7 +419,7 @@ export async function cleanupInitialDupes(perplexityContent: string): Promise<{
   logInfo("Cleaning up initial dupes response with OpenAI");
 
   // First, try to clean up common JSON formatting issues
-  let cleanedContent = perplexityContent
+  const cleanedContent = perplexityContent
     .replace(/^```json\s*|\s*```$/g, '') // Remove Markdown code blocks
     .replace(/\/\/.*$/gm, '') // Remove JavaScript-style comments
     .replace(/[""]/g, '"') // Replace fancy quotes with regular quotes

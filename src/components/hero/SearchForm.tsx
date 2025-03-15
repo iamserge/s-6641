@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -13,7 +13,7 @@ interface SearchFormProps {
   isProcessing: boolean;
   isCameraOpen: boolean;
   handleCameraSearch: () => void;
-  handleSearch: (e?: React.FormEvent) => void;
+  handleSearch: (e?: React.FormEvent, productData?: any) => Promise<any> | void;
   fileInputRef: React.RefObject<HTMLInputElement>;
 }
 
@@ -34,7 +34,7 @@ const SearchForm = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1.6, duration: 0.8 }}
-      onSubmit={handleSearch}
+      onSubmit={(e) => handleSearch(e)}
     >
       <div className="relative">
         {previewImage && (

@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /// <reference lib="es2015" />
 
-import { logInfo, logError, cleanMarkdownCodeBlock } from "../shared/utils.ts";
+import { logInfo, logError, cleanMarkdownCodeBlock, safeStringify } from "../shared/utils.ts";
 import { DupeResponse, PRODUCT_CATEGORIES } from "../shared/types.ts";
 import { 
   PERPLEXITY_API_KEY, 
@@ -8,7 +9,83 @@ import {
   SCHEMA_DEFINITION 
 } from "../shared/constants.ts";
 import { cleanupInitialDupes, repairPerplexityResponse } from "./openai.ts";
+const IDENTIFY_PRODUCT_SYSTEM_PROMPT = `
+You are a beauty product expert specializing in identifying makeup, skincare, and hair care products.
+Your task is to identify product details from user input and determine if it's a beauty-related product.
 
+IMPORTANT: Only beauty products (makeup, skincare, hair care, fragrance, nail care) are relevant.
+Non-beauty items like electronics, food, clothing, furniture, etc. are NOT relevant.
+
+Return ONLY a JSON object in the exact format below - no explanations or other text:
+
+{
+  "productName": "full product name",
+  "brandName": "brand name",
+  "category": "product category if known",
+  "isRelevant": boolean indicating if this is a beauty product
+}
+
+If the input is not a beauty product, set isRelevant to false.
+`;
+
+// 2. New function to identify product and check relevance using Perplexity
+export async function identifyProductWithPerplexity(searchText) {
+  const logPrefix = `[PRODUCT-IDENTIFICATION]`;
+  logInfo(`${logPrefix} Identifying product with Perplexity: "${searchText}"`);
+  
+  try {
+    const response = await fetch(PERPLEXITY_API_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${PERPLEXITY_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "sonar-pro",
+        messages: [
+          {
+            role: "system",
+            content: IDENTIFY_PRODUCT_SYSTEM_PROMPT,
+          },
+          { role: "user", content: `Identify this product: "${searchText}"` },
+        ],
+        max_tokens: 2000, // Reduced since we only need basic identification
+        temperature: 0.2,
+        top_p: 0.9,
+        search_recency_filter: "month",
+        stream: false,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Perplexity API error: ${await response.text()}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    logInfo(`${logPrefix} Perplexity identification response: ${content}`);
+
+    try {
+      const result = JSON.parse(content);
+      return {
+        name: result.productName,
+        brand: result.brandName,
+        category: result.category,
+        isRelevant: result.isRelevant
+      };
+    } catch (parseError) {
+      logError(`${logPrefix} Failed to parse Perplexity response: ${parseError.message}`);
+      throw new Error('Failed to parse product information');
+    }
+  } catch (error) {
+    logError(`${logPrefix} Error identifying product: ${safeStringify(error)}`);
+    return {
+      name: searchText,
+      brand: null,
+      isRelevant: false
+    };
+  }
+}
 /**
  * System prompt for initial product and dupe search
  */
@@ -672,8 +749,8 @@ export async function getBatchProductReviews(products: any): Promise<any> {
         
         // Add missing products with empty data
         products.forEach(product => {
-          if (!repairedJson.products || !repairedJson.products[product?.id]) {
-            if (!repairedJson.products) repairedJson.products = {};
+          if (!repairedJson.dupes || !repairedJson.dupes[product?.id]) {
+            if (!repairedJson.dupes) repairedJson.dupes =[];
             
             repairedJson.products[product?.id] = {
               name: product.name,

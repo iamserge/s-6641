@@ -1,10 +1,9 @@
-
-import { useState, useRef, useCallback, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 
 // Import components
 import TaglineAnimation from "./hero/TaglineAnimation";
@@ -12,103 +11,34 @@ import AnimatedSteps from "./hero/AnimatedSteps";
 import SearchForm from "./hero/SearchForm";
 import CameraCapture from "./hero/CameraCapture";
 import ProcessingModal from "./hero/ProcessingModal";
-import { useMessageVariations, useBeautyTips } from "./hero/useMessageVariations";
+import { useMessageVariations } from "./hero/useMessageVariations";
 
 const Hero = () => {
   // State
   const [searchText, setSearchText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState(null);
   const [progressMessage, setProgressMessage] = useState("");
-  const [originalProgressMessage, setOriginalProgressMessage] = useState("");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [showTip, setShowTip] = useState(false);
-  const [showRecentProducts, setShowRecentProducts] = useState(false);
-  const [tip, setTip] = useState("");
   const [searchTriggered, setSearchTriggered] = useState(false);
-  const [detectedProduct, setDetectedProduct] = useState<any>(null);
-  const [showProductConfirmation, setShowProductConfirmation] = useState(false);
+  const [detectedProduct, setDetectedProduct] = useState(null);
+  const [productError, setProductError] = useState(null);
   
   // Hooks
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const navigate = useNavigate();
   const { getRandomVariation } = useMessageVariations();
-  const { getRandomTip } = useBeautyTips();
 
   const taglineWords = "Outsmart the Beauty Industry, One Dupe at a Time 🧠".split(" ");
 
-  // Function to fetch recent products
-  const fetchRecentProducts = useCallback(async () => {
-    try {
-      const { data: productsWithDupes } = await supabase
-        .from("product_dupes")
-        .select("original_product_id, savings_percentage")
-        .order("savings_percentage", { ascending: false })
-        .limit(3);
-
-      if (!productsWithDupes || productsWithDupes.length === 0) return [];
-
-      const productIds = productsWithDupes.map((item) => item.original_product_id);
-      const { data: products } = await supabase
-        .from("products")
-        .select("id, name, brand, image_url, slug")
-        .in("id", productIds);
-
-      if (!products || products.length === 0) return [];
-
-      const productsWithDetails = await Promise.all(
-        products.map(async (product) => {
-          const { data: dupes, count } = await supabase
-            .from("product_dupes")
-            .select("savings_percentage", { count: "exact" })
-            .eq("original_product_id", product?.id);
-          const maxSavings = Math.max(...(dupes?.map((d) => d.savings_percentage) || [0]));
-          return { ...product, dupesCount: count, maxSavings };
-        })
-      );
-      return productsWithDetails;
-    } catch (error) {
-      console.error("Error fetching recent products:", error);
-      return [];
-    }
-  }, []);
-
-  const { data: recentProducts } = useQuery({
-    queryKey: ["recentProductsForModal"],
-    queryFn: fetchRecentProducts,
-    enabled: showRecentProducts,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  // Effects
-  useEffect(() => {
-    let tipTimer, productsTimer;
-    if (isProcessing) {
-      tipTimer = setTimeout(() => {
-        setShowTip(true);
-        setTip(getRandomTip());
-      }, 10000);
-      productsTimer = setTimeout(() => setShowRecentProducts(true), 20000);
-    }
-    return () => {
-      clearTimeout(tipTimer);
-      clearTimeout(productsTimer);
-      if (!isProcessing) {
-        setShowTip(false);
-        setShowRecentProducts(false);
-      }
-    };
-  }, [isProcessing, getRandomTip]);
-
   // Handlers
-  const handleSearch = async (e?: React.FormEvent, productData?: any) => {
+  const handleSearch = async (e, productData) => {
     if (e) e.preventDefault();
     
-    let searchData: { searchText?: string; imageData?: string } = {};
+    let searchData = {};
     let bodyMethod = 'GET';
     const url = new URL(`${(supabase as any).supabaseUrl}/functions/v1/search-dupes`);
     
@@ -134,9 +64,9 @@ const Hero = () => {
     try {
       setIsProcessing(true);
       setSearchTriggered(true);
-      setShowProductConfirmation(false);
       setDetectedProduct(null);
-      setProgressMessage(getRandomVariation("Heyyy! We're on the hunt for the perfect dupes for you! 🎨"));
+      setProductError(null);
+      setProgressMessage(getRandomVariation("Looking for dupes! 🎨"));
       
       const { data: { session } } = await supabase.auth.getSession();
       const apikey = (supabase as any).supabaseKey;
@@ -163,10 +93,16 @@ const Hero = () => {
         
         if (data.type === "productIdentified") {
           setDetectedProduct(data.data);
-          setShowProductConfirmation(true);
         } else if (data.type === "progress") {
           setProgressMessage(getRandomVariation(data.message));
-          setOriginalProgressMessage(data.message);
+        } else if (data.type === "notRelevant") {
+          setProductError({
+            type: "notRelevant",
+            message: data.message || "This doesn't appear to be a beauty product we can find dupes for."
+          });
+          eventSource.close();
+          setIsProcessing(false);
+          setSearchTriggered(false);
         } else if (data.type === "result") {
           if (data.data.success && data.data.data.slug) {
             setProgressMessage("Ta-da! Your dupes are ready to shine! 🌟");
@@ -177,7 +113,6 @@ const Hero = () => {
                 navigate(`/dupes/for/${data.data.data.slug}`);
                 setIsProcessing(false);
                 setSearchTriggered(false);
-                setShowProductConfirmation(false);
               }, 1000);
             }, 1500);
           } else {
@@ -192,7 +127,6 @@ const Hero = () => {
         eventSource.close();
         setIsProcessing(false);
         setSearchTriggered(false);
-        setShowProductConfirmation(false);
         toast({
           variant: "destructive",
           title: "Error",
@@ -209,7 +143,6 @@ const Hero = () => {
       });
       setIsProcessing(false);
       setSearchTriggered(false);
-      setShowProductConfirmation(false);
     }
   };
 
@@ -229,11 +162,11 @@ const Hero = () => {
       });
       setIsCameraOpen(false);
     }
-  }, []);
+  }, [toast]);
 
   const stopCamera = useCallback(() => {
     if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
+      const stream = videoRef.current.srcObject;
       stream.getTracks().forEach((track) => track.stop());
       videoRef.current.srcObject = null;
     }
@@ -297,7 +230,7 @@ const Hero = () => {
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -307,7 +240,7 @@ const Hero = () => {
     try {
       const reader = new FileReader();
       reader.onload = async () => {
-        const imageDataUrl = reader.result as string;
+        const imageDataUrl = reader.result;
         setPreviewImage(imageDataUrl);
         
         handleSearch(undefined, undefined);
@@ -339,7 +272,12 @@ const Hero = () => {
     setPreviewImage(null);
     setSearchText("");
     setSearchTriggered(false);
-    setShowProductConfirmation(false);
+    setDetectedProduct(null);
+    setProductError(null);
+  };
+
+  const confirmProduct = () => {
+    // Continue with the search using the detected product
     setDetectedProduct(null);
   };
 
@@ -392,33 +330,26 @@ const Hero = () => {
 
       <ProcessingModal
         isProcessing={isProcessing}
-        showProductConfirmation={showProductConfirmation}
         detectedProduct={detectedProduct}
+        productError={productError}
         previewImage={previewImage}
         progressMessage={progressMessage}
         searchTriggered={searchTriggered}
         searchText={searchText}
-        showTip={showTip}
-        tip={tip}
-        showRecentProducts={showRecentProducts}
-        recentProducts={recentProducts}
         cancelSearch={cancelSearch}
-        setShowProductConfirmation={setShowProductConfirmation}
+        confirmProduct={confirmProduct}
       />
 
       <canvas ref={canvasRef} className="hidden" />
       
-      {/* File input handler needs to be here to access handleImageUpload */}
-      {fileInputRef.current && (
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept="image/*"
-          capture="environment"
-          onChange={handleImageUpload}
-          className="hidden"
-        />
-      )}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        capture="environment"
+        onChange={handleImageUpload}
+        className="hidden"
+      />
     </section>
   );
 };
