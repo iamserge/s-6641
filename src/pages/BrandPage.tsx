@@ -147,7 +147,7 @@ const BrandPage = () => {
       <div className="min-h-screen flex items-center justify-center">
         <AnimatedBackground />
         <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-[#9b87f5] mb-4 mx-auto" />
+          <Loader2 className="w-10 h-10 animate-spin text-gray-600 mb-4 mx-auto" />
           <p className="text-gray-600">Loading brand details...</p>
         </div>
       </div>
@@ -167,7 +167,7 @@ const BrandPage = () => {
   }
 
   return (
-    <div className="min-h-screen font-urbanist">
+    <div className="min-h-screen font-urbanist bg-gradient-to-b from-violet-50 to-pink-50">
       <AnimatedBackground />
       <Navbar />
       
@@ -178,11 +178,11 @@ const BrandPage = () => {
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex justify-center mb-6">
-            <TabsList className="grid grid-cols-2 w-full max-w-md">
-              <TabsTrigger value="products" className="rounded-md">
+            <TabsList className="grid grid-cols-2 w-full max-w-md bg-white/50 backdrop-blur-sm p-1 rounded-full border border-gray-100 shadow-sm">
+              <TabsTrigger value="products" className="rounded-full px-5 py-2 data-[state=active]:bg-gray-100 data-[state=active]:text-gray-800">
                 Products ({brand.product_count})
               </TabsTrigger>
-              <TabsTrigger value="resources" className="rounded-md">
+              <TabsTrigger value="resources" className="rounded-full px-5 py-2 data-[state=active]:bg-gray-100 data-[state=active]:text-gray-800">
                 Resources ({brand.resources?.length || 0})
               </TabsTrigger>
             </TabsList>
