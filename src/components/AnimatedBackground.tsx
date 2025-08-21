@@ -1,35 +1,9 @@
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
 
 const AnimatedBackground = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    
-    window.addEventListener("mousemove", handleMouseMove);
-    
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
-
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-      <motion.div 
-        className="absolute top-0 left-0 w-full h-full opacity-20"
-        style={{
-          background: "radial-gradient(circle 800px at var(--x) var(--y), rgba(255, 182, 193, 0.15), transparent 80%)"
-        }}
-        animate={{
-          "--x": `${mousePosition.x}px`,
-          "--y": `${mousePosition.y}px`
-        } as any}
-        transition={{ type: "spring", damping: 10, stiffness: 50 }}
-      />
       
       {/* Pink blob in top right */}
       <motion.div 
