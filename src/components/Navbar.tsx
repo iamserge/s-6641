@@ -33,7 +33,7 @@ const CurrencySelector = () => {
       <DropdownMenuTrigger className="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors">
         <span className="text-base font-medium">{selectedCurrency.symbol}</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-24 bg-white">
+      <DropdownMenuContent align="end" className="w-24 bg-white z-[110]">
         {currencies.map((currency) => (
           <DropdownMenuItem
             key={currency.code}
@@ -73,7 +73,7 @@ const Navbar = () => {
   return (
     <>
       {/* Static top navbar */}
-      <div className="absolute top-0 left-0 right-0 z-40 px-6 py-4">
+      <div className="absolute top-0 left-0 right-0 z-[100] px-6 py-4">
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-center justify-between">
             <Link to="/">
@@ -111,7 +111,7 @@ const Navbar = () => {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: isScrolled ? 0 : -100, opacity: isScrolled ? 1 : 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="fixed w-full z-50 px-6 py-4 backdrop-blur-[5px] bg-white/20"
+        className="fixed w-full z-[101] px-6 py-4 backdrop-blur-[5px] bg-white/20"
       >
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-center justify-between">
